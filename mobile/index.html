@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Be Fit — Gym & Fitness Center</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%230D9488'><circle cx='12' cy='12' r='10'/><text x='12' y='16' text-anchor='middle' font-size='10' fill='white' font-weight='bold'>BF</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            teal: { 550: '#0D9488', 650: '#0F766E' },
+            brand: { blue: '#0284C7', sunny: '#FACC15', green: '#16A34A' },
+            surface: '#F4F6F8',
+            card: '#FFFFFF'
+          },
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', 'Inter', 'system-ui', 'sans-serif']
+          },
+          boxShadow: {
+            card: '0 2px 10px rgba(0,0,0,0.04)',
+            cardHover: '0 4px 16px rgba(0,0,0,0.08)',
+            nav: '0 -2px 12px rgba(0,0,0,0.06)'
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-gray-100 font-sans text-slate-900 antialiased">
+
+  <!-- ==================== MOBILE APP SHELL (430px Centered) ==================== -->
+  <div id="app-shell" class="relative mx-auto bg-surface min-h-screen overflow-x-hidden" style="max-width:430px;">
+
+    <!-- Scrollable Main Content (with bottom padding for nav) -->
+    <main id="main-content" class="pb-28">
+
+      <!-- ===== A. TOP HERO PROMO CAROUSEL ===== -->
+      <section id="hero-carousel" class="relative w-full overflow-hidden" style="height:210px;">
+        <div id="carousel-track" class="flex transition-transform duration-500 ease-out h-full">
+          <!-- Slide 1 -->
+          <div class="carousel-slide relative w-full shrink-0 h-full">
+            <img src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=860&h=420&fit=crop&q=80" alt="Be Fit Gym Interior" class="w-full h-full object-cover">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
+            <div class="absolute bottom-0 left-0 right-0 p-5">
+              <span class="inline-block px-2.5 py-1 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-brand-sunny text-slate-900 mb-2 shadow-sm">Spesial Member Baru</span>
+              <h2 class="text-white text-base font-extrabold leading-snug tracking-tight">GRATIS SESI PT S/D 2X<br>+ DISKON S/D 15%</h2>
+              <button class="mt-2.5 px-4 py-1.5 rounded-lg bg-brand-sunny text-slate-900 text-xs font-bold shadow-md hover:brightness-105 active:scale-95 transition-all" onclick="openPromoDetail(0)">KLIK DI SINI</button>
+            </div>
+          </div>
+          <!-- Slide 2 -->
+          <div class="carousel-slide relative w-full shrink-0 h-full">
+            <img src="https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=860&h=420&fit=crop&q=80" alt="Gym Workout" class="w-full h-full object-cover">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
+            <div class="absolute bottom-0 left-0 right-0 p-5">
+              <span class="inline-block px-2.5 py-1 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-teal-550 text-white mb-2 shadow-sm">Paket Couple</span>
+              <h2 class="text-white text-base font-extrabold leading-snug tracking-tight">AJAK PASANGAN OLAHRAGA<br>HEMAT HINGGA 25%</h2>
+              <button class="mt-2.5 px-4 py-1.5 rounded-lg bg-white text-slate-900 text-xs font-bold shadow-md hover:brightness-105 active:scale-95 transition-all" onclick="openPromoDetail(1)">LIHAT DETAIL</button>
+            </div>
+          </div>
+          <!-- Slide 3 -->
+          <div class="carousel-slide relative w-full shrink-0 h-full">
+            <img src="https://images.unsplash.com/photo-1540497077202-7c8a3999166f?w=860&h=420&fit=crop&q=80" alt="Gym Equipment" class="w-full h-full object-cover">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
+            <div class="absolute bottom-0 left-0 right-0 p-5">
+              <span class="inline-block px-2.5 py-1 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-red-500 text-white mb-2 shadow-sm">Terbatas!</span>
+              <h2 class="text-white text-base font-extrabold leading-snug tracking-tight">BUNDLING MEMBERSHIP<br>+ 4 SESI PERSONAL TRAINER</h2>
+              <button class="mt-2.5 px-4 py-1.5 rounded-lg bg-brand-sunny text-slate-900 text-xs font-bold shadow-md hover:brightness-105 active:scale-95 transition-all" onclick="openPromoDetail(2)">CEK SEKARANG</button>
+            </div>
+          </div>
+        </div>
+        <!-- Carousel Dots -->
+        <div id="carousel-dots" class="absolute bottom-3 left-5 flex items-center gap-1.5 z-10">
+          <button class="carousel-dot w-5 h-1.5 rounded-full bg-white transition-all active" data-index="0"></button>
+          <button class="carousel-dot w-1.5 h-1.5 rounded-full bg-white/50 transition-all" data-index="1"></button>
+          <button class="carousel-dot w-1.5 h-1.5 rounded-full bg-white/50 transition-all" data-index="2"></button>
+        </div>
+      </section>
+
+      <!-- ===== B. BRANCH LOCATION & CROWD INDICATOR (Overlapping Card) ===== -->
+      <section class="px-4 -mt-5 relative z-10">
+        <div class="bg-white rounded-[14px] border border-slate-200 shadow-card p-4">
+          <!-- Branch Selector Row -->
+          <button type="button" class="w-full flex items-center justify-between group" onclick="openBranchSheet()">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-550 shrink-0">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+              </div>
+              <div class="text-left">
+                <h3 class="text-sm font-bold text-slate-900 group-hover:text-teal-550 transition-colors">Be Fit Setiabudi Bandung</h3>
+                <p class="text-[11px] text-slate-400 font-medium">Jl. Dr. Setiabudi No. 130</p>
+              </div>
+            </div>
+            <svg class="w-5 h-5 text-slate-300 group-hover:text-teal-550 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </button>
+
+          <!-- Divider -->
+          <div class="my-3 border-t border-slate-100"></div>
+
+          <!-- Crowd Indicator Row -->
+          <button type="button" class="w-full flex items-center justify-between" onclick="openCrowdInfo()">
+            <div class="flex items-center gap-2.5">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-green-50 text-green-700 border border-green-200">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                Gym Area Crowd &nbsp;|&nbsp; <span class="text-green-600 font-extrabold">Low</span>
+              </span>
+            </div>
+            <svg class="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+      </section>
+
+      <!-- ===== C. FREE TRIAL 7 HARI CLAIM CARD ===== -->
+      <section class="px-4 mt-4">
+        <div id="trial-card" class="bg-white rounded-xl border-[1.5px] border-brand-sunny shadow-card flex items-center gap-3 p-4 hover:shadow-cardHover transition-shadow">
+          <!-- Gift Icon -->
+          <div class="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center text-2xl shrink-0 border border-amber-200">
+            🎁
+          </div>
+          <!-- Text -->
+          <div class="flex-1 min-w-0">
+            <h3 class="text-sm font-extrabold text-slate-900 leading-tight">Free Trial 7 Hari Untukmu!</h3>
+            <p class="text-[11px] text-slate-500 mt-0.5">Coba gym & ikut kelas gratis</p>
+          </div>
+          <!-- Claim Button -->
+          <button type="button" id="btn-claim-trial" class="px-4 py-2 rounded-lg bg-teal-550 text-white text-xs font-bold shrink-0 shadow-sm hover:bg-teal-650 active:scale-95 transition-all" onclick="handleTrialClaim()">
+            Klaim
+          </button>
+        </div>
+      </section>
+
+      <!-- ===== D. KELAS TERSEDIA HARI INI ===== -->
+      <section class="mt-6">
+        <!-- Section Header -->
+        <div class="px-4 flex items-end justify-between mb-3">
+          <div>
+            <h2 class="text-base font-extrabold text-slate-900 tracking-tight">Kelas Tersedia Hari Ini</h2>
+            <p class="text-[11px] text-slate-400 font-medium mt-0.5">Berdasarkan lokasi club yang dipilih</p>
+          </div>
+          <button class="text-xs font-bold text-teal-550 hover:underline" onclick="openAllClassesSheet()">Lihat Semua</button>
+        </div>
+
+        <!-- Horizontal Scroll Class Cards -->
+        <div class="hide-scrollbar flex gap-3 overflow-x-auto px-4 pb-2 snap-x snap-mandatory">
+          <!-- Class Card 1: Zumba -->
+          <button type="button" class="class-card relative shrink-0 rounded-[14px] overflow-hidden shadow-card group snap-start" style="width:175px;height:230px;" onclick="openClassDetail(0)">
+            <img src="https://images.unsplash.com/photo-1518611012118-696072aa579a?w=350&h=460&fit=crop&q=80" alt="Zumba" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+            <!-- Time Pill -->
+            <span class="absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/95 text-[10px] font-bold text-slate-700 backdrop-blur-sm shadow-sm">🕒 18:10</span>
+            <!-- Quota Badge -->
+            <span class="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md text-[10px] font-bold bg-green-500 text-white shadow-sm">Tersisa 4 Slot</span>
+            <!-- Bottom Info -->
+            <div class="absolute bottom-0 left-0 right-0 p-3">
+              <span class="inline-block px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-white/20 text-green-300 backdrop-blur-sm mb-1">Easy</span>
+              <h3 class="text-white text-sm font-extrabold leading-tight">Zumba</h3>
+              <p class="text-white/70 text-[11px] font-medium mt-0.5">With Lia</p>
+              <span class="inline-block mt-2 text-[10px] font-extrabold text-brand-sunny uppercase tracking-wider">DAFTAR KELAS &gt;</span>
+            </div>
+          </button>
+
+          <!-- Class Card 2: Bodypump -->
+          <button type="button" class="class-card relative shrink-0 rounded-[14px] overflow-hidden shadow-card group snap-start" style="width:175px;height:230px;" onclick="openClassDetail(1)">
+            <img src="https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=350&h=460&fit=crop&q=80" alt="Bodypump" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+            <span class="absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/95 text-[10px] font-bold text-slate-700 backdrop-blur-sm shadow-sm">🕒 19:20</span>
+            <span class="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md text-[10px] font-bold bg-green-500 text-white shadow-sm">Tersisa 8 Slot</span>
+            <div class="absolute bottom-0 left-0 right-0 p-3">
+              <span class="inline-block px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-white/20 text-amber-300 backdrop-blur-sm mb-1">Hard</span>
+              <h3 class="text-white text-sm font-extrabold leading-tight">Bodypump</h3>
+              <p class="text-white/70 text-[11px] font-medium mt-0.5">With Hari</p>
+              <span class="inline-block mt-2 text-[10px] font-extrabold text-brand-sunny uppercase tracking-wider">DAFTAR KELAS &gt;</span>
+            </div>
+          </button>
+
+          <!-- Class Card 3: HIIT Core -->
+          <button type="button" class="class-card relative shrink-0 rounded-[14px] overflow-hidden shadow-card group snap-start" style="width:175px;height:230px;" onclick="openClassDetail(2)">
+            <img src="https://images.unsplash.com/photo-1549060279-7e168fcee0c2?w=350&h=460&fit=crop&q=80" alt="HIIT Core" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+            <span class="absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/95 text-[10px] font-bold text-slate-700 backdrop-blur-sm shadow-sm">🕒 17:00</span>
+            <span class="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500 text-white shadow-sm">Tersisa 2 Slot</span>
+            <div class="absolute bottom-0 left-0 right-0 p-3">
+              <span class="inline-block px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-white/20 text-red-300 backdrop-blur-sm mb-1">Hard</span>
+              <h3 class="text-white text-sm font-extrabold leading-tight">HIIT Core</h3>
+              <p class="text-white/70 text-[11px] font-medium mt-0.5">With Coach Alex</p>
+              <span class="inline-block mt-2 text-[10px] font-extrabold text-brand-sunny uppercase tracking-wider">DAFTAR KELAS &gt;</span>
+            </div>
+          </button>
+
+          <!-- Class Card 4: Vinyasa Yoga -->
+          <button type="button" class="class-card relative shrink-0 rounded-[14px] overflow-hidden shadow-card group snap-start" style="width:175px;height:230px;" onclick="openClassDetail(3)">
+            <img src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=350&h=460&fit=crop&q=80" alt="Vinyasa Yoga" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+            <span class="absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/95 text-[10px] font-bold text-slate-700 backdrop-blur-sm shadow-sm">🕒 16:30</span>
+            <span class="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md text-[10px] font-bold bg-green-500 text-white shadow-sm">Tersisa 11 Slot</span>
+            <div class="absolute bottom-0 left-0 right-0 p-3">
+              <span class="inline-block px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-white/20 text-green-300 backdrop-blur-sm mb-1">Easy</span>
+              <h3 class="text-white text-sm font-extrabold leading-tight">Vinyasa Yoga</h3>
+              <p class="text-white/70 text-[11px] font-medium mt-0.5">With Maya</p>
+              <span class="inline-block mt-2 text-[10px] font-extrabold text-brand-sunny uppercase tracking-wider">DAFTAR KELAS &gt;</span>
+            </div>
+          </button>
+
+          <!-- Spacer for scroll padding -->
+          <div class="shrink-0 w-1"></div>
+        </div>
+      </section>
+
+      <!-- ===== E. PERSONAL TRAINER SHOWCASE (Full-Width Teal Section) ===== -->
+      <section class="mt-6 py-6 bg-gradient-to-br from-teal-550 to-teal-650">
+        <!-- Header -->
+        <div class="px-4 flex items-center justify-between mb-4">
+          <h2 class="text-base font-extrabold text-white tracking-tight">Personal Trainer</h2>
+          <button class="text-xs font-bold text-white/80 hover:text-white" onclick="openAllTrainersSheet()">Lihat Semua</button>
+        </div>
+
+        <!-- Content: Price Info + Trainer Scroll -->
+        <div class="flex items-stretch gap-0">
+          <!-- Left: Price Column (Fixed 125px) -->
+          <div class="shrink-0 pl-4 pr-2 flex flex-col items-start justify-center" style="width:130px;">
+            <span class="text-[11px] font-bold text-white/70 uppercase tracking-wider">Mulai Dari</span>
+            <span class="text-2xl font-extrabold text-brand-sunny leading-tight mt-0.5">Rp 199K</span>
+            <span class="text-[11px] font-bold text-white/70 uppercase tracking-wider mt-0.5">Per Sesi</span>
+            <span class="inline-block mt-3 px-3 py-1.5 rounded-full text-[10px] font-bold bg-brand-sunny text-slate-900 text-center leading-tight">Khusus Member<br>Baru & Rejoin</span>
+          </div>
+
+          <!-- Right: Trainer Cards Horizontal Scroll -->
+          <div class="hide-scrollbar flex-1 flex gap-3 overflow-x-auto pr-4 pb-1 snap-x snap-mandatory">
+            <!-- Trainer 1: Aby -->
+            <button type="button" class="trainer-card relative shrink-0 rounded-xl overflow-hidden shadow-lg group snap-start" style="width:145px;height:195px;" onclick="openTrainerDetail(0)">
+              <img src="https://images.unsplash.com/photo-1567013127542-490d757e51fc?w=290&h=390&fit=crop&q=80" alt="Coach Aby" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+              <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+              <div class="absolute bottom-0 left-0 right-0 p-3">
+                <h4 class="text-white text-sm font-extrabold leading-tight">Aby</h4>
+                <p class="text-white/60 text-[10px] font-medium mt-0.5">59 klien aktif</p>
+              </div>
+            </button>
+
+            <!-- Trainer 2: Egi Angga -->
+            <button type="button" class="trainer-card relative shrink-0 rounded-xl overflow-hidden shadow-lg group snap-start" style="width:145px;height:195px;" onclick="openTrainerDetail(1)">
+              <img src="https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=290&h=390&fit=crop&q=80" alt="Coach Egi" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+              <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+              <div class="absolute bottom-0 left-0 right-0 p-3">
+                <h4 class="text-white text-sm font-extrabold leading-tight">Egi Angga</h4>
+                <p class="text-white/60 text-[10px] font-medium mt-0.5">33 klien aktif</p>
+              </div>
+            </button>
+
+            <!-- Trainer 3: Sarah Wijaya -->
+            <button type="button" class="trainer-card relative shrink-0 rounded-xl overflow-hidden shadow-lg group snap-start" style="width:145px;height:195px;" onclick="openTrainerDetail(2)">
+              <img src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=290&h=390&fit=crop&q=80" alt="Coach Sarah" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+              <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+              <div class="absolute bottom-0 left-0 right-0 p-3">
+                <h4 class="text-white text-sm font-extrabold leading-tight">Sarah Wijaya</h4>
+                <p class="text-white/60 text-[10px] font-medium mt-0.5">47 klien aktif</p>
+              </div>
+            </button>
+
+            <!-- Trainer 4: Bima Sakti -->
+            <button type="button" class="trainer-card relative shrink-0 rounded-xl overflow-hidden shadow-lg group snap-start" style="width:145px;height:195px;" onclick="openTrainerDetail(3)">
+              <img src="https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=290&h=390&fit=crop&q=80" alt="Coach Bima" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+              <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+              <div class="absolute bottom-0 left-0 right-0 p-3">
+                <h4 class="text-white text-sm font-extrabold leading-tight">Bima Sakti</h4>
+                <p class="text-white/60 text-[10px] font-medium mt-0.5">28 klien aktif</p>
+              </div>
+            </button>
+
+            <div class="shrink-0 w-1"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== F. REFERRAL BANNER ===== -->
+      <section class="px-4 mt-6">
+        <div class="bg-blue-600 rounded-[14px] p-4 flex items-center gap-4 shadow-card overflow-hidden relative">
+          <!-- Gift Icon -->
+          <div class="text-4xl shrink-0 z-10">🎁</div>
+          <!-- Text -->
+          <div class="flex-1 z-10">
+            <h3 class="text-white text-[13px] font-extrabold leading-snug">Dapatkan lebih dari 12 bulan Membership GRATIS!</h3>
+            <p class="text-blue-200 text-[10px] font-medium mt-0.5">Ajak teman & keluargamu bergabung.</p>
+          </div>
+          <!-- Button -->
+          <button type="button" class="px-3.5 py-2 rounded-lg bg-white text-slate-800 text-xs font-bold shadow-md shrink-0 z-10 hover:bg-slate-50 active:scale-95 transition-all" onclick="openReferralSheet()">
+            Undang<br>Teman
+          </button>
+          <!-- Decorative Circles -->
+          <div class="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-blue-500/40"></div>
+          <div class="absolute -right-2 -bottom-8 w-20 h-20 rounded-full bg-blue-500/30"></div>
+        </div>
+      </section>
+
+      <!-- ===== G. PROMO SPESIAL UNTUKMU ===== -->
+      <section class="mt-6 mb-4">
+        <div class="px-4 mb-3">
+          <h2 class="text-base font-extrabold text-slate-900 tracking-tight">Promo Spesial Untukmu</h2>
+        </div>
+
+        <div class="hide-scrollbar flex gap-3 overflow-x-auto px-4 pb-2 snap-x snap-mandatory">
+          <!-- Promo Banner 1 -->
+          <button type="button" class="promo-banner-card relative shrink-0 rounded-[14px] overflow-hidden shadow-card group snap-start" style="width:290px;height:150px;" onclick="openPromoDetail(0)">
+            <img src="https://images.unsplash.com/photo-1593079831268-3381b0db4a77?w=580&h=300&fit=crop&q=80" alt="Promo Member Baru" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+            <div class="absolute inset-0 bg-gradient-to-r from-black/75 via-black/40 to-transparent"></div>
+            <div class="absolute bottom-0 left-0 right-0 p-4">
+              <span class="inline-block px-2 py-0.5 rounded text-[9px] font-extrabold uppercase bg-brand-sunny text-slate-900 mb-1.5">Member Baru</span>
+              <h3 class="text-white text-[13px] font-extrabold leading-snug">Jadi Member Sekarang<br>Bisa Lebih Hemat!</h3>
+              <span class="inline-block mt-1.5 px-3 py-1 rounded-md bg-brand-sunny text-slate-900 text-[10px] font-bold shadow-sm">CEK PROMONYA DI SINI!</span>
+            </div>
+          </button>
+
+          <!-- Promo Banner 2 -->
+          <button type="button" class="promo-banner-card relative shrink-0 rounded-[14px] overflow-hidden shadow-card group snap-start" style="width:290px;height:150px;" onclick="openPromoDetail(1)">
+            <img src="https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=580&h=300&fit=crop&q=80" alt="Promo Couple" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+            <div class="absolute inset-0 bg-gradient-to-r from-teal-900/80 via-teal-900/40 to-transparent"></div>
+            <div class="absolute bottom-0 left-0 right-0 p-4">
+              <span class="inline-block px-2 py-0.5 rounded text-[9px] font-extrabold uppercase bg-teal-400 text-teal-900 mb-1.5">Student & Couple</span>
+              <h3 class="text-white text-[13px] font-extrabold leading-snug">Paket Couple / Student<br>Hemat Hingga 25%</h3>
+            </div>
+          </button>
+
+          <!-- Promo Banner 3 -->
+          <button type="button" class="promo-banner-card relative shrink-0 rounded-[14px] overflow-hidden shadow-card group snap-start" style="width:290px;height:150px;" onclick="openPromoDetail(2)">
+            <img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=580&h=300&fit=crop&q=80" alt="Promo Bundling" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+            <div class="absolute inset-0 bg-gradient-to-r from-slate-900/80 via-slate-900/40 to-transparent"></div>
+            <div class="absolute bottom-0 left-0 right-0 p-4">
+              <span class="inline-block px-2 py-0.5 rounded text-[9px] font-extrabold uppercase bg-red-500 text-white mb-1.5">Bundling</span>
+              <h3 class="text-white text-[13px] font-extrabold leading-snug">Membership + 4 Sesi PT<br>Mulai Rp 799K/bulan</h3>
+            </div>
+          </button>
+
+          <div class="shrink-0 w-1"></div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ===== H1. FLOATING PROMO STICKER ===== -->
+    <button type="button" id="floating-sticker" class="fixed z-40 flex items-center gap-1.5 px-3 py-2 rounded-full bg-red-500 text-white text-[10px] font-bold shadow-xl shadow-red-500/30 hover:bg-red-600 active:scale-90 transition-all animate-bounce-slow" style="bottom:88px;right:max(16px, calc((100vw - 430px)/2 + 16px));" onclick="openVoucherList()">
+      <span class="text-base">🏷️</span>
+      <span class="whitespace-nowrap">KLAIM DISKON!</span>
+    </button>
+
+    <!-- ===== H2. FIXED BOTTOM NAVIGATION BAR ===== -->
+    <nav id="bottom-nav" class="fixed bottom-0 z-50 bg-white border-t border-slate-200 shadow-nav flex items-end justify-around px-2 pb-1 pt-1" style="height:68px; width:100%; max-width:430px; left:50%; transform:translateX(-50%);">
+      <!-- Home (Active) -->
+      <button class="bottom-nav-item flex flex-col items-center gap-0.5 pt-1.5 pb-1 px-3 text-teal-550 relative" data-tab="home">
+        <span class="absolute -top-0.5 w-8 h-0.5 rounded-full bg-teal-550"></span>
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        <span class="text-[10px] font-bold">Home</span>
+      </button>
+      <!-- Class -->
+      <button class="bottom-nav-item flex flex-col items-center gap-0.5 pt-1.5 pb-1 px-3 text-slate-400" data-tab="class" onclick="openAllClassesSheet()">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        <span class="text-[10px] font-medium">Class</span>
+      </button>
+      <!-- Center Button: Cek Harga -->
+      <button class="flex flex-col items-center -mt-5 relative" onclick="openPricingSheet()">
+        <div class="w-14 h-14 rounded-full bg-gradient-to-br from-teal-550 to-brand-blue flex items-center justify-center border-4 border-white shadow-lg">
+          <span class="text-xl">⚡</span>
+        </div>
+        <span class="text-[10px] font-bold text-slate-500 mt-0.5">Cek Harga</span>
+      </button>
+      <!-- Trainer -->
+      <button class="bottom-nav-item flex flex-col items-center gap-0.5 pt-1.5 pb-1 px-3 text-slate-400" data-tab="trainer" onclick="openAllTrainersSheet()">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+        <span class="text-[10px] font-medium">Trainer</span>
+      </button>
+      <!-- Profile -->
+      <button class="bottom-nav-item flex flex-col items-center gap-0.5 pt-1.5 pb-1 px-3 text-slate-400" data-tab="profile" onclick="openProfileSheet()">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span class="text-[10px] font-medium">Profile</span>
+      </button>
+    </nav>
+
+  </div><!-- End App Shell -->
+
+  <!-- ===== BOTTOM SHEET OVERLAY (Shared Container) ===== -->
+  <div id="sheet-backdrop" class="fixed inset-0 bg-black/50 z-[60] hidden opacity-0 transition-opacity duration-300" onclick="closeBottomSheet()"></div>
+  <div id="sheet-container" class="fixed bottom-0 left-0 right-0 z-[70] flex justify-center pointer-events-none">
+    <div id="sheet-panel" class="bg-white rounded-t-2xl shadow-2xl w-full pointer-events-auto translate-y-full transition-transform duration-300 ease-out overflow-hidden" style="max-width:430px; max-height:85vh;">
+      <!-- Drag Handle -->
+      <div class="flex justify-center py-3 cursor-grab" id="sheet-handle">
+        <div class="w-10 h-1 rounded-full bg-slate-300"></div>
+      </div>
+      <!-- Dynamic Content -->
+      <div id="sheet-content" class="px-5 pb-6 overflow-y-auto" style="max-height:calc(85vh - 40px);">
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TOAST NOTIFICATION ===== -->
+  <div id="mobile-toast" class="fixed top-4 left-1/2 -translate-x-1/2 z-[80] px-4 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold shadow-xl opacity-0 -translate-y-4 transition-all duration-300 pointer-events-none whitespace-nowrap max-w-[90vw]" style="max-width:400px;"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
