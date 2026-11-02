@@ -1,7 +1,9 @@
 {
   "rewrites": [
-    { "source": "/mobile", "destination": "/mobile/index.html" },
-    { "source": "/mobile/(.*)", "destination": "/mobile/$1" },
+    { "source": "/admin", "destination": "/admin.html" },
+    { "source": "/admin/(.*)", "destination": "/admin.html" },
+    { "source": "/mobile", "destination": "/index.html" },
+    { "source": "/mobile/(.*)", "destination": "/index.html" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

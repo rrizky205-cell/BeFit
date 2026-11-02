@@ -29,6 +29,8 @@ const server = http.createServer((req, res) => {
 
   let sanitizedUrl = req.url.split('?')[0];
   if (sanitizedUrl === '/') sanitizedUrl = '/index.html';
+  if (sanitizedUrl === '/admin' || sanitizedUrl === '/admin/') sanitizedUrl = '/admin.html';
+  if (sanitizedUrl === '/mobile' || sanitizedUrl === '/mobile/') sanitizedUrl = '/index.html';
 
   // Handle directory index (e.g., /mobile/ -> /mobile/index.html)
   if (sanitizedUrl.endsWith('/')) sanitizedUrl += 'index.html';

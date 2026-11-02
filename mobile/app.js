@@ -874,15 +874,32 @@ function openProfileSheet() {
     <button type="button" class="w-full py-3 rounded-xl bg-teal-550 text-white text-sm font-bold shadow-md hover:bg-teal-650 active:scale-[0.98] transition-all mb-2.5">
       Masuk ke Akun
     </button>
-    <button type="button" class="w-full py-3 rounded-xl bg-white text-teal-600 text-sm font-bold border-2 border-teal-500 hover:bg-teal-50 active:scale-[0.98] transition-all" onclick="closeBottomSheet(); handleTrialClaim();">
+    <button type="button" class="w-full py-3 rounded-xl bg-white text-teal-600 text-sm font-bold border-2 border-teal-500 hover:bg-teal-50 active:scale-[0.98] transition-all mb-3" onclick="closeBottomSheet(); handleTrialClaim();">
       Daftar Baru — Free Trial 7 Hari
     </button>
+    <div class="pt-3 border-t border-slate-100 flex justify-center">
+      <a href="admin.html" class="text-xs font-semibold text-slate-400 hover:text-teal-600 transition-colors flex items-center gap-1.5 py-1">
+        <span>🔐</span> Buka Dashboard Admin Gym (CRM)
+      </a>
+    </div>
   `);
 }
 
 // ==================== INITIALIZATION ====================
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Clear any old session redirection or hash that could trap the user in admin views
+  if (window.location.hash && ['#dashboard', '#members', '#kanban', '#checkin', '#classes', '#analytics'].includes(window.location.hash)) {
+    try {
+      history.replaceState(null, '', window.location.pathname);
+    } catch (e) {}
+  }
+  try {
+    localStorage.removeItem('befit_admin_page');
+    localStorage.removeItem('current_page');
+    localStorage.removeItem('active_nav');
+  } catch (e) {}
+
   // Start hero carousel
   goToSlide(0);
   startCarousel();

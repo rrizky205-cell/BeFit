@@ -1,0 +1,116 @@
+/* ==========================================================================
+   BE FIT MOBILE APP – Clean Commercial Retail UI
+   Light Mode · Teal Accent · Plus Jakarta Sans
+   ========================================================================== */
+
+/* Hide scrollbar for horizontal scroll containers */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Carousel dot states */
+.carousel-dot {
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+.carousel-dot.active {
+  width: 20px;
+  background-color: #FFFFFF;
+}
+
+/* Smooth card press effect */
+.class-card,
+.trainer-card,
+.promo-banner-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  cursor: pointer;
+}
+.class-card:active,
+.trainer-card:active,
+.promo-banner-card:active {
+  transform: scale(0.97);
+}
+
+/* Floating sticker slow bounce */
+@keyframes bounceSlow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.animate-bounce-slow {
+  animation: bounceSlow 2.5s infinite ease-in-out;
+}
+
+/* Bottom sheet backdrop fade */
+#sheet-backdrop.visible {
+  opacity: 1;
+}
+
+/* Bottom sheet slide up */
+#sheet-panel.open {
+  transform: translateY(0);
+}
+
+/* Toast visible */
+#mobile-toast.visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* Bottom navigation active indicator */
+.bottom-nav-item {
+  transition: color 0.2s ease;
+}
+.bottom-nav-item[data-active="true"] {
+  color: #0D9488;
+}
+
+/* Prevent body scroll when sheet is open */
+body.sheet-open {
+  overflow: hidden;
+}
+
+/* Selection */
+::selection {
+  background-color: #0D9488;
+  color: white;
+}
+
+/* Fix for iOS safe area at bottom */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  #bottom-nav {
+    padding-bottom: calc(4px + env(safe-area-inset-bottom));
+  }
+}
+
+/* Prevent tap highlight on mobile */
+button, a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Smooth scroll behavior for the whole page */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Badge pulse for urgent slots */
+@keyframes pulseBadge {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+.badge-pulse {
+  animation: pulseBadge 1.5s infinite ease-in-out;
+}
+
+/* Bottom sheet content styling */
+#sheet-content h3 {
+  font-weight: 800;
+}
+
+#sheet-content .sheet-divider {
+  height: 1px;
+  background: #E2E8F0;
+  margin: 16px 0;
+}
