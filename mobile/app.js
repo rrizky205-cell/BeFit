@@ -11,9 +11,14 @@ const STORAGE_KEY = 'befit_crm_state_v1';
 const BRANCH_STORAGE_KEY = 'befit_selected_branch';
 const USERS_STORAGE_KEY = 'befit_users';
 const CURRENT_USER_KEY = 'befit_current_user';
-const CLASSES_STORAGE_KEY = 'befit_mobile_classes';
-const TRAINERS_STORAGE_KEY = 'befit_mobile_trainers';
+const CLASSES_STORAGE_KEY = 'befit_mobile_classes_v3';
+const TRAINERS_STORAGE_KEY = 'befit_mobile_trainers_v3';
 const TRANSACTIONS_KEY = 'befit_mobile_transactions';
+const CLAIMED_VOUCHERS_KEY = 'befit_claimed_vouchers';
+const CLASS_BOOKINGS_KEY = 'befit_class_bookings';
+const PT_BOOKINGS_KEY = 'befit_pt_bookings';
+const TRIAL_CLAIMS_KEY = 'befit_trial_claims';
+const ADMIN_AUTH_KEY = 'befit_admin_auth';
 
 // ==================== 1. BRANCHES & CROWD STATUS ====================
 
@@ -68,187 +73,237 @@ const BRANCHES_DATA = [
   }
 ];
 
-// ==================== 2. CLASSES DATA (BRANCH-SPECIFIC WITH DATE BOOKINGS) ====================
+// ==================== 2. CLASSES DATA (12 ENTERPRISE CLASSES & 6-8 SLOTS DAILY) ====================
 
-const DEFAULT_CLASSES = [
-  // --- CABANG SETIABUDI (HIIT, Zumba, Bodypump) ---
+const ENTERPRISE_CLASS_CATALOG = [
   {
-    id: 'CLS-1',
-    branchIds: ['setiabudi'],
-    name: 'Zumba Party',
-    time: '18:10 – 19:00',
+    typeId: 'bodypump',
+    name: 'Les Mills Bodypump',
+    category: 'Strength',
+    description: 'Latihan beban berirama dengan barbell dan repetisi tinggi untuk membentuk otot kencang, kuat, dan membakar hingga 560 kalori.',
+    difficulty: 'Hard',
+    room: 'Studio Utama',
+    duration: '55 Menit',
+    calories: '560 kcal',
+    image: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=600&h=800&fit=crop&q=80',
+    capacity: 20
+  },
+  {
+    typeId: 'bodycombat',
+    name: 'Les Mills Bodycombat',
+    category: 'Cardio Martial Arts',
+    description: 'Kardio bela diri berintensitas tinggi (boxing, karate, taekwondo, muay thai) membakar kalori tanpa kontak fisik.',
+    difficulty: 'Hard',
+    room: 'Studio Utama',
+    duration: '55 Menit',
+    calories: '700 kcal',
+    image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&h=800&fit=crop&q=80',
+    capacity: 22
+  },
+  {
+    typeId: 'reformer-pilates',
+    name: 'Reformer Pilates',
+    category: 'Core & Posture',
+    description: 'Latihan presisi menggunakan carriage Pilates Reformer untuk stabilitas core, elongasi postur tulang belakang, dan mobilitas sendi.',
+    difficulty: 'Medium',
+    room: 'Reformer Pilates Studio',
+    duration: '50 Menit',
+    calories: '380 kcal',
+    image: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=600&h=800&fit=crop&q=80',
+    capacity: 12
+  },
+  {
+    typeId: 'vinyasa-yoga',
+    name: 'Vinyasa Flow Yoga',
+    category: 'Mind & Flexibility',
+    description: 'Aliran gerakan dinamis yang menyelaraskan pernapasan ritmis dan postur asana untuk fleksibilitas dan ketenangan pikiran.',
     difficulty: 'Easy',
-    instructor: 'Coach Lia',
-    slotsLeft: 4,
-    capacity: 20,
-    description: 'Kelas kardio penuh energi dengan gerakan tarian Latin. Cocok untuk semua level, bakar kalori sambil bersenang-senang!',
-    image: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=350&h=460&fit=crop&q=80',
-    registeredUserIds: [],
-    dateBookings: {}
+    room: 'Yoga Shala Studio',
+    duration: '60 Menit',
+    calories: '320 kcal',
+    image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=600&h=800&fit=crop&q=80',
+    capacity: 18
   },
   {
-    id: 'CLS-2',
-    branchIds: ['setiabudi'],
-    name: 'HIIT Extreme',
-    time: '17:00 – 17:45',
-    difficulty: 'Hard',
-    instructor: 'Coach Alex',
-    slotsLeft: 3,
-    capacity: 15,
-    description: 'High-Intensity Interval Training yang fokus pada core, ketahanan kardio, dan pembakaran lemak maksimal dalam 45 menit.',
-    image: 'https://images.unsplash.com/photo-1549060279-7e168fcee0c2?w=350&h=460&fit=crop&q=80',
-    registeredUserIds: [],
-    dateBookings: {}
-  },
-  {
-    id: 'CLS-3',
-    branchIds: ['setiabudi'],
-    name: 'Bodypump Strength',
-    time: '19:20 – 20:10',
-    difficulty: 'Hard',
-    instructor: 'Coach Hari',
-    slotsLeft: 6,
-    capacity: 18,
-    description: 'Latihan beban berirama dengan barbell ringan dan repetisi tinggi untuk membentuk otot kencang dan atletis.',
-    image: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=350&h=460&fit=crop&q=80',
-    registeredUserIds: [],
-    dateBookings: {}
-  },
-
-  // --- CABANG DAGO (Bodycombat, Yoga, RPM) ---
-  {
-    id: 'CLS-4',
-    branchIds: ['dago'],
-    name: 'Bodycombat',
-    time: '17:30 – 18:30',
-    difficulty: 'Hard',
-    instructor: 'Coach Bima',
-    slotsLeft: 8,
-    capacity: 20,
-    description: 'Latihan kardio berintensitas tinggi yang terinspirasi seni bela diri (karate, boxing, taekwondo, muay thai). Efektif membakar kalori!',
-    image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=350&h=460&fit=crop&q=80',
-    registeredUserIds: [],
-    dateBookings: {}
-  },
-  {
-    id: 'CLS-5',
-    branchIds: ['dago'],
-    name: 'Vinyasa Yoga',
-    time: '19:00 – 20:00',
-    difficulty: 'Easy',
-    instructor: 'Coach Maya',
-    slotsLeft: 7,
-    capacity: 15,
-    description: 'Aliran gerakan yoga dinamis yang menyelaraskan pernapasan dan postur tubuh untuk fleksibilitas dan ketenangan.',
-    image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=350&h=460&fit=crop&q=80',
-    registeredUserIds: [],
-    dateBookings: {}
-  },
-  {
-    id: 'CLS-6',
-    branchIds: ['dago'],
+    typeId: 'rpm-cycling',
     name: 'RPM Indoor Cycling',
-    time: '18:00 – 18:45',
+    category: 'Cardio Endurance',
+    description: 'Bersepeda indoor intensif dengan irama musik upbeat. Latihan daya tahan jantung-paru yang ramah persendian lutut.',
     difficulty: 'Medium',
-    instructor: 'Coach Sarah',
-    slotsLeft: 4,
-    capacity: 16,
-    description: 'Bersepeda indoor dengan irama musik upbeat. Latihan endurance tanpa hentakan sendi yang ramah lutut.',
-    image: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=350&h=460&fit=crop&q=80',
-    registeredUserIds: [],
-    dateBookings: {}
+    room: 'Cycling Arena',
+    duration: '45 Menit',
+    calories: '620 kcal',
+    image: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=600&h=800&fit=crop&q=80',
+    capacity: 20
   },
-
-  // --- CABANG BUAH BATU (Jadwal Khusus: Aerobic, Pilates, Body Balance) ---
   {
-    id: 'CLS-7',
-    branchIds: ['buahbatu'],
-    name: 'Aerobic Blast',
-    time: '08:00 – 09:00',
+    typeId: 'zumba',
+    name: 'Zumba Fitness Party',
+    category: 'Dance Cardio',
+    description: 'Pesta kardio berirama musik Latin & pop. Bakar ratusan kalori dengan senyuman dan keceriaan bersama teman.',
     difficulty: 'Easy',
-    instructor: 'Coach Rina',
-    slotsLeft: 10,
-    capacity: 25,
-    description: 'Senam aerobik pagi hari untuk memacu metabolisme dan stamina. Musik ceria dan instruktur penuh semangat.',
-    image: 'https://images.unsplash.com/photo-1518310383802-640c2de311b2?w=350&h=460&fit=crop&q=80',
-    registeredUserIds: [],
-    dateBookings: {}
+    room: 'Studio Utama',
+    duration: '50 Menit',
+    calories: '480 kcal',
+    image: 'https://images.unsplash.com/photo-1518310383802-640c2de311b2?w=600&h=800&fit=crop&q=80',
+    capacity: 25
   },
   {
-    id: 'CLS-8',
-    branchIds: ['buahbatu'],
-    name: 'Mat Pilates',
-    time: '16:30 – 17:30',
-    difficulty: 'Medium',
-    instructor: 'Coach Dina',
-    slotsLeft: 5,
-    capacity: 15,
-    description: 'Fokus pada penguatan core, perbaikan postur tubuh, dan fleksibilitas tulang belakang.',
-    image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=350&h=460&fit=crop&q=80',
-    registeredUserIds: [],
-    dateBookings: {}
-  },
-  {
-    id: 'CLS-9',
-    branchIds: ['buahbatu'],
-    name: 'Body Balance',
-    time: '18:30 – 19:30',
-    difficulty: 'Easy',
-    instructor: 'Coach Tara',
-    slotsLeft: 9,
-    capacity: 20,
-    description: 'Kombinasi harmonis antara yoga, tai chi, dan pilates untuk memulihkan energi tubuh setelah beraktivitas.',
-    image: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=350&h=460&fit=crop&q=80',
-    registeredUserIds: [],
-    dateBookings: {}
-  },
-
-  // --- CABANG PASIRKALIKI (Pound Fit, Functional Strength) ---
-  {
-    id: 'CLS-10',
-    branchIds: ['pasirkaliki'],
-    name: 'Pound Fit',
-    time: '17:00 – 18:00',
-    difficulty: 'Medium',
-    instructor: 'Coach Citra',
-    slotsLeft: 6,
-    capacity: 18,
-    description: 'Kardio jam-session dengan ripstix (drum stick) berbobot ringan untuk membakar kalori dengan energik.',
-    image: 'https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=350&h=460&fit=crop&q=80',
-    registeredUserIds: [],
-    dateBookings: {}
-  },
-  {
-    id: 'CLS-11',
-    branchIds: ['pasirkaliki'],
-    name: 'Functional Strength',
-    time: '18:30 – 19:30',
+    typeId: 'muay-thai',
+    name: 'Muay Thai Conditioning',
+    category: 'Combat Agility',
+    description: 'Seni 8 tungkai yang memadukan pukulan, tendangan, knee, dan elbow strike untuk stamina tempur dan kelincahan.',
     difficulty: 'Hard',
-    instructor: 'Coach Aby',
-    slotsLeft: 4,
-    capacity: 15,
-    description: 'Latihan kettlebell dan dumbell untuk membangun kekuatan fungsional sehari-hari.',
-    image: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=350&h=460&fit=crop&q=80',
-    registeredUserIds: [],
-    dateBookings: {}
+    room: 'Combat Ring Area',
+    duration: '60 Menit',
+    calories: '750 kcal',
+    image: 'https://images.unsplash.com/photo-1549060279-7e168fcee0c2?w=600&h=800&fit=crop&q=80',
+    capacity: 16
+  },
+  {
+    typeId: 'crossfit-wod',
+    name: 'CrossFit WOD',
+    category: 'Functional Power',
+    description: 'Workout of the Day dengan perpaduan angkat beban olimpiade, senam fungsional, dan kardio intensif terstruktur.',
+    difficulty: 'Hard',
+    room: 'CrossFit Box',
+    duration: '50 Menit',
+    calories: '680 kcal',
+    image: 'https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=600&h=800&fit=crop&q=80',
+    capacity: 15
+  },
+  {
+    typeId: 'pound-fit',
+    name: 'Pound Fit Workout',
+    category: 'Drumstick Cardio',
+    description: 'Kardio jam-session energik menggunakan ripstix drumstick berbobot ringan untuk membakar kalori dan meredakan stres.',
+    difficulty: 'Medium',
+    room: 'Studio Utama',
+    duration: '45 Menit',
+    calories: '520 kcal',
+    image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=600&h=800&fit=crop&q=80',
+    capacity: 22
+  },
+  {
+    typeId: 'trx',
+    name: 'TRX Suspension Training',
+    category: 'Bodyweight Core',
+    description: 'Latihan fungsional memanfaatkan tali suspensi dan gravitasi tubuh untuk menguatkan core dan ketahanan seluruh otot.',
+    difficulty: 'Medium',
+    room: 'Functional Area',
+    duration: '45 Menit',
+    calories: '460 kcal',
+    image: 'https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=600&h=800&fit=crop&q=80',
+    capacity: 16
+  },
+  {
+    typeId: 'mat-pilates',
+    name: 'Mat Pilates & Stretch',
+    category: 'Core & Mobility',
+    description: 'Penguatan otot inti tubuh mendalam dan peregangan menyeluruh di atas matras untuk postur ideal dan relaksasi.',
+    difficulty: 'Easy',
+    room: 'Mind & Body Studio',
+    duration: '50 Menit',
+    calories: '300 kcal',
+    image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=600&h=800&fit=crop&q=80',
+    capacity: 18
+  },
+  {
+    typeId: 'hiit-burn',
+    name: 'HIIT Metabolic Burn',
+    category: 'High-Intensity Intervals',
+    description: 'Interval kardio berintensitas ekstrem yang memicu efek Afterburn (EPOC) membakar kalori bahkan setelah selesai latihan.',
+    difficulty: 'Hard',
+    room: 'HIIT Zone',
+    duration: '45 Menit',
+    calories: '650 kcal',
+    image: 'https://images.unsplash.com/photo-1540497077202-7c8a3999166f?w=600&h=800&fit=crop&q=80',
+    capacity: 16
   }
 ];
 
-// ==================== 3. PERSONAL TRAINERS (BRANCH-SPECIFIC) ====================
+// Standard 8 daily time slots: Morning (07:00, 08:30, 10:00), Afternoon (12:15, 16:30), Evening (18:00, 19:15, 20:15)
+const CLASS_TIME_SLOTS = [
+  '07:00 – 07:50',
+  '08:30 – 09:20',
+  '10:00 – 10:50',
+  '12:15 – 13:00',
+  '16:30 – 17:20',
+  '18:00 – 18:50',
+  '19:15 – 20:05',
+  '20:15 – 21:05'
+];
+
+const INSTRUCTORS_POOL = [
+  'Coach Hari',
+  'Coach Maya',
+  'Coach Bima',
+  'Coach Alex',
+  'Coach Sarah',
+  'Coach Lia',
+  'Coach Dina',
+  'Coach Citra',
+  'Coach Aby',
+  'Coach Kevin',
+  'Coach Nadia',
+  'Coach Jessica'
+];
+
+// Helper to generate dynamic schedules for each branch and date
+function getClassesForBranch(branchId, dateKey = null) {
+  if (!dateKey) dateKey = getTodayDateKey();
+  const dateParts = dateKey.split('-');
+  const dayNum = (parseInt(dateParts[2]) || 1) + (parseInt(dateParts[1]) || 1) * 31;
+  const branchOffsets = { setiabudi: 0, dago: 3, pasirkaliki: 6, buahbatu: 9 };
+  const bOffset = branchOffsets[branchId] || 0;
+
+  return CLASS_TIME_SLOTS.map((timeSlot, idx) => {
+    const classIdx = (bOffset + dayNum * 3 + idx * 2) % ENTERPRISE_CLASS_CATALOG.length;
+    const instIdx = (bOffset + dayNum + idx) % INSTRUCTORS_POOL.length;
+    const base = ENTERPRISE_CLASS_CATALOG[classIdx];
+    const instructor = INSTRUCTORS_POOL[instIdx];
+    const classId = `CLS-${branchId.toUpperCase()}-S${idx + 1}-${base.typeId}`;
+
+    return {
+      id: classId,
+      branchIds: [branchId],
+      name: base.name,
+      time: timeSlot,
+      difficulty: base.difficulty,
+      instructor: instructor,
+      capacity: base.capacity,
+      description: base.description,
+      image: base.image,
+      room: base.room,
+      calories: base.calories,
+      duration: base.duration,
+      dateBookings: {}
+    };
+  });
+}
+
+const DEFAULT_CLASSES = [
+  ...getClassesForBranch('setiabudi'),
+  ...getClassesForBranch('dago'),
+  ...getClassesForBranch('pasirkaliki'),
+  ...getClassesForBranch('buahbatu')
+];
+
+// ==================== 3. PERSONAL TRAINERS (BRANCH-SPECIFIC EXPANSION) ====================
 
 const DEFAULT_TRAINERS = [
-  // --- SETIABUDI: Aby & Egi Angga ---
+  // --- CABANG SETIABUDI (5 Trainers) ---
   {
     id: 'TR-1',
-    branchIds: ['setiabudi', 'pasirkaliki'],
-    name: 'Aby',
-    fullName: 'Muhammad Aby Pratama',
-    photo: 'https://images.unsplash.com/photo-1567013127542-490d757e51fc?w=290&h=390&fit=crop&q=80',
+    branchIds: ['setiabudi'],
+    name: 'Aby Pratama',
+    fullName: 'Muhammad Aby Pratama, CPT',
+    photo: 'https://images.unsplash.com/photo-1567013127542-490d757e51fc?w=400&h=550&fit=crop&q=80',
     clients: 59,
     experience: '6 Tahun',
-    specialization: 'Fat Loss, Functional Training',
-    certifications: 'ACE Certified Personal Trainer, NSCA-CPT',
-    bio: 'Aby adalah pelatih berpengalaman di Be Fit Setiabudi yang fokus pada program fat loss dan peningkatan mobilitas fungsional.',
+    specialization: 'Strength & Conditioning, Functional Mobility',
+    certifications: 'Head Coach • ACE Certified Personal Trainer, NSCA-CPT',
+    bio: 'Head Coach di Be Fit Setiabudi dengan pengalaman 6 tahun mencetak transformasi tubuh atletis dan peningkatan performa atletik.',
     packages: [
       { sessions: 1, price: 199000, label: '1 Sesi', perSession: 199000, badge: 'Trial Sesi' },
       { sessions: 4, price: 750000, label: '4 Sesi', perSession: 187500, badge: 'Starter' },
@@ -261,32 +316,12 @@ const DEFAULT_TRAINERS = [
     branchIds: ['setiabudi'],
     name: 'Egi Angga',
     fullName: 'Egi Angga Permana',
-    photo: 'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=290&h=390&fit=crop&q=80',
+    photo: 'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400&h=550&fit=crop&q=80',
     clients: 33,
     experience: '4 Tahun',
-    specialization: 'Hypertrophy, Strength Training',
+    specialization: 'Fat Loss & Body Recomposition',
     certifications: 'ISSA Certified Fitness Trainer',
-    bio: 'Egi adalah spesialis pembentukan massa otot di Be Fit Setiabudi. Cocok untuk membangun postur tubuh atletis.',
-    packages: [
-      { sessions: 1, price: 199000, label: '1 Sesi', perSession: 199000, badge: 'Trial Sesi' },
-      { sessions: 4, price: 750000, label: '4 Sesi', perSession: 187500, badge: 'Starter' },
-      { sessions: 8, price: 1400000, label: '8 Sesi', perSession: 175000, badge: 'Best Value 🔥' },
-      { sessions: 12, price: 1950000, label: '12 Sesi', perSession: 162500, badge: 'Pro Athlete ⚡' }
-    ]
-  },
-
-  // --- DAGO: Adi Pratama & Sarah Wijaya ---
-  {
-    id: 'TR-5',
-    branchIds: ['dago'],
-    name: 'Adi',
-    fullName: 'Adi Pratama, CSCS',
-    photo: 'https://images.unsplash.com/photo-1548690312-e3b507d8c110?w=290&h=390&fit=crop&q=80',
-    clients: 42,
-    experience: '5 Tahun',
-    specialization: 'Athletic Performance, Hypertrophy',
-    certifications: 'NSCA Certified Strength & Conditioning Specialist',
-    bio: 'Coach Adi memimpin program conditioning dan hipertrofi di Be Fit Dago, berfokus pada kekuatan dan performa atletis.',
+    bio: 'Spesialis program pembakaran lemak optimal dan rekomposisi massa otot berbasis target kalori terukur di Be Fit Setiabudi.',
     packages: [
       { sessions: 1, price: 199000, label: '1 Sesi', perSession: 199000, badge: 'Trial Sesi' },
       { sessions: 4, price: 750000, label: '4 Sesi', perSession: 187500, badge: 'Starter' },
@@ -296,15 +331,217 @@ const DEFAULT_TRAINERS = [
   },
   {
     id: 'TR-3',
-    branchIds: ['dago', 'pasirkaliki'],
+    branchIds: ['setiabudi'],
+    name: 'Nadia Kusuma',
+    fullName: 'Nadia Kusuma Wardhani',
+    photo: 'https://images.unsplash.com/photo-1594381898411-846e7d193883?w=400&h=550&fit=crop&q=80',
+    clients: 41,
+    experience: '5 Tahun',
+    specialization: 'Posture & Mobility Specialist',
+    certifications: 'NASM-CPT, FMS Level 2 Certified',
+    bio: 'Membantu member memperbaiki postur tubuh, menghilangkan nyeri punggung/bahu akibat duduk lama, dan meningkatkan fleksibilitas sendi.',
+    packages: [
+      { sessions: 1, price: 199000, label: '1 Sesi', perSession: 199000, badge: 'Trial Sesi' },
+      { sessions: 4, price: 750000, label: '4 Sesi', perSession: 187500, badge: 'Starter' },
+      { sessions: 8, price: 1400000, label: '8 Sesi', perSession: 175000, badge: 'Best Value 🔥' },
+      { sessions: 12, price: 1950000, label: '12 Sesi', perSession: 162500, badge: 'Pro Athlete ⚡' }
+    ]
+  },
+  {
+    id: 'TR-4',
+    branchIds: ['setiabudi'],
+    name: 'Kevin Wijaya',
+    fullName: 'Kevin Wijaya, CSCS',
+    photo: 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?w=400&h=550&fit=crop&q=80',
+    clients: 38,
+    experience: '4 Tahun',
+    specialization: 'Hypertrophy & Muscle Building',
+    certifications: 'CSCS • Certified Strength & Conditioning Specialist',
+    bio: 'Fokus pada hipertrofi dan pembentukan massa otot bersih dengan teknik angkat beban berprogresi beban terstruktur.',
+    packages: [
+      { sessions: 1, price: 199000, label: '1 Sesi', perSession: 199000, badge: 'Trial Sesi' },
+      { sessions: 4, price: 750000, label: '4 Sesi', perSession: 187500, badge: 'Starter' },
+      { sessions: 8, price: 1400000, label: '8 Sesi', perSession: 175000, badge: 'Best Value 🔥' },
+      { sessions: 12, price: 1950000, label: '12 Sesi', perSession: 162500, badge: 'Pro Athlete ⚡' }
+    ]
+  },
+  {
+    id: 'TR-5',
+    branchIds: ['setiabudi'],
+    name: 'Rina Maharani',
+    fullName: 'Rina Maharani, CPT',
+    photo: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=550&fit=crop&q=80',
+    clients: 45,
+    experience: '5 Tahun',
+    specialization: 'Functional Fitness & Core Training',
+    certifications: 'ACE-CPT, EXOS Performance Specialist',
+    bio: 'Pelatih kebugaran fungsional yang menggabungkan latihan beban tubuh, kettlebell, dan stabilitas core untuk stamina prima.',
+    packages: [
+      { sessions: 1, price: 199000, label: '1 Sesi', perSession: 199000, badge: 'Trial Sesi' },
+      { sessions: 4, price: 750000, label: '4 Sesi', perSession: 187500, badge: 'Starter' },
+      { sessions: 8, price: 1400000, label: '8 Sesi', perSession: 175000, badge: 'Best Value 🔥' },
+      { sessions: 12, price: 1950000, label: '12 Sesi', perSession: 162500, badge: 'Pro Athlete ⚡' }
+    ]
+  },
+
+  // --- CABANG DAGO (5 Trainers) ---
+  {
+    id: 'TR-6',
+    branchIds: ['dago'],
+    name: 'Adi Nugroho',
+    fullName: 'Adi Nugroho, CSCS',
+    photo: 'https://images.unsplash.com/photo-1548690312-e3b507d8c110?w=400&h=550&fit=crop&q=80',
+    clients: 52,
+    experience: '7 Tahun',
+    specialization: 'Elite Performance Coach',
+    certifications: 'Head Coach Dago • NSCA Certified Strength Coach',
+    bio: 'Mengarahkan atlet dan member profesional di Be Fit Dago untuk mencapai kekuatan puncak, kecepatan, dan ketahanan kardiovaskular.',
+    packages: [
+      { sessions: 1, price: 199000, label: '1 Sesi', perSession: 199000, badge: 'Trial Sesi' },
+      { sessions: 4, price: 750000, label: '4 Sesi', perSession: 187500, badge: 'Starter' },
+      { sessions: 8, price: 1400000, label: '8 Sesi', perSession: 175000, badge: 'Best Value 🔥' },
+      { sessions: 12, price: 1950000, label: '12 Sesi', perSession: 162500, badge: 'Pro Athlete ⚡' }
+    ]
+  },
+  {
+    id: 'TR-7',
+    branchIds: ['dago'],
     name: 'Sarah Wijaya',
     fullName: 'Sarah Ayu Wijaya',
-    photo: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=290&h=390&fit=crop&q=80',
+    photo: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400&h=550&fit=crop&q=80',
     clients: 47,
     experience: '5 Tahun',
-    specialization: 'Weight Management, Post-Injury Rehab',
-    certifications: 'NASM-CPT, Prehab/Rehab Specialist',
-    bio: 'Sarah melatih di Be Fit Dago dengan spesialisasi penurunan berat badan sehat dan pemulihan pasca cedera.',
+    specialization: 'Pilates & Rehab Conditioning',
+    certifications: 'NASM-CPT, Polestar Pilates Certified',
+    bio: 'Berpengalaman dalam pemulihan pasca cedera sendi, pilates core alignment, dan penguatan otot punggung di Be Fit Dago.',
+    packages: [
+      { sessions: 1, price: 199000, label: '1 Sesi', perSession: 199000, badge: 'Trial Sesi' },
+      { sessions: 4, price: 750000, label: '4 Sesi', perSession: 187500, badge: 'Starter' },
+      { sessions: 8, price: 1400000, label: '8 Sesi', perSession: 175000, badge: 'Best Value 🔥' },
+      { sessions: 12, price: 1950000, label: '12 Sesi', perSession: 162500, badge: 'Pro Athlete ⚡' }
+    ]
+  },
+  {
+    id: 'TR-8',
+    branchIds: ['dago'],
+    name: 'Marco Santoso',
+    fullName: 'Marco Santoso, CF-L2',
+    photo: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=400&h=550&fit=crop&q=80',
+    clients: 39,
+    experience: '6 Tahun',
+    specialization: 'CrossFit & Powerlifting',
+    certifications: 'CrossFit Level 2 Trainer, USAPL Coach',
+    bio: 'Ahli dalam teknik squat, bench press, deadlift, dan sirkuit ketahanan intensif untuk membangun kekuatan maksimal.',
+    packages: [
+      { sessions: 1, price: 199000, label: '1 Sesi', perSession: 199000, badge: 'Trial Sesi' },
+      { sessions: 4, price: 750000, label: '4 Sesi', perSession: 187500, badge: 'Starter' },
+      { sessions: 8, price: 1400000, label: '8 Sesi', perSession: 175000, badge: 'Best Value 🔥' },
+      { sessions: 12, price: 1950000, label: '12 Sesi', perSession: 162500, badge: 'Pro Athlete ⚡' }
+    ]
+  },
+  {
+    id: 'TR-9',
+    branchIds: ['dago'],
+    name: 'Dinda Putri',
+    fullName: 'Dinda Putri Lestari',
+    photo: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=400&h=550&fit=crop&q=80',
+    clients: 36,
+    experience: '4 Tahun',
+    specialization: "Women's Weight Training & Tone",
+    certifications: 'ACE Certified Personal Trainer, Women Fitness Specialist',
+    bio: 'Spesialis program latihan beban wanita untuk membentuk pinggul, mengecilkan lingkar pinggang, dan mengencangkan tubuh.',
+    packages: [
+      { sessions: 1, price: 199000, label: '1 Sesi', perSession: 199000, badge: 'Trial Sesi' },
+      { sessions: 4, price: 750000, label: '4 Sesi', perSession: 187500, badge: 'Starter' },
+      { sessions: 8, price: 1400000, label: '8 Sesi', perSession: 175000, badge: 'Best Value 🔥' },
+      { sessions: 12, price: 1950000, label: '12 Sesi', perSession: 162500, badge: 'Pro Athlete ⚡' }
+    ]
+  },
+  {
+    id: 'TR-10',
+    branchIds: ['dago'],
+    name: 'Reza Pahlevi',
+    fullName: 'Reza Pahlevi Pratama',
+    photo: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&h=550&fit=crop&q=80',
+    clients: 44,
+    experience: '5 Tahun',
+    specialization: 'HIIT & Calisthenics',
+    certifications: 'WSWCF Calisthenics Coach, ACE-CPT',
+    bio: 'Menguasai senam kalistenik tingkat lanjut, muscle-up, handstand, dan sirkuit HIIT pembakar lemak intensif.',
+    packages: [
+      { sessions: 1, price: 199000, label: '1 Sesi', perSession: 199000, badge: 'Trial Sesi' },
+      { sessions: 4, price: 750000, label: '4 Sesi', perSession: 187500, badge: 'Starter' },
+      { sessions: 8, price: 1400000, label: '8 Sesi', perSession: 175000, badge: 'Best Value 🔥' },
+      { sessions: 12, price: 1950000, label: '12 Sesi', perSession: 162500, badge: 'Pro Athlete ⚡' }
+    ]
+  },
+
+  // --- CABANG PASIRKALIKI (4 Trainers) ---
+  {
+    id: 'TR-11',
+    branchIds: ['pasirkaliki'],
+    name: 'Bima Sakti',
+    fullName: 'Bima Sakti Nugraha',
+    photo: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400&h=550&fit=crop&q=80',
+    clients: 48,
+    experience: '6 Tahun',
+    specialization: 'Strength & Boxing Coach',
+    certifications: 'Head Coach Pasirkaliki • WBC Conditioning, AIBA Coach',
+    bio: 'Kombinasi padat antara latihan kekuatan fisik dan teknik tinju kardio eksplosif di Be Fit Pasirkaliki.',
+    packages: [
+      { sessions: 1, price: 199000, label: '1 Sesi', perSession: 199000, badge: 'Trial Sesi' },
+      { sessions: 4, price: 750000, label: '4 Sesi', perSession: 187500, badge: 'Starter' },
+      { sessions: 8, price: 1400000, label: '8 Sesi', perSession: 175000, badge: 'Best Value 🔥' },
+      { sessions: 12, price: 1950000, label: '12 Sesi', perSession: 162500, badge: 'Pro Athlete ⚡' }
+    ]
+  },
+  {
+    id: 'TR-12',
+    branchIds: ['pasirkaliki'],
+    name: 'Jessica Tan',
+    fullName: 'Jessica Tanuwijaya',
+    photo: 'https://images.unsplash.com/photo-1518310383802-640c2de311b2?w=400&h=550&fit=crop&q=80',
+    clients: 42,
+    experience: '4 Tahun',
+    specialization: 'Body Shaping & Toning',
+    certifications: 'ISSA Certified Fitness Coach',
+    bio: 'Membimbing pembentukan proporsi tubuh ideal wanita dengan teknik glute & core sculpting terarah.',
+    packages: [
+      { sessions: 1, price: 199000, label: '1 Sesi', perSession: 199000, badge: 'Trial Sesi' },
+      { sessions: 4, price: 750000, label: '4 Sesi', perSession: 187500, badge: 'Starter' },
+      { sessions: 8, price: 1400000, label: '8 Sesi', perSession: 175000, badge: 'Best Value 🔥' },
+      { sessions: 12, price: 1950000, label: '12 Sesi', perSession: 162500, badge: 'Pro Athlete ⚡' }
+    ]
+  },
+  {
+    id: 'TR-13',
+    branchIds: ['pasirkaliki'],
+    name: 'Fajar Ramadhan',
+    fullName: 'Fajar Ramadhan, ACSM',
+    photo: 'https://images.unsplash.com/photo-1549060279-7e168fcee0c2?w=400&h=550&fit=crop&q=80',
+    clients: 35,
+    experience: '5 Tahun',
+    specialization: 'Cardiovascular & Endurance',
+    certifications: 'ACSM Certified Exercise Physiologist',
+    bio: 'Fokus pada peningkatan kapasitas VO2 Max, lari jarak jauh, dan ketahanan fungsional jantung-paru.',
+    packages: [
+      { sessions: 1, price: 199000, label: '1 Sesi', perSession: 199000, badge: 'Trial Sesi' },
+      { sessions: 4, price: 750000, label: '4 Sesi', perSession: 187500, badge: 'Starter' },
+      { sessions: 8, price: 1400000, label: '8 Sesi', perSession: 175000, badge: 'Best Value 🔥' },
+      { sessions: 12, price: 1950000, label: '12 Sesi', perSession: 162500, badge: 'Pro Athlete ⚡' }
+    ]
+  },
+  {
+    id: 'TR-14',
+    branchIds: ['pasirkaliki'],
+    name: 'Maya Sari',
+    fullName: 'Maya Sari Kusuma, RYT',
+    photo: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&h=550&fit=crop&q=80',
+    clients: 50,
+    experience: '6 Tahun',
+    specialization: 'Yoga & Flexibility Specialist',
+    certifications: 'RYT-500 Yoga Alliance Registered Teacher',
+    bio: 'Pakar peregangan asana, latihan pernapasan pranayama, dan mobilitas tubuh untuk keseimbangan fisik dan mental.',
     packages: [
       { sessions: 1, price: 199000, label: '1 Sesi', perSession: 199000, badge: 'Trial Sesi' },
       { sessions: 4, price: 750000, label: '4 Sesi', perSession: 187500, badge: 'Starter' },
@@ -312,7 +549,7 @@ const DEFAULT_TRAINERS = [
       { sessions: 12, price: 1950000, label: '12 Sesi', perSession: 162500, badge: 'Pro Athlete ⚡' }
     ]
   }
-  // CATATAN: Cabang Buah Batu TIDAK memiliki trainer!
+  // CATATAN WAJIB: Cabang Buah Batu TIDAK memiliki Personal Trainer (0 Trainer)
 ];
 
 // ==================== 4. MEMBERSHIP PACKAGES ====================
@@ -440,11 +677,77 @@ const PROMOS_DATA = [
 ];
 
 const VOUCHERS_DATA = [
-  { code: 'NEWFIT15', desc: 'Diskon 15% Member Baru', expires: '30 Nov 2026', type: 'Membership', percent: 15 },
-  { code: 'COUPLE25', desc: 'Diskon 25% Paket Couple', expires: '31 Des 2026', type: 'Membership', percent: 25 },
-  { code: 'PTFREE2', desc: 'Gratis 2 Sesi Personal Trainer', expires: '30 Nov 2026', type: 'PT Session', freePT: 2 },
-  { code: 'BUNDLE799', desc: 'Potongan Rp 300K Bundling PT', expires: '15 Nov 2026', type: 'Bundling', amount: 300000 }
+  {
+    code: 'MEMBERBARU15',
+    desc: 'Diskon 15% Member Baru (Semua Paket)',
+    type: 'all',
+    percent: 15,
+    minAmount: 0,
+    expires: '31 Des 2026',
+    badge: '15% OFF'
+  },
+  {
+    code: 'HEMAT50K',
+    desc: 'Potongan Langsung Rp 50.000',
+    type: 'all',
+    amount: 50000,
+    minAmount: 300000,
+    expires: '31 Des 2026',
+    badge: 'Potong Rp 50K'
+  },
+  {
+    code: 'PTPROMO20',
+    desc: 'Diskon 20% Khusus Personal Trainer',
+    type: 'pt',
+    percent: 20,
+    minAmount: 0,
+    expires: '31 Des 2026',
+    badge: '20% OFF PT'
+  },
+  {
+    code: 'GAJIAN100K',
+    desc: 'Potongan Rp 100.000 Membership 3/6/12 Bln',
+    type: 'membership',
+    amount: 100000,
+    minAmount: 900000,
+    expires: '31 Des 2026',
+    badge: 'Potong Rp 100K'
+  }
 ];
+
+function getUserClaimedVouchers() {
+  const u = getCurrentUser();
+  if (u && Array.isArray(u.claimedVouchers) && u.claimedVouchers.length > 0) {
+    return u.claimedVouchers;
+  }
+  try {
+    const raw = localStorage.getItem('befit_claimed_vouchers');
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return ['MEMBERBARU15'];
+}
+
+function claimVoucher(code) {
+  const v = VOUCHERS_DATA.find(x => x.code === code);
+  if (!v) {
+    showToast(`Voucher ${code} tidak ditemukan.`);
+    return;
+  }
+  const list = getUserClaimedVouchers();
+  if (!list.includes(code)) {
+    list.push(code);
+  }
+  try {
+    localStorage.setItem('befit_claimed_vouchers', JSON.stringify(list));
+  } catch (e) {}
+
+  const u = getCurrentUser();
+  if (u) {
+    u.claimedVouchers = list;
+    setCurrentUser(u);
+  }
+  showToast(`Voucher ${code} berhasil diklaim! Gunakan saat pembayaran.`, 4000);
+}
 
 // ==================== 6. SEED USERS & AUTH STATE ====================
 
@@ -1668,6 +1971,24 @@ function handleBookClass(classId) {
     });
     setCurrentUser(currentUser);
 
+    // Save to befit_class_bookings for Admin CRM Panel
+    try {
+      const rawBk = localStorage.getItem('befit_class_bookings');
+      const bkList = rawBk ? JSON.parse(rawBk) : [];
+      bkList.unshift({
+        id: 'CLS-BK-' + Math.floor(1000 + Math.random() * 9000),
+        userName: currentUser.name,
+        userPhone: currentUser.phone,
+        className: cls.name,
+        instructor: cls.instructor,
+        branch: getSelectedBranch().name,
+        dateKey: selectedClassDateKey,
+        time: cls.time,
+        status: 'Terkonfirmasi'
+      });
+      localStorage.setItem('befit_class_bookings', JSON.stringify(bkList));
+    } catch (e) {}
+
     renderHomeClasses();
     openClassDetail(classId);
     showToast(`✓ Berhasil mendaftar kelas ${cls.name}!`, 3500);
@@ -1833,8 +2154,8 @@ function renderHomeTrainers() {
       <div class="px-4 w-full">
         <div class="p-6 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 text-white text-center flex flex-col items-center justify-center">
           <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-2xl mb-2.5">🏋️‍♂️</div>
-          <h4 class="text-sm font-extrabold tracking-tight">Belum ada trainer tersedia di cabang ini</h4>
-          <p class="text-xs text-white/70 mt-1 max-w-[260px]">Layanan Personal Trainer segera hadir untuk cabang Buah Batu Bandung.</p>
+          <h4 class="text-sm font-extrabold tracking-tight">Belum Ada Personal Trainer Tersedia di Cabang Ini</h4>
+          <p class="text-xs text-white/70 mt-1 max-w-[260px]">Belum ada Personal Trainer tersedia di cabang Be Fit Buah Batu saat ini. Silakan kunjungi cabang Setiabudi, Dago, atau Pasirkaliki untuk sesi latihan privat.</p>
         </div>
       </div>
     `;
@@ -2052,7 +2373,9 @@ function openUnifiedCheckout(params) {
 
   const { type, package: pkg, trainer } = params;
   activePaymentMethod = 'qris';
-  appliedVoucher = null;
+  let appliedVoucher = null;
+  let voucherError = '';
+  const claimedList = getUserClaimedVouchers();
 
   function calculateBilling() {
     let base = pkg.price;
@@ -2065,8 +2388,66 @@ function openUnifiedCheckout(params) {
       }
     }
     const total = Math.max(0, base - disc);
-    return { base, disc, total };
+    return { base, disc, total, appliedVoucher };
   }
+
+  function applyCheckoutVoucher(code) {
+    voucherError = '';
+    const cleanCode = (code || '').trim().toUpperCase();
+    if (!cleanCode) {
+      voucherError = 'Masukkan kode voucher terlebih dahulu.';
+      updateCheckoutUI();
+      return;
+    }
+
+    const v = VOUCHERS_DATA.find(x => x.code === cleanCode);
+    if (!v) {
+      voucherError = `Kode voucher "${cleanCode}" tidak valid atau kadaluarsa.`;
+      updateCheckoutUI();
+      return;
+    }
+
+    // Validate type compatibility
+    if (v.type === 'pt' && type !== 'pt') {
+      voucherError = `Voucher ${v.code} hanya berlaku untuk paket Personal Trainer.`;
+      updateCheckoutUI();
+      return;
+    }
+    if (v.type === 'membership' && type !== 'membership') {
+      voucherError = `Voucher ${v.code} hanya berlaku untuk paket Membership.`;
+      updateCheckoutUI();
+      return;
+    }
+
+    // Validate minAmount
+    if (v.minAmount && pkg.price < v.minAmount) {
+      voucherError = `Voucher ${v.code} berlaku untuk minimal transaksi ${formatRupiah(v.minAmount)}.`;
+      updateCheckoutUI();
+      return;
+    }
+
+    // Special check for GAJIAN100K: 3/6/12 bulan
+    if (v.code === 'GAJIAN100K' && pkg.durationDays && pkg.durationDays < 90) {
+      voucherError = 'Voucher GAJIAN100K khusus untuk paket Membership 3, 6, atau 12 bulan.';
+      updateCheckoutUI();
+      return;
+    }
+
+    appliedVoucher = v;
+    voucherError = '';
+    showToast(`✓ Voucher ${v.code} berhasil digunakan! Potongan ${v.badge}.`, 3000);
+    updateCheckoutUI();
+  }
+
+  function removeCheckoutVoucher() {
+    appliedVoucher = null;
+    voucherError = '';
+    showToast('Voucher dibatalkan.');
+    updateCheckoutUI();
+  }
+
+  window.applyCheckoutVoucher = applyCheckoutVoucher;
+  window.removeCheckoutVoucher = removeCheckoutVoucher;
 
   function renderPaymentMethodDetails() {
     const vaNumber = `8801 ${currentUser.phone.replace(/[^0-9]/g, '').slice(-8) || '12345678'}`;
@@ -2074,7 +2455,7 @@ function openUnifiedCheckout(params) {
     if (activePaymentMethod === 'qris') {
       return `
         <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-center">
-          <span class="inline-block px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-100 text-emerald-800 uppercase tracking-wider mb-2">Verifikasi Otomatis</span>
+          <span class="inline-block px-2.5 py-0.5 rounded text-[10px] font-extrabold bg-emerald-100 text-emerald-800 uppercase tracking-wider mb-2">Verifikasi Instan Otomatis</span>
           <!-- Realistic Simulated QRIS Code -->
           <div class="w-44 h-44 bg-white p-3 rounded-2xl border-2 border-slate-900 mx-auto flex flex-col items-center justify-center shadow-md">
             <svg class="w-32 h-32" viewBox="0 0 100 100" fill="#0F172A">
@@ -2122,7 +2503,7 @@ function openUnifiedCheckout(params) {
   }
 
   function getCheckoutHtml() {
-    const { base, disc, total } = calculateBilling();
+    const { base, disc, total, appliedVoucher: curVoucher } = calculateBilling();
     const isMembership = type === 'membership';
 
     return `
@@ -2156,6 +2537,74 @@ function openUnifiedCheckout(params) {
         <div class="mt-2.5 pt-2 border-t border-slate-200/80 text-[11px] text-slate-500 flex items-center justify-between">
           <span>Pemesan: <strong>${sanitize(currentUser.name)}</strong></span>
           <span>${currentUser.phone}</span>
+        </div>
+      </div>
+
+      <!-- ===== INTERACTIVE VOUCHER & PROMO SYSTEM ===== -->
+      <div class="mb-4 p-3.5 bg-white rounded-2xl border border-slate-200 shadow-sm">
+        <div class="flex items-center justify-between mb-2">
+          <label class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+            <span>🏷️</span>
+            <span>Gunakan Kode Promo / Voucher:</span>
+          </label>
+          ${curVoucher ? `
+            <span class="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+              ✓ Aktif
+            </span>
+          ` : ''}
+        </div>
+
+        ${curVoucher ? `
+          <!-- Active Voucher Alert Banner -->
+          <div class="p-3 bg-emerald-50 border border-emerald-300 rounded-xl flex items-center justify-between mb-2.5">
+            <div class="flex items-center gap-2">
+              <svg class="w-5 h-5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+              <div>
+                <span class="text-xs font-black text-emerald-900 block leading-tight">Voucher ${curVoucher.code} Aktif</span>
+                <span class="text-[10px] text-emerald-700 font-medium">${curVoucher.desc}</span>
+              </div>
+            </div>
+            <button type="button" onclick="removeCheckoutVoucher()" class="px-2.5 py-1 text-[10px] font-black text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 rounded-lg border border-red-200 transition-colors">
+              Hapus
+            </button>
+          </div>
+        ` : `
+          <!-- Voucher Input Row -->
+          <div class="flex items-center gap-2 mb-2">
+            <input type="text" id="checkout-voucher-input" placeholder="Masukkan kode promo (misal: ${isMembership ? 'MEMBERBARU15' : 'PTPROMO20'})..."
+              class="flex-1 px-3 py-2 rounded-xl border border-slate-200 text-xs font-mono uppercase font-bold focus:ring-2 focus:ring-teal-550 outline-none">
+            <button type="button" onclick="applyCheckoutVoucher(document.getElementById('checkout-voucher-input').value)"
+              class="px-4 py-2 rounded-xl bg-teal-550 hover:bg-teal-650 active:scale-95 text-white text-xs font-bold shadow-sm transition-all">
+              Pakai
+            </button>
+          </div>
+        `}
+
+        ${voucherError ? `
+          <p class="text-[11px] text-red-600 font-bold mb-2 flex items-center gap-1">
+            <span>⚠️</span>
+            <span>${voucherError}</span>
+          </p>
+        ` : ''}
+
+        <!-- Quick-Click Voucher Chips -->
+        <div class="pt-2 border-t border-slate-100">
+          <span class="text-[10px] font-bold text-slate-400 block mb-1.5 uppercase tracking-wider">Pilihan Voucher (Klik untuk Pakai Langsung):</span>
+          <div class="flex flex-wrap gap-1.5">
+            ${VOUCHERS_DATA.map(v => {
+              const isClaimed = claimedList.includes(v.code);
+              const isCurrent = curVoucher && curVoucher.code === v.code;
+              return `
+                <button type="button" onclick="applyCheckoutVoucher('${v.code}')"
+                  class="px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-all flex items-center gap-1 ${isCurrent ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm' : isClaimed ? 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100' : 'bg-white text-slate-700 border-slate-200 hover:border-teal-500'}">
+                  <span>🏷️</span>
+                  <span class="font-mono">${v.code}</span>
+                  <span class="text-[9px] opacity-80">(${v.badge})</span>
+                  ${isClaimed ? '<span class="text-[8px] bg-amber-200 text-amber-900 px-1 py-0.2 rounded font-black">KLAIM</span>' : ''}
+                </button>
+              `;
+            }).join('')}
+          </div>
         </div>
       </div>
 
@@ -2208,16 +2657,16 @@ function openUnifiedCheckout(params) {
         ${renderPaymentMethodDetails()}
       </div>
 
-      <!-- Tagihan Akhir -->
+      <!-- Tagihan Akhir Dinamis Real-Time -->
       <div class="p-3.5 bg-slate-100/70 rounded-2xl mb-4 space-y-1.5 text-xs text-slate-600">
         <div class="flex justify-between">
-          <span>Subtotal Layanan:</span>
+          <span>Harga Normal:</span>
           <span class="font-mono font-medium">${formatRupiah(base)}</span>
         </div>
         ${disc > 0 ? `
-          <div class="flex justify-between text-teal-600 font-bold">
-            <span>Diskon Promo:</span>
-            <span class="font-mono">-${formatRupiah(disc)}</span>
+          <div class="flex justify-between text-emerald-600 font-bold">
+            <span>Diskon Voucher (${curVoucher.code}):</span>
+            <span class="font-mono font-black">-${formatRupiah(disc)}</span>
           </div>
         ` : ''}
         <div class="flex justify-between">
@@ -2225,12 +2674,12 @@ function openUnifiedCheckout(params) {
           <span class="font-bold text-emerald-600 font-mono">GRATIS</span>
         </div>
         <div class="pt-2 border-t border-slate-200 flex justify-between text-sm font-black text-slate-900">
-          <span>Total Tagihan:</span>
+          <span>Total Pembayaran:</span>
           <span class="text-base text-teal-600 font-mono font-black">${formatRupiah(total)}</span>
         </div>
       </div>
 
-      <!-- Pay Button -->
+      <!-- Pay Button with Real-Time Total -->
       <button type="button" id="btn-submit-payment" class="w-full py-3.5 rounded-xl bg-teal-550 text-white text-sm font-black shadow-lg shadow-teal-550/30 hover:bg-teal-650 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
         onclick="executePaymentProcess()">
         <span>Bayar Sekarang — ${formatRupiah(total)}</span>
@@ -2239,10 +2688,14 @@ function openUnifiedCheckout(params) {
     `;
   }
 
-  window.switchPaymentMethod = (method) => {
-    activePaymentMethod = method;
+  function updateCheckoutUI() {
     const content = document.getElementById('sheet-content');
     if (content) content.innerHTML = getCheckoutHtml();
+  }
+
+  window.switchPaymentMethod = (method) => {
+    activePaymentMethod = method;
+    updateCheckoutUI();
   };
 
   window.executePaymentProcess = () => {
@@ -2274,6 +2727,7 @@ function completePaymentSuccess(params, billing) {
   const invoiceNo = `INV-BF-${Math.floor(100000 + Math.random() * 900000)}`;
   const now = new Date();
   const dateStr = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const voucherCodeUsed = billing.appliedVoucher ? billing.appliedVoucher.code : '-';
 
   // 1. Sync User State
   if (type === 'membership') {
@@ -2287,6 +2741,11 @@ function completePaymentSuccess(params, billing) {
     currentUser.packageDuration = pkg.name;
     currentUser.expiryDate = newExpiry;
     currentUser.status = 'Active';
+    currentUser.voucherUsed = voucherCodeUsed;
+    currentUser.totalPaid = billing.total;
+    currentUser.paymentMethod = activePaymentMethod.toUpperCase();
+    currentUser.branch = getSelectedBranch().name.split(' ')[2] || 'Setiabudi';
+    currentUser.dateJoined = dateStr;
     setCurrentUser(currentUser);
 
     syncWithCRMState(currentUser, 'Pembelian Paket Membership', `${pkg.name} (${formatRupiah(billing.total)})`);
@@ -2310,6 +2769,27 @@ function completePaymentSuccess(params, billing) {
       saveTrainers(trainers);
     }
 
+    // Save to befit_pt_bookings for CRM Admin Panel
+    try {
+      const rawPt = localStorage.getItem('befit_pt_bookings');
+      const ptList = rawPt ? JSON.parse(rawPt) : [];
+      ptList.unshift({
+        id: 'PT-ORD-' + Math.floor(100 + Math.random() * 900),
+        userName: currentUser.name,
+        userPhone: currentUser.phone,
+        trainerName: trainer.fullName || trainer.name,
+        branch: getSelectedBranch().name,
+        package: pkg.label,
+        sessions: pkg.sessions,
+        discount: billing.disc || 0,
+        voucherCode: voucherCodeUsed,
+        totalPaid: billing.total,
+        date: dateStr,
+        status: 'Aktif / Berjalan'
+      });
+      localStorage.setItem('befit_pt_bookings', JSON.stringify(ptList));
+    } catch (e) {}
+
     syncWithCRMState(currentUser, 'Pembelian Sesi Personal Trainer', `${pkg.sessions} Sesi bersama Coach ${trainer.name} (${formatRupiah(billing.total)})`);
     showToast(`Paket PT bersama Coach ${trainer.name} berhasil dibeli!`, 4500);
     renderHomeTrainers();
@@ -2323,6 +2803,9 @@ function completePaymentSuccess(params, billing) {
       id: invoiceNo,
       type: type === 'membership' ? 'Membership' : 'Personal Trainer',
       title: type === 'membership' ? pkg.name : `${pkg.label} bersama ${trainer.name}`,
+      baseAmount: billing.base,
+      voucherCode: voucherCodeUsed,
+      discount: billing.disc,
       amount: billing.total,
       method: activePaymentMethod.toUpperCase(),
       date: dateStr,
@@ -2331,7 +2814,7 @@ function completePaymentSuccess(params, billing) {
     localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(txList));
   } catch (e) {}
 
-  // Render Payment Receipt
+  // Render Payment Receipt with Voucher Details
   const receiptHtml = `
     <div class="text-center py-2 mb-4">
       <div class="w-16 h-16 rounded-full bg-emerald-100 border-2 border-emerald-400 text-emerald-600 flex items-center justify-center mx-auto mb-3 shadow-sm animate-bounce-slow">
@@ -2355,6 +2838,16 @@ function completePaymentSuccess(params, billing) {
         <span class="font-bold text-slate-800 text-right">${type === 'membership' ? pkg.name : `${pkg.label} (${trainer.name})`}</span>
       </div>
       <div class="flex justify-between">
+        <span class="text-slate-400">Harga Normal:</span>
+        <span class="font-mono text-slate-700">${formatRupiah(billing.base)}</span>
+      </div>
+      ${billing.appliedVoucher ? `
+        <div class="flex justify-between text-emerald-600 font-bold">
+          <span>Diskon Voucher (${billing.appliedVoucher.code}):</span>
+          <span class="font-mono">-${formatRupiah(billing.disc)}</span>
+        </div>
+      ` : ''}
+      <div class="flex justify-between">
         <span class="text-slate-400">Metode Pembayaran:</span>
         <span class="font-mono font-bold text-slate-800 uppercase">${activePaymentMethod}</span>
       </div>
@@ -2364,7 +2857,7 @@ function completePaymentSuccess(params, billing) {
       </div>
       <div class="pt-2 border-t border-slate-200 flex justify-between text-sm font-black text-slate-900">
         <span>Total Dibayar:</span>
-        <span class="text-teal-600 font-mono">${formatRupiah(billing.total)}</span>
+        <span class="text-teal-600 font-mono font-black">${formatRupiah(billing.total)}</span>
       </div>
     </div>
 
@@ -2522,43 +3015,44 @@ function updateHeaderUserDisplay() {
 
 function handleTrialClaim() {
   requireAuth(() => {
-    const user = getCurrentUser();
-    if (!user) return;
+    const currentUser = getCurrentUser();
+    if (!currentUser) return;
 
-    if (user.isTrialClaimed) {
-      showToast('Anda sudah mengklaim Free Trial 7 Hari sebelumnya.');
-      updateTrialButton();
+    if (currentUser.isTrialClaimed) {
+      showToast('Anda sudah mengklaim Free Trial 7 Hari!');
       return;
     }
 
-    user.isTrialClaimed = true;
-    user.status = 'Trial Active';
-    user.expiryDate = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
-    setCurrentUser(user);
+    currentUser.isTrialClaimed = true;
+    setCurrentUser(currentUser);
 
-    syncWithCRMState(user, 'Klaim Free Trial 7 Hari', 'Free Pass Mobile');
-    updateTrialButton();
-    showToast(`🎉 Free Trial 7 Hari aktif untuk ${user.name}!`, 3500);
+    // Save to befit_trial_claims for CRM Admin Panel
+    try {
+      const raw = localStorage.getItem('befit_trial_claims');
+      const list = raw ? JSON.parse(raw) : [];
+      list.unshift({
+        id: 'TRL-' + Math.floor(100 + Math.random() * 900),
+        userName: currentUser.name,
+        email: currentUser.email,
+        phone: currentUser.phone,
+        branch: getSelectedBranch().name,
+        dateClaimed: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }),
+        status: 'Aktif (7 Hari)'
+      });
+      localStorage.setItem('befit_trial_claims', JSON.stringify(list));
+    } catch (e) {}
+
+    const trialBtn = document.getElementById('btn-claim-trial');
+    if (trialBtn) {
+      trialBtn.disabled = true;
+      trialBtn.textContent = '✓ Diklaim';
+      trialBtn.classList.remove('bg-teal-550', 'hover:bg-teal-650');
+      trialBtn.classList.add('bg-emerald-600', 'cursor-not-allowed');
+    }
+
+    showToast('🎁 Free Trial 7 Hari berhasil diklaim! Tunjukkan ke resepsionis gym.', 4000);
   });
 }
-
-function updateTrialButton() {
-  const btn = document.getElementById('btn-claim-trial');
-  if (!btn) return;
-  const user = getCurrentUser();
-
-  if (user && user.isTrialClaimed) {
-    btn.textContent = 'Terklaim ✓';
-    btn.className = 'px-4 py-2 rounded-lg bg-slate-200 text-slate-500 text-xs font-bold shrink-0 cursor-default shadow-none';
-    btn.disabled = true;
-  } else {
-    btn.textContent = 'Klaim';
-    btn.className = 'px-4 py-2 rounded-lg bg-teal-550 text-white text-xs font-bold shrink-0 shadow-sm hover:bg-teal-650 active:scale-95 transition-all';
-    btn.disabled = false;
-  }
-}
-
-// ==================== REFERRAL & PROMO MODALS ====================
 
 function openReferralSheet() {
   const user = getCurrentUser();
@@ -2630,29 +3124,46 @@ function openPromoDetail(index) {
 }
 
 function openVoucherList() {
-  const items = VOUCHERS_DATA.map(v => `
-    <div class="flex items-center justify-between p-3.5 rounded-2xl border border-slate-200 hover:bg-slate-50 transition-colors">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center text-lg shrink-0">🏷️</div>
-        <div>
-          <h4 class="text-xs font-bold text-slate-900">${sanitize(v.desc)}</h4>
-          <div class="flex items-center gap-2 mt-0.5">
-            <span class="text-[10px] font-bold text-teal-600 font-mono">${v.code}</span>
-            <span class="text-[10px] text-slate-400">• Exp: ${v.expires}</span>
+  const claimedList = getUserClaimedVouchers();
+
+  const items = VOUCHERS_DATA.map(v => {
+    const isClaimed = claimedList.includes(v.code);
+    return `
+      <div class="flex items-center justify-between p-3.5 rounded-2xl border ${isClaimed ? 'border-emerald-300 bg-emerald-50/40' : 'border-slate-200 hover:bg-slate-50'} transition-colors">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center text-lg shrink-0">🏷️</div>
+          <div>
+            <h4 class="text-xs font-bold text-slate-900">${sanitize(v.desc)}</h4>
+            <div class="flex items-center gap-2 mt-0.5">
+              <span class="text-[10px] font-bold text-teal-600 font-mono">${v.code}</span>
+              <span class="text-[10px] text-slate-400">• Exp: ${v.expires}</span>
+            </div>
           </div>
         </div>
+        <div class="flex items-center gap-1.5 shrink-0">
+          ${isClaimed ? `
+            <span class="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-[10px] font-bold">
+              ✓ Diklaim
+            </span>
+          ` : `
+            <button type="button" class="px-3 py-1.5 rounded-lg bg-teal-550 text-white text-[10px] font-bold hover:bg-teal-650 active:scale-95 transition-all shadow-sm"
+              onclick="claimVoucher('${v.code}'); openVoucherList();">
+              Klaim
+            </button>
+          `}
+          <button type="button" class="px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-700 text-[10px] font-bold hover:bg-slate-100 active:scale-95 transition-all"
+            onclick="copyToClipboard('${v.code}', 'Voucher ${v.code} berhasil disalin!')" title="Salin Kode">
+            📋
+          </button>
+        </div>
       </div>
-      <button type="button" class="px-3 py-1.5 rounded-lg bg-teal-550 text-white text-[10px] font-bold shrink-0 hover:bg-teal-650 active:scale-95 transition-all"
-        onclick="copyToClipboard('${v.code}', 'Voucher ${v.code} disalin!')">
-        Salin
-      </button>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 
   openBottomSheet(`
     <div class="mb-4">
       <h3 class="text-base font-extrabold text-slate-900">Voucher & Promo Aktif 🏷️</h3>
-      <p class="text-xs text-slate-400 mt-0.5">Gunakan kode voucher saat checkout untuk potongan harga</p>
+      <p class="text-xs text-slate-400 mt-0.5">Klaim voucher dan gunakan saat checkout untuk potongan harga langsung.</p>
     </div>
     <div class="space-y-2.5">${items}</div>
   `);
@@ -2748,3 +3259,92 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'Escape' && sheetOpen) closeBottomSheet();
   });
 });
+
+
+
+// ==================== ADMIN LOGIN MODAL (TRIGGERED BY LOGO CLICK) ====================
+
+function openAdminLoginModal() {
+  const modalHtml = `
+    <div class="mb-4 text-center">
+      <div class="w-12 h-12 rounded-2xl bg-[#090D16] border border-amber-500/40 p-1 mx-auto mb-2 flex items-center justify-center shadow-md">
+        <img src="logo-square.jpg" alt="Be Fit Logo" class="w-full h-full object-cover rounded-xl">
+      </div>
+      <h3 class="text-base font-black text-slate-900">Portal Admin Be Fit CRM</h3>
+      <p class="text-xs text-slate-500 mt-0.5">Masukkan kredensial admin untuk mengakses panel manajemen</p>
+    </div>
+
+    <!-- Credentials Hint Box -->
+    <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 mb-4 text-xs text-amber-900 flex items-start gap-2">
+      <span class="text-base">🔐</span>
+      <div>
+        <p class="font-bold text-amber-950">Kredensial Akses Admin:</p>
+        <p class="font-mono text-[11px] mt-0.5 text-amber-800">Email: <strong>rrizky205@gmail.com</strong></p>
+        <p class="font-mono text-[11px] text-amber-800">Password: <strong>wudinjir1911</strong></p>
+      </div>
+    </div>
+
+    <form id="admin-login-modal-form" onsubmit="event.preventDefault(); submitAdminLogin();" class="space-y-3.5">
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Email Admin</label>
+        <input type="email" id="admin-modal-email" value="rrizky205@gmail.com" required
+          class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-teal-550 focus:border-transparent outline-none">
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Password Admin</label>
+        <div class="relative">
+          <input type="password" id="admin-modal-pass" value="wudinjir1911" required
+            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium pr-10 focus:ring-2 focus:ring-teal-550 focus:border-transparent outline-none">
+          <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold"
+            onclick="toggleAdminModalPassword()">
+            <span id="admin-modal-eye">👁️</span>
+          </button>
+        </div>
+      </div>
+
+      <button type="submit"
+        class="w-full py-3 rounded-xl bg-teal-550 text-white text-xs font-black shadow-lg shadow-teal-550/30 hover:bg-teal-650 active:scale-95 transition-all mt-2">
+        Masuk ke Panel Admin CRM &rarr;
+      </button>
+    </form>
+  `;
+
+  openBottomSheet(modalHtml);
+}
+
+function toggleAdminModalPassword() {
+  const p = document.getElementById('admin-modal-pass');
+  const eye = document.getElementById('admin-modal-eye');
+  if (p) {
+    if (p.type === 'password') {
+      p.type = 'text';
+      if (eye) eye.textContent = '🙈';
+    } else {
+      p.type = 'password';
+      if (eye) eye.textContent = '👁️';
+    }
+  }
+}
+
+function submitAdminLogin() {
+  const emailInput = document.getElementById('admin-modal-email');
+  const passInput = document.getElementById('admin-modal-pass');
+  const email = emailInput ? emailInput.value.trim() : '';
+  const pass = passInput ? passInput.value.trim() : '';
+
+  if (email === 'rrizky205@gmail.com' && pass === 'wudinjir1911') {
+    localStorage.setItem('befit_admin_auth', 'true');
+    showToast('Login Admin berhasil! Mengalihkan ke Panel Admin...', 2500);
+    closeBottomSheet();
+    setTimeout(() => {
+      window.location.href = 'admin.html';
+    }, 400);
+  } else {
+    showToast('Email atau password admin tidak valid!', 3500);
+  }
+}
+
+window.openAdminLoginModal = openAdminLoginModal;
+window.toggleAdminModalPassword = toggleAdminModalPassword;
+window.submitAdminLogin = submitAdminLogin;

@@ -41,9 +41,9 @@
 
     <!-- Top Sticky App Header -->
     <header class="px-4 py-2.5 bg-white border-b border-slate-200/80 flex items-center justify-between sticky top-0 z-30 shadow-sm">
-      <div class="flex items-center gap-2.5 min-w-0">
+      <button type="button" onclick="openAdminLoginModal()" class="flex items-center gap-2.5 min-w-0 text-left hover:opacity-90 active:scale-95 transition-all group cursor-pointer" title="Klik logo untuk Login Admin CRM">
         <!-- Compact ~32px Real Logo Emblem from User Image -->
-        <div class="w-8 h-8 rounded-xl shrink-0 shadow-sm overflow-hidden flex items-center justify-center bg-[#090D16] border border-amber-500/40" title="Be Fit Gym & Fitness Club">
+        <div class="w-8 h-8 rounded-xl shrink-0 shadow-sm overflow-hidden flex items-center justify-center bg-[#090D16] border border-amber-500/40 group-hover:border-amber-400">
           <img src="logo-square.jpg" alt="Be Fit Logo" class="w-full h-full object-cover">
         </div>
         <div class="leading-tight min-w-0">
@@ -53,7 +53,7 @@
           </div>
           <span id="header-branch-name" class="text-[11px] font-semibold text-slate-600 block truncate max-w-[175px]">Be Fit Setiabudi Bandung</span>
         </div>
-      </div>
+      </button>
       <div id="header-user-badge">
         <!-- Injected dynamically: User Badge or Login Button -->
       </div>
@@ -63,41 +63,44 @@
     <main id="main-content" class="pb-28">
 
       <!-- ===== A. TOP HERO PROMO CAROUSEL ===== -->
-      <section id="hero-carousel" class="relative w-full overflow-hidden" style="height:210px;">
+      <section id="hero-carousel" class="relative w-full overflow-hidden" style="height:215px;">
         <div id="carousel-track" class="flex transition-transform duration-500 ease-out h-full">
           <!-- Slide 1 -->
           <div class="carousel-slide relative w-full shrink-0 h-full">
             <img src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=860&h=420&fit=crop&q=80" alt="Be Fit Gym Interior" class="w-full h-full object-cover">
-            <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent"></div>
-            <div class="absolute bottom-0 left-0 right-0 p-5">
-              <span class="inline-block px-2.5 py-1 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-brand-sunny text-slate-900 mb-2 shadow-sm">Spesial Member Baru</span>
-              <h2 class="text-white text-base font-extrabold leading-snug tracking-tight">GRATIS SESI PT S/D 2X<br>+ DISKON S/D 15%</h2>
-              <button class="mt-2.5 px-4 py-1.5 rounded-lg bg-brand-sunny text-slate-900 text-xs font-bold shadow-md hover:brightness-105 active:scale-95 transition-all" onclick="openPromoDetail(0)">KLIK DI SINI</button>
+            <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent"></div>
+            <div class="absolute bottom-0 left-0 right-0 p-4">
+              <span class="inline-block px-2.5 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-brand-sunny text-slate-900 mb-1 shadow-sm">Spesial Member Baru</span>
+              <h2 class="text-white text-[15px] font-extrabold leading-snug tracking-tight">Gratis Sesi PT hingga 2x & Diskon 15%</h2>
+              <p class="text-white/80 text-[11px] font-medium leading-relaxed mt-0.5 line-clamp-2">Mulai perjalanan sehatmu hari ini dengan fasilitas gym terlengkap dan pelatih profesional.</p>
+              <button class="mt-2 px-4 py-1.5 rounded-lg bg-brand-sunny text-slate-900 text-xs font-bold shadow-md hover:brightness-105 active:scale-95 transition-all" onclick="claimVoucher('MEMBERBARU15')">Klaim Promo</button>
             </div>
           </div>
           <!-- Slide 2 -->
           <div class="carousel-slide relative w-full shrink-0 h-full">
             <img src="https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=860&h=420&fit=crop&q=80" alt="Gym Workout" class="w-full h-full object-cover">
-            <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent"></div>
-            <div class="absolute bottom-0 left-0 right-0 p-5">
-              <span class="inline-block px-2.5 py-1 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-teal-550 text-white mb-2 shadow-sm">Paket Couple</span>
-              <h2 class="text-white text-base font-extrabold leading-snug tracking-tight">AJAK PASANGAN OLAHRAGA<br>HEMAT HINGGA 25%</h2>
-              <button class="mt-2.5 px-4 py-1.5 rounded-lg bg-white text-slate-900 text-xs font-bold shadow-md hover:brightness-105 active:scale-95 transition-all" onclick="openPromoDetail(1)">LIHAT DETAIL</button>
+            <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent"></div>
+            <div class="absolute bottom-0 left-0 right-0 p-4">
+              <span class="inline-block px-2.5 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-teal-550 text-white mb-1 shadow-sm">Program Transformasi</span>
+              <h2 class="text-white text-[15px] font-extrabold leading-snug tracking-tight">Paket Membership Lebih Hemat hingga 30%</h2>
+              <p class="text-white/80 text-[11px] font-medium leading-relaxed mt-0.5 line-clamp-2">Pilih durasi 3, 6, atau 12 bulan untuk akses tanpa batas ke semua area latihan dan kelas.</p>
+              <button class="mt-2 px-4 py-1.5 rounded-lg bg-white text-slate-900 text-xs font-bold shadow-md hover:brightness-105 active:scale-95 transition-all" onclick="openPricingSheet()">Lihat Paket</button>
             </div>
           </div>
           <!-- Slide 3 -->
           <div class="carousel-slide relative w-full shrink-0 h-full">
             <img src="https://images.unsplash.com/photo-1540497077202-7c8a3999166f?w=860&h=420&fit=crop&q=80" alt="Gym Equipment" class="w-full h-full object-cover">
-            <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent"></div>
-            <div class="absolute bottom-0 left-0 right-0 p-5">
-              <span class="inline-block px-2.5 py-1 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-red-500 text-white mb-2 shadow-sm">Terbatas!</span>
-              <h2 class="text-white text-base font-extrabold leading-snug tracking-tight">BUNDLING MEMBERSHIP<br>+ 4 SESI PERSONAL TRAINER</h2>
-              <button class="mt-2.5 px-4 py-1.5 rounded-lg bg-brand-sunny text-slate-900 text-xs font-bold shadow-md hover:brightness-105 active:scale-95 transition-all" onclick="openPromoDetail(2)">CEK SEKARANG</button>
+            <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent"></div>
+            <div class="absolute bottom-0 left-0 right-0 p-4">
+              <span class="inline-block px-2.5 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-amber-500 text-white mb-1 shadow-sm">Kelas Studio Eksklusif</span>
+              <h2 class="text-white text-[15px] font-extrabold leading-snug tracking-tight">Bakar Kalori Lebih Cepat di Kelas Group Workout</h2>
+              <p class="text-white/80 text-[11px] font-medium leading-relaxed mt-0.5 line-clamp-2">Dari Les Mills, Yoga, hingga HIIT. Dipandu instruktur bersertifikasi setiap hari.</p>
+              <button class="mt-2 px-4 py-1.5 rounded-lg bg-brand-sunny text-slate-900 text-xs font-bold shadow-md hover:brightness-105 active:scale-95 transition-all" onclick="openAllClassesSheet()">Cek Jadwal</button>
             </div>
           </div>
         </div>
         <!-- Carousel Dots -->
-        <div id="carousel-dots" class="absolute bottom-3 left-5 flex items-center gap-1.5 z-10">
+        <div id="carousel-dots" class="absolute bottom-3 left-4 flex items-center gap-1.5 z-10">
           <button class="carousel-dot w-5 h-1.5 rounded-full bg-white transition-all active" data-index="0"></button>
           <button class="carousel-dot w-1.5 h-1.5 rounded-full bg-white/50 transition-all" data-index="1"></button>
           <button class="carousel-dot w-1.5 h-1.5 rounded-full bg-white/50 transition-all" data-index="2"></button>
