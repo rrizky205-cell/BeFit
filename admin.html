@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Be Fit — Admin CRM Panel</title>
+  <title>Be Fit — Admin CRM & Retention Portal</title>
   
   <link rel="icon" type="image/jpeg" href="logo-square.jpg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,9 +16,9 @@
       theme: {
         extend: {
           colors: {
-            teal: { 550: '#0D9488', 650: '#0F766E' },
+            teal: { 50: '#F0FDFA', 100: '#CCFBF1', 500: '#14B8A6', 550: '#0D9488', 600: '#0D9488', 650: '#0F766E', 700: '#0F766E' },
             brand: { blue: '#0284C7', sunny: '#FACC15', green: '#16A34A' },
-            surface: '#F4F6F8'
+            surface: '#F8FAFC'
           },
           fontFamily: {
             sans: ['Plus Jakarta Sans', 'Inter', 'system-ui', 'sans-serif'],
@@ -30,7 +30,7 @@
   </script>
   <link rel="stylesheet" href="admin.css">
 </head>
-<body class="bg-[#F4F6F8] text-slate-900 antialiased min-h-screen">
+<body class="bg-[#F8FAFC] text-slate-900 antialiased min-h-screen">
 
   <!-- ==================== ADMIN APP ROOT CONTAINER ==================== -->
   <div id="admin-root">
@@ -49,7 +49,7 @@
     const PT_BOOKINGS_KEY = 'befit_pt_bookings';
     const TRIAL_CLAIMS_KEY = 'befit_trial_claims';
 
-    // Fallback seed members if empty
+    // Fallback seed members with realistic CRM expiry dates & status
     const SEED_MEMBERS = [
       {
         id: 'BF-1001',
@@ -61,11 +61,11 @@
         voucherUsed: 'MEMBERBARU15',
         totalPaid: 765000,
         paymentMethod: 'QRIS INSTANT',
-        dateJoined: '28 Okt 2026',
+        dateJoined: '06 Agu 2026',
+        expiryDate: '2026-11-06', // 4 days remaining (expiring <= 7 days)
         branch: 'Setiabudi',
         status: 'Active',
-        ptSessions: 4,
-        ptTrainer: 'Aby Pratama'
+        isFrozen: false
       },
       {
         id: 'BF-1002',
@@ -77,11 +77,11 @@
         voucherUsed: 'GAJIAN100K',
         totalPaid: 1550000,
         paymentMethod: 'BCA VA',
-        dateJoined: '30 Okt 2026',
+        dateJoined: '04 Mei 2026',
+        expiryDate: '2026-11-04', // 2 days remaining (immediate follow-up 1-3 days)
         branch: 'Dago',
         status: 'Active',
-        ptSessions: 8,
-        ptTrainer: 'Sarah Wijaya'
+        isFrozen: false
       },
       {
         id: 'BF-1003',
@@ -93,11 +93,11 @@
         voucherUsed: 'HEMAT50K',
         totalPaid: 300000,
         paymentMethod: 'MANDIRI VA',
-        dateJoined: '01 Nov 2026',
+        dateJoined: '01 Okt 2026',
+        expiryDate: '2026-10-31', // Expired 2 days ago
         branch: 'Pasirkaliki',
-        status: 'Active',
-        ptSessions: 0,
-        ptTrainer: '-'
+        status: 'Expired',
+        isFrozen: false
       },
       {
         id: 'BF-1004',
@@ -110,10 +110,10 @@
         totalPaid: 2850000,
         paymentMethod: 'BNI VA',
         dateJoined: '02 Nov 2026',
+        expiryDate: '2027-11-02', // 365 days remaining
         branch: 'Setiabudi',
         status: 'Active',
-        ptSessions: 12,
-        ptTrainer: 'Nadia Kusuma'
+        isFrozen: false
       },
       {
         id: 'BF-1005',
@@ -126,14 +126,14 @@
         totalPaid: 765000,
         paymentMethod: 'QRIS INSTANT',
         dateJoined: '02 Nov 2026',
+        expiryDate: '2027-02-02', // 92 days remaining
         branch: 'Dago',
         status: 'Active',
-        ptSessions: 4,
-        ptTrainer: 'Adi Nugroho'
+        isFrozen: false
       }
     ];
 
-    // Fallback seed PT bookings if empty
+    // Fallback seed PT bookings with remaining sessions quota
     const SEED_PT_BOOKINGS = [
       {
         id: 'PT-ORD-201',
@@ -143,11 +143,12 @@
         branch: 'Be Fit Setiabudi Bandung',
         package: '4 Sesi Starter Coaching',
         sessions: 4,
+        remainingSessions: 3,
         discount: 112500,
         voucherCode: 'PTPROMO20',
         totalPaid: 637500,
         date: '29 Okt 2026',
-        status: 'Aktif / Berjalan'
+        status: 'Aktif Berjalan'
       },
       {
         id: 'PT-ORD-202',
@@ -157,11 +158,12 @@
         branch: 'Be Fit Dago Bandung',
         package: '8 Sesi Best Value Coaching',
         sessions: 8,
+        remainingSessions: 6,
         discount: 280000,
         voucherCode: 'PTPROMO20',
         totalPaid: 1120000,
         date: '30 Okt 2026',
-        status: 'Aktif / Berjalan'
+        status: 'Aktif Berjalan'
       },
       {
         id: 'PT-ORD-203',
@@ -171,11 +173,12 @@
         branch: 'Be Fit Setiabudi Bandung',
         package: '12 Sesi Pro Athlete Coaching',
         sessions: 12,
+        remainingSessions: 12,
         discount: 292500,
         voucherCode: 'MEMBERBARU15',
         totalPaid: 1657500,
         date: '02 Nov 2026',
-        status: 'Aktif / Berjalan'
+        status: 'Aktif Berjalan'
       },
       {
         id: 'PT-ORD-204',
@@ -185,15 +188,16 @@
         branch: 'Be Fit Dago Bandung',
         package: '4 Sesi Starter Coaching',
         sessions: 4,
+        remainingSessions: 1,
         discount: 150000,
         voucherCode: 'PTPROMO20',
         totalPaid: 600000,
         date: '02 Nov 2026',
-        status: 'Aktif / Berjalan'
+        status: 'Aktif Berjalan'
       }
     ];
 
-    // Fallback seed Class bookings if empty
+    // Fallback seed Class bookings with Attendance status
     const SEED_CLASS_BOOKINGS = [
       {
         id: 'CLS-BK-301',
@@ -204,7 +208,7 @@
         branch: 'Be Fit Setiabudi Bandung',
         dateKey: '2026-11-02',
         time: '18:00 – 18:50',
-        status: 'Terkonfirmasi'
+        status: 'Menunggu'
       },
       {
         id: 'CLS-BK-302',
@@ -215,7 +219,7 @@
         branch: 'Be Fit Dago Bandung',
         dateKey: '2026-11-02',
         time: '16:30 – 17:20',
-        status: 'Terkonfirmasi'
+        status: 'Hadir ✓'
       },
       {
         id: 'CLS-BK-303',
@@ -226,7 +230,7 @@
         branch: 'Be Fit Pasirkaliki Bandung',
         dateKey: '2026-11-03',
         time: '19:15 – 20:05',
-        status: 'Terkonfirmasi'
+        status: 'Menunggu'
       },
       {
         id: 'CLS-BK-304',
@@ -237,7 +241,7 @@
         branch: 'Be Fit Setiabudi Bandung',
         dateKey: '2026-11-03',
         time: '08:30 – 09:20',
-        status: 'Terkonfirmasi'
+        status: 'Menunggu'
       }
     ];
 
@@ -274,11 +278,41 @@
 
     let currentTab = 'overview';
     let searchQuery = '';
+    let memberFilterStatus = 'all'; // 'all', 'expiring', 'active', 'frozen', 'expired'
 
     // ==================== HELPER FUNCTIONS ====================
     function formatRupiah(num) {
       if (!num || isNaN(num)) return 'Rp 0';
       return 'Rp ' + Number(num).toLocaleString('id-ID');
+    }
+
+    function formatWhatsAppNumber(phone) {
+      if (!phone) return '';
+      let clean = phone.replace(/[^0-9]/g, '');
+      if (clean.startsWith('0')) clean = '62' + clean.slice(1);
+      return clean;
+    }
+
+    function getDaysRemaining(expiryDateStr) {
+      if (!expiryDateStr) return 0;
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      const expiry = new Date(expiryDateStr);
+      expiry.setHours(0, 0, 0, 0);
+      return Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    }
+
+    function formatDateIndo(dateStr) {
+      if (!dateStr) return '-';
+      try {
+        const parts = dateStr.split('-');
+        if (parts.length === 3) {
+          const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+          const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+          return `${parts[2]} ${months[d.getMonth()]} ${parts[0]}`;
+        }
+      } catch (e) {}
+      return dateStr;
     }
 
     function showToast(msg, duration = 3000) {
@@ -336,24 +370,48 @@
       }
     }
 
-    // ==================== DATA RETRIEVAL HELPERS ====================
+    // ==================== DATA RETRIEVAL & PERSISTENCE ====================
     function getStoredMembers() {
       try {
         const raw = localStorage.getItem(USERS_STORAGE_KEY);
         if (raw) {
           const parsed = JSON.parse(raw);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            // Merge with seed members to ensure complete display
             const map = new Map();
-            parsed.forEach(m => map.set(m.email || m.id, m));
-            SEED_MEMBERS.forEach(s => {
-              if (!map.has(s.email)) map.set(s.email, s);
+            // Seed members first
+            SEED_MEMBERS.forEach(s => map.set(s.email || s.id, { ...s }));
+            // Merge stored members
+            parsed.forEach(m => {
+              const key = m.email || m.id;
+              const existing = map.get(key) || {};
+              map.set(key, {
+                ...existing,
+                ...m,
+                id: m.id || existing.id || 'BF-' + Math.floor(1000 + Math.random() * 9000),
+                name: m.name || existing.name || 'Member Be Fit',
+                email: m.email || existing.email || '-',
+                phone: m.phone || existing.phone || '08123456789',
+                expiryDate: m.expiryDate || existing.expiryDate || '2026-11-20',
+                status: m.status || existing.status || 'Active',
+                isFrozen: m.isFrozen !== undefined ? m.isFrozen : (existing.isFrozen || false),
+                totalPaid: m.totalPaid || existing.totalPaid || 765000,
+                branch: m.branch || existing.branch || 'Setiabudi',
+                packageType: m.packageType || existing.packageType || 'Pro Transformation',
+                packageDuration: m.packageDuration || existing.packageDuration || 'Paket 3 Bulan'
+              });
             });
             return Array.from(map.values());
           }
         }
       } catch (e) {}
+      saveMembers(SEED_MEMBERS);
       return SEED_MEMBERS;
+    }
+
+    function saveMembers(list) {
+      try {
+        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(list));
+      } catch (e) {}
     }
 
     function getStoredTransactions() {
@@ -372,10 +430,23 @@
         const raw = localStorage.getItem(PT_BOOKINGS_KEY);
         if (raw) {
           const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed.map(b => ({
+              ...b,
+              remainingSessions: b.remainingSessions !== undefined ? b.remainingSessions : (b.sessions || 4),
+              status: b.remainingSessions === 0 ? 'Selesai / Kuota Habis' : (b.status || 'Aktif Berjalan')
+            }));
+          }
         }
       } catch (e) {}
+      savePtBookings(SEED_PT_BOOKINGS);
       return SEED_PT_BOOKINGS;
+    }
+
+    function savePtBookings(list) {
+      try {
+        localStorage.setItem(PT_BOOKINGS_KEY, JSON.stringify(list));
+      } catch (e) {}
     }
 
     function getStoredClassBookings() {
@@ -386,7 +457,14 @@
           if (Array.isArray(parsed) && parsed.length > 0) return parsed;
         }
       } catch (e) {}
+      saveClassBookings(SEED_CLASS_BOOKINGS);
       return SEED_CLASS_BOOKINGS;
+    }
+
+    function saveClassBookings(list) {
+      try {
+        localStorage.setItem(CLASS_BOOKINGS_KEY, JSON.stringify(list));
+      } catch (e) {}
     }
 
     function getStoredTrialClaims() {
@@ -400,7 +478,75 @@
       return SEED_TRIAL_CLAIMS;
     }
 
-    // ==================== RENDER VIEWS ====================
+    // ==================== CRM ACTIONS & EVENT HANDLERS ====================
+    window.filterMembersByStatus = (status) => {
+      memberFilterStatus = status;
+      currentTab = 'members';
+      renderAdminView();
+    };
+
+    window.toggleMemberFreeze = (memberId) => {
+      const members = getStoredMembers();
+      const idx = members.findIndex(m => m.id === memberId || m.email === memberId);
+      if (idx !== -1) {
+        members[idx].isFrozen = !members[idx].isFrozen;
+        saveMembers(members);
+        showToast(members[idx].isFrozen 
+          ? `Status membership ${members[idx].name} dibekukan (Cuti).` 
+          : `Status membership ${members[idx].name} diaktifkan kembali.`);
+        renderAdminView();
+      }
+    };
+
+    window.extendMemberManual = (memberId) => {
+      const members = getStoredMembers();
+      const idx = members.findIndex(m => m.id === memberId || m.email === memberId);
+      if (idx !== -1) {
+        const currentExp = members[idx].expiryDate ? new Date(members[idx].expiryDate) : new Date();
+        const baseDate = currentExp > new Date() ? currentExp : new Date();
+        const newExpiry = new Date(baseDate.getTime() + 30 * 86400000).toISOString().split('T')[0];
+        
+        members[idx].expiryDate = newExpiry;
+        members[idx].status = 'Active';
+        members[idx].isFrozen = false;
+        saveMembers(members);
+        
+        showToast(`Masa aktif ${members[idx].name} berhasil diperpanjang +30 hari (s/d ${formatDateIndo(newExpiry)})!`, 4000);
+        renderAdminView();
+      }
+    };
+
+    window.checkInPtSession = (orderId) => {
+      const bookings = getStoredPtBookings();
+      const idx = bookings.findIndex(b => b.id === orderId);
+      if (idx !== -1) {
+        const currentRemaining = bookings[idx].remainingSessions !== undefined ? bookings[idx].remainingSessions : bookings[idx].sessions;
+        if (currentRemaining > 0) {
+          bookings[idx].remainingSessions = currentRemaining - 1;
+          if (bookings[idx].remainingSessions === 0) {
+            bookings[idx].status = 'Selesai / Kuota Habis';
+            showToast(`Sesi PT ${bookings[idx].userName} selesai (Kuota habis). Tawarkan paket perpanjangan via WA!`, 4500);
+          } else {
+            showToast(`Check-in sesi PT berhasil! Sisa kuota ${bookings[idx].userName}: ${bookings[idx].remainingSessions} sesi.`, 3500);
+          }
+          savePtBookings(bookings);
+          renderAdminView();
+        }
+      }
+    };
+
+    window.markClassAttendance = (classId, newStatus) => {
+      const list = getStoredClassBookings();
+      const idx = list.findIndex(c => c.id === classId);
+      if (idx !== -1) {
+        list[idx].status = newStatus;
+        saveClassBookings(list);
+        showToast(`Presensi kelas untuk ${list[idx].userName} dicatat: ${newStatus}`);
+        renderAdminView();
+      }
+    };
+
+    // ==================== MAIN RENDER VIEWS ====================
     function renderAdminView() {
       const root = document.getElementById('admin-root');
       if (!root) return;
@@ -412,7 +558,7 @@
       }
     }
 
-    // 1. Clean White Login Screen
+    // 1. Clean White Login Screen (NO AUTOFILL / NO CREDENTIAL LEAKS)
     function renderLoginCard() {
       return `
         <div class="min-h-screen flex flex-col justify-center items-center px-4 py-12">
@@ -423,7 +569,7 @@
                 <img src="logo-square.jpg" alt="Be Fit Logo" class="w-full h-full object-cover rounded-xl">
               </div>
               <h2 class="text-xl font-black text-slate-900 tracking-tight">Portal Admin Be Fit CRM</h2>
-              <p class="text-xs text-slate-500 mt-1">Masuk dengan kredensial admin resmi untuk mengelola member dan transaksi gym.</p>
+              <p class="text-xs text-slate-500 mt-1">Masuk dengan kredensial admin resmi untuk mengelola member dan retensi gym.</p>
             </div>
 
             <div id="login-error-msg" class="hidden p-3 bg-red-50 text-red-600 rounded-xl border border-red-200 text-xs font-bold mb-4"></div>
@@ -431,14 +577,14 @@
             <form onsubmit="handleAdminLogin(event)" class="space-y-4">
               <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Email Admin</label>
-                <input type="email" id="login-admin-email" value="" placeholder="Masukkan email admin" required
+                <input type="email" id="login-admin-email" value="" placeholder="Masukkan email admin" required autocomplete="off"
                   class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-teal-550 focus:border-transparent outline-none">
               </div>
 
               <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Password Admin</label>
                 <div class="relative">
-                  <input type="password" id="login-admin-pass" value="" placeholder="Masukkan password admin" required
+                  <input type="password" id="login-admin-pass" value="" placeholder="Masukkan password admin" required autocomplete="off"
                     class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm pr-12 focus:ring-2 focus:ring-teal-550 focus:border-transparent outline-none">
                   <button type="button" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 font-bold text-sm"
                     onclick="toggleLoginPasswordVisibility()">
@@ -449,7 +595,7 @@
 
               <button type="submit"
                 class="w-full py-3.5 rounded-xl bg-teal-550 text-white text-sm font-black shadow-lg shadow-teal-550/30 hover:bg-teal-650 active:scale-[0.98] transition-all">
-                Masuk ke Panel Admin &rarr;
+                Masuk ke Panel CRM &rarr;
               </button>
             </form>
 
@@ -471,7 +617,7 @@
       const classBookings = getStoredClassBookings();
       const trialClaims = getStoredTrialClaims();
 
-      // Aggregate revenue
+      // Aggregate revenue clean net
       let totalRevenue = 48500000; // Seed base
       transactions.forEach(t => {
         if (t.amount) totalRevenue += Number(t.amount);
@@ -491,10 +637,10 @@
                 <div class="flex items-center gap-2">
                   <span class="text-sm font-black tracking-wider text-gold-gradient uppercase font-sans">BE FIT</span>
                   <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-teal-50 text-teal-700 border border-teal-200">
-                    ADMIN CRM
+                    CRM RETENTION DASHBOARD
                   </span>
                 </div>
-                <span class="text-[11px] text-slate-400 font-medium">Enterprise Management Portal</span>
+                <span class="text-[11px] text-slate-400 font-medium">Customer Retention & Operations System</span>
               </div>
             </div>
 
@@ -533,28 +679,28 @@
             <button type="button" class="admin-tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all ${currentTab === 'overview' ? 'active' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}"
               onclick="switchAdminTab('overview')">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
-              <span>1. Ringkasan Bisnis (Overview KPI)</span>
+              <span>1. Ringkasan Bisnis & Retention Center</span>
             </button>
 
             <button type="button" class="admin-tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all ${currentTab === 'members' ? 'active' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}"
               onclick="switchAdminTab('members')">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-              <span>2. Data Member & Membership</span>
+              <span>2. Direktori Member & Retensi</span>
               <span class="px-2 py-0.5 rounded-full text-[10px] font-mono ${currentTab === 'members' ? 'bg-white/20 text-white' : 'bg-teal-50 text-teal-700'}">${members.length}</span>
             </button>
 
             <button type="button" class="admin-tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all ${currentTab === 'trainers' ? 'active' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}"
               onclick="switchAdminTab('trainers')">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-              <span>3. Data Pemesanan PT</span>
+              <span>3. Sesi Personal Trainer</span>
               <span class="px-2 py-0.5 rounded-full text-[10px] font-mono ${currentTab === 'trainers' ? 'bg-white/20 text-white' : 'bg-amber-50 text-amber-800'}">${ptBookings.length}</span>
             </button>
 
             <button type="button" class="admin-tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all ${currentTab === 'classes' ? 'active' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}"
               onclick="switchAdminTab('classes')">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-              <span>4. Booking Kelas & Free Trial</span>
-              <span class="px-2 py-0.5 rounded-full text-[10px] font-mono ${currentTab === 'classes' ? 'bg-white/20 text-white' : 'bg-blue-50 text-blue-700'}">${classBookings.length + trialClaims.length}</span>
+              <span>4. Presensi & Booking Kelas</span>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-mono ${currentTab === 'classes' ? 'bg-white/20 text-white' : 'bg-blue-50 text-blue-700'}">${classBookings.length}</span>
             </button>
           </div>
 
@@ -570,58 +716,170 @@
       `;
     }
 
-    // Tab 1: Overview
+    // ==================== TAB 1: OVERVIEW & RETENTION CENTER ====================
     function renderTabOverview(revenue, members, ptBookings, classBookings, trialClaims, transactions) {
-      const activeMembers = members.filter(m => m.status === 'Active').length;
-      const totalActivities = classBookings.length + trialClaims.length;
+      // Metric calculations
+      const expiringMembers = members.filter(m => {
+        const d = getDaysRemaining(m.expiryDate);
+        return d > 0 && d <= 7 && !m.isFrozen;
+      });
+
+      const activeMembers = members.filter(m => {
+        const d = getDaysRemaining(m.expiryDate);
+        return d > 0 && !m.isFrozen;
+      });
+
+      const atRiskMembers = members.filter(m => {
+        const d = getDaysRemaining(m.expiryDate);
+        return d <= 0 || m.status === 'Expired';
+      });
+
+      // Sum of active PT remaining sessions
+      const totalRemainingPtSessions = ptBookings.reduce((sum, b) => {
+        const rem = b.remainingSessions !== undefined ? b.remainingSessions : b.sessions;
+        return sum + Number(rem || 0);
+      }, 0);
+
+      // Members needing urgent follow-up today (remaining days 1 to 3)
+      const followUpTodayMembers = members.filter(m => {
+        const d = getDaysRemaining(m.expiryDate);
+        return d >= 1 && d <= 3 && !m.isFrozen;
+      });
 
       return `
-        <!-- 5 High-Impact Metric Cards -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+        <!-- 1. Retention Alert Banner (Amber) -->
+        ${expiringMembers.length > 0 ? `
+          <div class="mb-6 p-4 rounded-2xl bg-amber-50 border border-amber-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <span class="text-2xl">⚠️</span>
+              <div>
+                <h4 class="text-sm font-black text-amber-900 leading-tight">Perhatian CRM Retensi: Ada ${expiringMembers.length} Member Segera Kedaluwarsa!</h4>
+                <p class="text-xs text-amber-700 mt-0.5">Terdapat <strong>${expiringMembers.length} member</strong> yang masa aktifnya akan habis dalam 7 hari ke depan. Segera lakukan follow-up via WhatsApp untuk mencegah churn.</p>
+              </div>
+            </div>
+            <button type="button" onclick="filterMembersByStatus('expiring')"
+              class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-black shrink-0 transition-all shadow-md shadow-amber-500/20">
+              Lihat Member Ini &rarr;
+            </button>
+          </div>
+        ` : ''}
+
+        <!-- 2. 6 High-Impact CRM Metric Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
           
-          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Total Pendapatan</span>
-            <h3 class="text-xl font-black font-mono text-teal-600 leading-tight">${formatRupiah(revenue)}</h3>
-            <span class="inline-block mt-2 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
-              ✓ Termasuk Diskon Voucher
+          <!-- Card 1: Total Revenue -->
+          <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Total Pendapatan</span>
+            <h3 class="text-lg font-black font-mono text-teal-600 leading-tight">${formatRupiah(revenue)}</h3>
+            <span class="inline-block mt-2 text-[9px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
+              ✓ Bersih Setelah Diskon
             </span>
           </div>
 
-          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Total Member</span>
-            <h3 class="text-xl font-black font-mono text-slate-900 leading-tight">${members.length} Member</h3>
-            <span class="inline-block mt-2 text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
-              Semua Cabang Gym
+          <!-- Card 2: Active Members -->
+          <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Member Aktif</span>
+            <h3 class="text-lg font-black font-mono text-emerald-600 leading-tight">${activeMembers.length} Member</h3>
+            <span class="inline-block mt-2 text-[9px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
+              Membership Valid
             </span>
           </div>
 
-          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Paket Aktif</span>
-            <h3 class="text-xl font-black font-mono text-emerald-600 leading-tight">${activeMembers} Aktif</h3>
-            <span class="inline-block mt-2 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
-              100% Membership Valid
+          <!-- Card 3: Akan Kedaluwarsa (<= 7 Hari) -->
+          <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Akan Kedaluwarsa</span>
+            <h3 class="text-lg font-black font-mono text-amber-600 leading-tight">${expiringMembers.length} Member</h3>
+            <span class="inline-block mt-2 text-[9px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md">
+              Habis $\le$ 7 Hari
             </span>
           </div>
 
-          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Pemesanan PT</span>
-            <h3 class="text-xl font-black font-mono text-amber-600 leading-tight">${ptBookings.length} Pesanan</h3>
-            <span class="inline-block mt-2 text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md">
-              Private Coaching
+          <!-- Card 4: Member Pasif (At Risk Churn) -->
+          <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">At-Risk / Expired</span>
+            <h3 class="text-lg font-black font-mono text-rose-600 leading-tight">${atRiskMembers.length} Member</h3>
+            <span class="inline-block mt-2 text-[9px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md">
+              Perlu Winback
             </span>
           </div>
 
-          <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Kelas & Free Trial</span>
-            <h3 class="text-xl font-black font-mono text-blue-600 leading-tight">${totalActivities} Bookings</h3>
-            <span class="inline-block mt-2 text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md">
-              ${classBookings.length} Kelas • ${trialClaims.length} Trial
+          <!-- Card 5: Total Sesi PT Berjalan -->
+          <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Sisa Sesi PT</span>
+            <h3 class="text-lg font-black font-mono text-teal-600 leading-tight">${totalRemainingPtSessions} Sesi</h3>
+            <span class="inline-block mt-2 text-[9px] font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md">
+              Kuota Belum Selesai
+            </span>
+          </div>
+
+          <!-- Card 6: Rasio Utilisasi Kelas -->
+          <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Utilisasi Kelas</span>
+            <h3 class="text-lg font-black font-mono text-blue-600 leading-tight">76% Terisi</h3>
+            <span class="inline-block mt-2 text-[9px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md">
+              ${classBookings.length} Slot Terpesan
             </span>
           </div>
 
         </div>
 
-        <!-- 4 Gym Branches Live Monitoring -->
+        <!-- 3. Widget Aksi Cepat: Member Perlu Follow-Up Hari Ini (Masa Aktif Habis 1-3 Hari) -->
+        <div class="mb-6 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-base">⚡</span>
+                <h4 class="text-sm font-black text-slate-900">Aksi Cepat: Member Perlu Follow-Up Hari Ini (Masa Aktif Habis 1–3 Hari)</h4>
+              </div>
+              <p class="text-xs text-slate-400 mt-0.5">Kirimkan pesan pengingat WhatsApp dengan sekali klik agar member langsung memperpanjang keanggotaan.</p>
+            </div>
+            <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 self-start sm:self-auto">
+              ${followUpTodayMembers.length} Member Perlu Kontak
+            </span>
+          </div>
+
+          <div class="p-5">
+            ${followUpTodayMembers.length === 0 ? `
+              <div class="text-center py-6 text-slate-400 text-xs font-medium">
+                🎉 Hebat! Tidak ada member yang masa aktifnya habis dalam rentang 1–3 hari ke depan saat ini.
+              </div>
+            ` : `
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                ${followUpTodayMembers.map(m => {
+                  const daysLeft = getDaysRemaining(m.expiryDate);
+                  const waNumber = formatWhatsAppNumber(m.phone);
+                  const waMessage = encodeURIComponent(`Halo Kak ${m.name}, kami dari Be Fit Gym. Mengingatkan bahwa paket membership Kakak tersisa ${daysLeft} hari lagi (berakhir ${formatDateIndo(m.expiryDate)}). Yuk perpanjang sekarang dan dapatkan diskon retensi khusus untuk Kakak!`);
+                  const waUrl = `https://wa.me/${waNumber}?text=${waMessage}`;
+
+                  return `
+                    <div class="p-4 rounded-xl border border-amber-200 bg-amber-50/40 hover:bg-amber-50 transition-all flex flex-col justify-between">
+                      <div>
+                        <div class="flex items-center justify-between gap-2 mb-2">
+                          <span class="font-black text-slate-900 text-sm">${m.name}</span>
+                          <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-amber-100 text-amber-800 border border-amber-300">
+                            Sisa ${daysLeft} Hari
+                          </span>
+                        </div>
+                        <p class="text-xs text-slate-600 font-medium mb-1">${m.packageDuration || m.packageType}</p>
+                        <p class="text-[11px] text-slate-400 font-mono">Expired: ${formatDateIndo(m.expiryDate)} • ${m.branch || 'Setiabudi'}</p>
+                      </div>
+
+                      <div class="mt-4 pt-3 border-t border-amber-200/60 flex items-center justify-between">
+                        <span class="text-xs font-mono font-bold text-slate-600">${m.phone}</span>
+                        <a href="${waUrl}" target="_blank" rel="noopener noreferrer"
+                          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black shadow-sm transition-all">
+                          <span>💬 WhatsApp Follow-Up</span>
+                        </a>
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            `}
+          </div>
+        </div>
+
+        <!-- 4. Gym Branches Live Monitoring -->
         <div class="mb-6">
           <h4 class="text-xs font-black uppercase tracking-wider text-slate-500 mb-3">Monitoring Cabang Be Fit & Status Keramaian (Crowd Meter)</h4>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -669,11 +927,11 @@
           </div>
         </div>
 
-        <!-- Recent Real-Time Transactions Feed -->
+        <!-- 5. Recent Real-Time Transactions Feed -->
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
             <div>
-              <h4 class="text-sm font-black text-slate-900">Transaksi & Aktivitas Terbaru (Live Feed)</h4>
+              <h4 class="text-sm font-black text-slate-900">Transaksi & Aktivitas Pelanggan (Live Feed)</h4>
               <p class="text-xs text-slate-400 mt-0.5">Setiap transaksi checkout dari aplikasi pelanggan langsung tercatat otomatis di sini.</p>
             </div>
             <span class="px-3 py-1 rounded-full text-xs font-bold bg-teal-50 text-teal-700 border border-teal-200">
@@ -738,14 +996,42 @@
       `;
     }
 
-    // Tab 2: Members & Membership Purchases
+    // ==================== TAB 2: MEMBER DIRECTORY & RETENTION ====================
     function renderTabMembers(members) {
+      // Counts for filter pills
+      const expiringCount = members.filter(m => {
+        const d = getDaysRemaining(m.expiryDate);
+        return d > 0 && d <= 7 && !m.isFrozen;
+      }).length;
+
+      const activeCount = members.filter(m => {
+        const d = getDaysRemaining(m.expiryDate);
+        return d > 7 && !m.isFrozen;
+      }).length;
+
+      const frozenCount = members.filter(m => m.isFrozen).length;
+
+      const expiredCount = members.filter(m => {
+        const d = getDaysRemaining(m.expiryDate);
+        return (d <= 0 || m.status === 'Expired') && !m.isFrozen;
+      }).length;
+
+      // Filtered members by search and status
       const filtered = members.filter(m => {
+        // Status filter
+        const days = getDaysRemaining(m.expiryDate);
+        if (memberFilterStatus === 'expiring' && !(days > 0 && days <= 7 && !m.isFrozen)) return false;
+        if (memberFilterStatus === 'active' && !(days > 7 && !m.isFrozen)) return false;
+        if (memberFilterStatus === 'frozen' && !m.isFrozen) return false;
+        if (memberFilterStatus === 'expired' && !((days <= 0 || m.status === 'Expired') && !m.isFrozen)) return false;
+
+        // Search filter
         if (!searchQuery) return true;
         const q = searchQuery.toLowerCase();
         return (m.name && m.name.toLowerCase().includes(q)) ||
                (m.email && m.email.toLowerCase().includes(q)) ||
                (m.phone && m.phone.includes(q)) ||
+               (m.branch && m.branch.toLowerCase().includes(q)) ||
                (m.packageType && m.packageType.toLowerCase().includes(q));
       });
 
@@ -753,79 +1039,163 @@
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           
           <!-- Controls Header -->
-          <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div>
-              <h3 class="text-base font-black text-slate-900">Data Member & Pembelian Membership</h3>
-              <p class="text-xs text-slate-400 mt-0.5">Menampilkan status paket aktif, rincian voucher diskon, dan metode bayar.</p>
+          <div class="p-5 border-b border-slate-100 flex flex-col gap-4">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <h3 class="text-base font-black text-slate-900">Direktori Member & Manajemen Retensi (CRM)</h3>
+                <p class="text-xs text-slate-400 mt-0.5">Kelola masa aktif member, status cuti, follow-up WhatsApp langsung, dan perpanjangan manual.</p>
+              </div>
+              
+              <div class="w-full sm:w-72">
+                <input type="text" placeholder="Cari nama, email, hp, atau paket..." value="${searchQuery}"
+                  oninput="handleSearchChange(this.value)"
+                  class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-teal-550 outline-none">
+              </div>
             </div>
-            
-            <div class="w-full sm:w-72">
-              <input type="text" placeholder="Cari nama, email, atau paket..." value="${searchQuery}"
-                oninput="handleSearchChange(this.value)"
-                class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-teal-550 outline-none">
+
+            <!-- Filter Pills -->
+            <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-bold">
+              <button type="button" onclick="setMemberStatusFilter('all')"
+                class="px-3 py-1.5 rounded-lg border transition-all ${memberFilterStatus === 'all' ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'}">
+                Semua (${members.length})
+              </button>
+              
+              <button type="button" onclick="setMemberStatusFilter('expiring')"
+                class="px-3 py-1.5 rounded-lg border transition-all ${memberFilterStatus === 'expiring' ? 'bg-amber-500 text-white border-amber-500' : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'}">
+                ⚠️ Segera Berakhir ≤7 Hari (${expiringCount})
+              </button>
+
+              <button type="button" onclick="setMemberStatusFilter('active')"
+                class="px-3 py-1.5 rounded-lg border transition-all ${memberFilterStatus === 'active' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'}">
+                ✓ Aktif (${activeCount})
+              </button>
+
+              <button type="button" onclick="setMemberStatusFilter('frozen')"
+                class="px-3 py-1.5 rounded-lg border transition-all ${memberFilterStatus === 'frozen' ? 'bg-blue-600 text-white border-blue-600' : 'bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100'}">
+                ❄️ Cuti / Frozen (${frozenCount})
+              </button>
+
+              <button type="button" onclick="setMemberStatusFilter('expired')"
+                class="px-3 py-1.5 rounded-lg border transition-all ${memberFilterStatus === 'expired' ? 'bg-rose-600 text-white border-rose-600' : 'bg-rose-50 text-rose-800 border-rose-200 hover:bg-rose-100'}">
+                ✕ Expired (${expiredCount})
+              </button>
             </div>
           </div>
 
-          <!-- Table -->
+          <!-- Member Table -->
           <div class="overflow-x-auto">
             <table class="w-full text-left admin-table text-xs">
               <thead class="bg-slate-50 text-slate-500 uppercase tracking-wider font-bold border-b border-slate-200 text-[10px]">
                 <tr>
-                  <th class="px-6 py-3.5">Nama Member</th>
-                  <th class="px-6 py-3.5">Kontak</th>
-                  <th class="px-6 py-3.5">Paket Membership</th>
-                  <th class="px-6 py-3.5">Kode Voucher</th>
-                  <th class="px-6 py-3.5">Total Bayar (Net)</th>
-                  <th class="px-6 py-3.5">Metode Bayar</th>
-                  <th class="px-6 py-3.5">Tanggal</th>
+                  <th class="px-6 py-3.5">Nama & Kontak</th>
+                  <th class="px-6 py-3.5">Paket & Cabang</th>
+                  <th class="px-6 py-3.5">Tanggal Berakhir & Sisa Hari</th>
                   <th class="px-6 py-3.5">Status Akun</th>
+                  <th class="px-6 py-3.5">LTV (Total Belanja)</th>
+                  <th class="px-6 py-3.5 text-center">Aksi Cepat CRM</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-100">
-                ${filtered.map(m => `
+                ${filtered.length === 0 ? `
                   <tr>
-                    <td class="px-6 py-4">
-                      <div class="flex items-center gap-2.5">
-                        <div class="w-8 h-8 rounded-full bg-teal-50 border border-teal-200 flex items-center justify-center font-black text-teal-600 text-xs shrink-0">
-                          ${(m.name || 'M')[0]}
-                        </div>
-                        <div>
-                          <span class="font-bold text-slate-900 block leading-tight">${m.name || 'Pelanggan Be Fit'}</span>
-                          <span class="text-[10px] text-slate-400 font-mono">${m.id || 'BF-USER'}</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td class="px-6 py-4">
-                      <span class="text-slate-800 block">${m.email || '-'}</span>
-                      <span class="text-[10px] text-slate-400 font-mono">${m.phone || '-'}</span>
-                    </td>
-                    <td class="px-6 py-4">
-                      <span class="font-bold text-slate-900 block">${m.packageDuration || m.packageType || 'Paket 1 Bulan'}</span>
-                      <span class="text-[10px] text-teal-600 font-semibold">Cabang: ${m.branch || 'Setiabudi'}</span>
-                    </td>
-                    <td class="px-6 py-4">
-                      ${m.voucherUsed ? `
-                        <span class="px-2.5 py-1 rounded-md text-[10px] font-mono font-bold bg-emerald-50 text-emerald-800 border border-emerald-300">
-                          ${m.voucherUsed}
-                        </span>
-                      ` : '<span class="text-slate-400 font-mono text-[11px]">-</span>'}
-                    </td>
-                    <td class="px-6 py-4 font-mono font-black text-teal-600">
-                      ${formatRupiah(m.totalPaid || 765000)}
-                    </td>
-                    <td class="px-6 py-4 font-bold text-slate-700 font-mono uppercase">
-                      ${m.paymentMethod || 'QRIS INSTANT'}
-                    </td>
-                    <td class="px-6 py-4 font-mono text-slate-500 text-[11px]">
-                      ${m.dateJoined || '02 Nov 2026'}
-                    </td>
-                    <td class="px-6 py-4">
-                      <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">
-                        ${m.status || 'Active'}
-                      </span>
+                    <td colspan="6" class="px-6 py-8 text-center text-slate-400 font-medium">
+                      Tidak ada member yang cocok dengan filter "${memberFilterStatus}" atau pencarian "${searchQuery}".
                     </td>
                   </tr>
-                `).join('')}
+                ` : filtered.map(m => {
+                  const days = getDaysRemaining(m.expiryDate);
+                  const isExpiring = days > 0 && days <= 7 && !m.isFrozen;
+                  const isExpired = (days <= 0 || m.status === 'Expired') && !m.isFrozen;
+                  const isFrozen = !!m.isFrozen;
+
+                  // Days Remaining Badge
+                  let daysBadgeHtml = '';
+                  let statusBadgeHtml = '';
+
+                  if (isFrozen) {
+                    daysBadgeHtml = `<span class="px-2 py-0.5 rounded font-mono font-bold bg-blue-50 text-blue-800 border border-blue-200">❄️ Dibekukan (${formatDateIndo(m.expiryDate)})</span>`;
+                    statusBadgeHtml = `<span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-blue-100 text-blue-800 border border-blue-300">CUTI / FROZEN</span>`;
+                  } else if (isExpired) {
+                    daysBadgeHtml = `<span class="px-2 py-0.5 rounded font-mono font-bold bg-rose-50 text-rose-800 border border-rose-200">✕ Expired (${Math.abs(days)} hari lalu)</span>`;
+                    statusBadgeHtml = `<span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-rose-100 text-rose-800 border border-rose-300">EXPIRED</span>`;
+                  } else if (isExpiring) {
+                    daysBadgeHtml = `<span class="px-2 py-0.5 rounded font-mono font-bold bg-amber-50 text-amber-800 border border-amber-300">⚠️ Sisa ${days} Hari (${formatDateIndo(m.expiryDate)})</span>`;
+                    statusBadgeHtml = `<span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-amber-100 text-amber-800 border border-amber-300">SEGERA BERAKHIR</span>`;
+                  } else {
+                    daysBadgeHtml = `<span class="px-2 py-0.5 rounded font-mono font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">✓ Sisa ${days} Hari (${formatDateIndo(m.expiryDate)})</span>`;
+                    statusBadgeHtml = `<span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">AKTIF</span>`;
+                  }
+
+                  // WhatsApp CRM Direct Link
+                  const waNumber = formatWhatsAppNumber(m.phone);
+                  const waText = encodeURIComponent(`Halo Kak ${m.name}, kami dari Be Fit Gym. Mengingatkan bahwa paket membership Kakak ${days > 0 ? `tersisa ${days} hari lagi (berakhir ${formatDateIndo(m.expiryDate)})` : 'sudah berakhir'}. Yuk perpanjang sekarang dan dapatkan diskon retensi khusus untuk Kakak!`);
+                  const waUrl = `https://wa.me/${waNumber}?text=${waText}`;
+
+                  return `
+                    <tr>
+                      <!-- 1. Nama & Kontak -->
+                      <td class="px-6 py-4">
+                        <div class="flex items-center gap-2.5">
+                          <div class="w-8 h-8 rounded-full bg-teal-50 border border-teal-200 flex items-center justify-center font-black text-teal-600 text-xs shrink-0">
+                            ${(m.name || 'M')[0]}
+                          </div>
+                          <div>
+                            <span class="font-bold text-slate-900 block leading-tight">${m.name || 'Pelanggan Be Fit'}</span>
+                            <span class="text-[10px] text-slate-400 font-mono">${m.id || 'BF-USER'}</span>
+                            <span class="text-[11px] text-slate-500 block mt-0.5">${m.email || '-'} • ${m.phone || '-'}</span>
+                          </div>
+                        </div>
+                      </td>
+
+                      <!-- 2. Paket & Cabang -->
+                      <td class="px-6 py-4">
+                        <span class="font-bold text-slate-900 block">${m.packageDuration || m.packageType || 'Paket 1 Bulan'}</span>
+                        <span class="text-[10px] text-teal-600 font-semibold">Cabang: ${m.branch || 'Setiabudi'}</span>
+                      </td>
+
+                      <!-- 3. Tanggal Berakhir & Sisa Hari -->
+                      <td class="px-6 py-4">
+                        ${daysBadgeHtml}
+                      </td>
+
+                      <!-- 4. Status Akun -->
+                      <td class="px-6 py-4">
+                        ${statusBadgeHtml}
+                      </td>
+
+                      <!-- 5. LTV (Total Belanja) -->
+                      <td class="px-6 py-4 font-mono font-black text-teal-600">
+                        ${formatRupiah(m.totalPaid || 765000)}
+                      </td>
+
+                      <!-- 6. Aksi Cepat CRM -->
+                      <td class="px-6 py-4">
+                        <div class="flex items-center justify-center gap-1.5 flex-wrap">
+                          <!-- WhatsApp Button -->
+                          <a href="${waUrl}" target="_blank" rel="noopener noreferrer"
+                            class="px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white border border-emerald-300 font-black text-[11px] transition-all inline-flex items-center gap-1"
+                            title="Kirim Pesan Retensi via WhatsApp">
+                            <span>💬 WA</span>
+                          </a>
+
+                          <!-- Cuti / Freeze Button -->
+                          <button type="button" onclick="toggleMemberFreeze('${m.id}')"
+                            class="px-2.5 py-1.5 rounded-lg border font-bold text-[11px] transition-all ${isFrozen ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'}"
+                            title="${isFrozen ? 'Batalkan Cuti & Aktifkan Member' : 'Bekukan Membership (Cuti)'}">
+                            ${isFrozen ? '❄️ Unfreeze' : 'Ajukan Cuti'}
+                          </button>
+
+                          <!-- Extend +30 Days Button -->
+                          <button type="button" onclick="extendMemberManual('${m.id}')"
+                            class="px-2.5 py-1.5 rounded-lg bg-teal-50 text-teal-700 hover:bg-teal-600 hover:text-white border border-teal-300 font-black text-[11px] transition-all"
+                            title="Perpanjang Masa Aktif +30 Hari">
+                            +30 Hari
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
               </tbody>
             </table>
           </div>
@@ -834,17 +1204,17 @@
       `;
     }
 
-    // Tab 3: Personal Trainer Orders
+    // ==================== TAB 3: PERSONAL TRAINER & SESSION QUOTA ====================
     function renderTabTrainers(ptBookings) {
       return `
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+          <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h3 class="text-base font-black text-slate-900">Data Pemesanan Personal Trainer (Private Coaching)</h3>
-              <p class="text-xs text-slate-400 mt-0.5">Mencatat pelatih yang dipilih, jumlah sesi aktif, dan voucher diskon yang digunakan.</p>
+              <h3 class="text-base font-black text-slate-900">Manajemen Personal Trainer & Kuota Sesi (Private Coaching)</h3>
+              <p class="text-xs text-slate-400 mt-0.5">Pantau sisa sesi coaching member, kurangi kuota setelah sesi selesai, dan tawarkan paket baru via WhatsApp.</p>
             </div>
-            <span class="px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
-              ${ptBookings.length} Pesanan Aktif
+            <span class="px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 self-start sm:self-auto">
+              ${ptBookings.length} Pesanan Berjalan
             </span>
           </div>
 
@@ -853,51 +1223,104 @@
               <thead class="bg-slate-50 text-slate-500 uppercase tracking-wider font-bold border-b border-slate-200 text-[10px]">
                 <tr>
                   <th class="px-6 py-3.5">ID Order</th>
-                  <th class="px-6 py-3.5">Nama Member</th>
-                  <th class="px-6 py-3.5">Trainer yang Dipilih</th>
-                  <th class="px-6 py-3.5">Cabang Gym</th>
+                  <th class="px-6 py-3.5">Nama Member & Kontak</th>
+                  <th class="px-6 py-3.5">Trainer & Cabang</th>
                   <th class="px-6 py-3.5">Paket Sesi</th>
-                  <th class="px-6 py-3.5">Diskon Voucher</th>
-                  <th class="px-6 py-3.5">Total Bayar (Net)</th>
+                  <th class="px-6 py-3.5">Progress Sisa Sesi / Kuota</th>
+                  <th class="px-6 py-3.5">Total Bayar & Diskon</th>
                   <th class="px-6 py-3.5">Status Sesi</th>
+                  <th class="px-6 py-3.5 text-center">Aksi Operasional</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-100">
-                ${ptBookings.map(b => `
-                  <tr>
-                    <td class="px-6 py-4 font-mono font-bold text-slate-800">${b.id}</td>
-                    <td class="px-6 py-4">
-                      <span class="font-bold text-slate-900 block leading-tight">${b.userName}</span>
-                      <span class="text-[10px] text-slate-400 font-mono">${b.userPhone}</span>
-                    </td>
-                    <td class="px-6 py-4">
-                      <div class="flex items-center gap-2">
-                        <span class="text-base">🏋️‍♂️</span>
-                        <span class="font-bold text-teal-600">${b.trainerName}</span>
-                      </div>
-                    </td>
-                    <td class="px-6 py-4 font-medium text-slate-700">${b.branch}</td>
-                    <td class="px-6 py-4">
-                      <span class="font-bold text-slate-900 block">${b.package || `${b.sessions} Sesi Coaching`}</span>
-                      <span class="text-[10px] text-slate-400">${b.sessions}x Pertemuan Privat</span>
-                    </td>
-                    <td class="px-6 py-4">
-                      ${b.voucherCode ? `
-                        <span class="px-2 py-0.5 rounded font-mono font-bold bg-emerald-50 text-emerald-800 border border-emerald-300">
-                          ${b.voucherCode} (-${formatRupiah(b.discount)})
-                        </span>
-                      ` : '<span class="text-slate-400 font-mono">-</span>'}
-                    </td>
-                    <td class="px-6 py-4 font-mono font-black text-teal-600">
-                      ${formatRupiah(b.totalPaid)}
-                    </td>
-                    <td class="px-6 py-4">
-                      <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">
-                        ${b.status || 'Aktif'}
-                      </span>
-                    </td>
-                  </tr>
-                `).join('')}
+                ${ptBookings.map(b => {
+                  const total = b.sessions || 4;
+                  const remaining = b.remainingSessions !== undefined ? b.remainingSessions : total;
+                  const pct = Math.round((remaining / total) * 100);
+                  const isDone = remaining <= 0;
+
+                  // WhatsApp renewal message
+                  const waNumber = formatWhatsAppNumber(b.userPhone);
+                  const waText = encodeURIComponent(`Halo Kak ${b.userName}, kuota sesi Personal Trainer Kakak bersama Coach ${b.trainerName} sudah selesai. Yuk perpanjang sesi coaching Kakak hari ini dengan promo spesial dari Be Fit Gym!`);
+                  const waUrl = `https://wa.me/${waNumber}?text=${waText}`;
+
+                  return `
+                    <tr>
+                      <!-- ID Order -->
+                      <td class="px-6 py-4 font-mono font-bold text-slate-800">${b.id}</td>
+
+                      <!-- Nama Member & Kontak -->
+                      <td class="px-6 py-4">
+                        <span class="font-bold text-slate-900 block leading-tight">${b.userName}</span>
+                        <span class="text-[10px] text-slate-400 font-mono">${b.userPhone}</span>
+                      </td>
+
+                      <!-- Trainer & Cabang -->
+                      <td class="px-6 py-4">
+                        <div class="flex items-center gap-1.5">
+                          <span class="text-sm">🏋️‍♂️</span>
+                          <span class="font-bold text-teal-600">${b.trainerName}</span>
+                        </div>
+                        <span class="text-[10px] text-slate-400 block">${b.branch}</span>
+                      </td>
+
+                      <!-- Paket Sesi -->
+                      <td class="px-6 py-4">
+                        <span class="font-bold text-slate-900 block">${b.package || `${total} Sesi Coaching`}</span>
+                        <span class="text-[10px] text-slate-400">${total}x Pertemuan Privat</span>
+                      </td>
+
+                      <!-- Progress Sisa Sesi -->
+                      <td class="px-6 py-4 min-w-[160px]">
+                        <div class="flex items-center justify-between text-[11px] font-bold mb-1">
+                          <span class="${isDone ? 'text-slate-400' : 'text-slate-800'}">Sisa ${remaining} dari ${total} Sesi</span>
+                          <span class="font-mono text-teal-600">${pct}%</span>
+                        </div>
+                        <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                          <div class="h-full rounded-full transition-all ${isDone ? 'bg-slate-300' : 'bg-teal-500'}" style="width: ${pct}%"></div>
+                        </div>
+                      </td>
+
+                      <!-- Total Bayar & Diskon -->
+                      <td class="px-6 py-4">
+                        <span class="font-mono font-black text-teal-600 block">${formatRupiah(b.totalPaid)}</span>
+                        ${b.voucherCode ? `
+                          <span class="text-[10px] font-mono font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                            ${b.voucherCode}
+                          </span>
+                        ` : '<span class="text-slate-400 text-[10px]">-</span>'}
+                      </td>
+
+                      <!-- Status Sesi -->
+                      <td class="px-6 py-4">
+                        ${isDone ? `
+                          <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-slate-100 text-slate-600 border border-slate-300">
+                            SELESAI / HABIS
+                          </span>
+                        ` : `
+                          <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">
+                            AKTIF BERJALAN
+                          </span>
+                        `}
+                      </td>
+
+                      <!-- Aksi Operasional -->
+                      <td class="px-6 py-4 text-center">
+                        ${!isDone ? `
+                          <button type="button" onclick="checkInPtSession('${b.id}')"
+                            class="px-3 py-1.5 rounded-lg bg-teal-550 hover:bg-teal-650 text-white font-black text-xs shadow-sm transition-all inline-flex items-center gap-1">
+                            <span>✓ Check-in (-1)</span>
+                          </button>
+                        ` : `
+                          <a href="${waUrl}" target="_blank" rel="noopener noreferrer"
+                            class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-sm transition-all inline-flex items-center gap-1">
+                            <span>💬 Tawarkan Perpanjang (WA)</span>
+                          </a>
+                        `}
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
               </tbody>
             </table>
           </div>
@@ -905,55 +1328,116 @@
       `;
     }
 
-    // Tab 4: Class Bookings & Free Trial
+    // ==================== TAB 4: CLASS BOOKINGS & ATTENDANCE ====================
     function renderTabClasses(classBookings, trialClaims) {
+      const hadirCount = classBookings.filter(c => c.status === 'Hadir ✓').length;
+      const menungguCount = classBookings.filter(c => c.status === 'Menunggu' || c.status === 'Terkonfirmasi').length;
+      const noShowCount = classBookings.filter(c => c.status === 'Tidak Hadir').length;
+
       return `
         <div class="space-y-6">
           
-          <!-- Section 1: Class Bookings -->
+          <!-- Section 1: Interactive Class Attendance -->
           <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+            <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h3 class="text-base font-black text-slate-900">Data Booking Kelas Studio (Group Workout)</h3>
-                <p class="text-xs text-slate-400 mt-0.5">Mencatat pendaftaran kelas Les Mills, Yoga, Pilates, RPM, dan HIIT.</p>
+                <h3 class="text-base font-black text-slate-900">Booking Kelas & Presensi Kehadiran (Class Attendance)</h3>
+                <p class="text-xs text-slate-400 mt-0.5">Kelola reservasi studio workout, verifikasi presensi kehadiran member secara langsung [Hadir / No-Show].</p>
               </div>
-              <span class="px-3 py-1 rounded-full text-xs font-bold bg-teal-50 text-teal-700 border border-teal-200">
-                ${classBookings.length} Pendaftar
-              </span>
+
+              <!-- Mini Stats -->
+              <div class="flex items-center gap-2 self-start sm:self-auto text-xs font-bold">
+                <span class="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200">
+                  ✓ Hadir: ${hadirCount}
+                </span>
+                <span class="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200">
+                  ⏳ Menunggu: ${menungguCount}
+                </span>
+                <span class="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-800 border border-rose-200">
+                  ✕ No-Show: ${noShowCount}
+                </span>
+              </div>
             </div>
 
             <div class="overflow-x-auto">
               <table class="w-full text-left admin-table text-xs">
                 <thead class="bg-slate-50 text-slate-500 uppercase tracking-wider font-bold border-b border-slate-200 text-[10px]">
                   <tr>
-                    <th class="px-6 py-3.5">Nama Member</th>
-                    <th class="px-6 py-3.5">Kelas Studio</th>
-                    <th class="px-6 py-3.5">Instruktur</th>
+                    <th class="px-6 py-3.5">Tanggal & Jam</th>
                     <th class="px-6 py-3.5">Cabang Gym</th>
-                    <th class="px-6 py-3.5">Tanggal Sesi</th>
-                    <th class="px-6 py-3.5">Jam Sesi</th>
-                    <th class="px-6 py-3.5">Status</th>
+                    <th class="px-6 py-3.5">Kelas & Instruktur</th>
+                    <th class="px-6 py-3.5">Peserta & Kontak</th>
+                    <th class="px-6 py-3.5">Status Presensi</th>
+                    <th class="px-6 py-3.5 text-center">Verifikasi Presensi</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
-                  ${classBookings.map(c => `
-                    <tr>
-                      <td class="px-6 py-4">
-                        <span class="font-bold text-slate-900 block leading-tight">${c.userName}</span>
-                        <span class="text-[10px] text-slate-400 font-mono">${c.userPhone || ''}</span>
-                      </td>
-                      <td class="px-6 py-4 font-black text-slate-900">${c.className}</td>
-                      <td class="px-6 py-4 font-bold text-teal-600">${c.instructor}</td>
-                      <td class="px-6 py-4 font-medium text-slate-600">${c.branch}</td>
-                      <td class="px-6 py-4 font-mono text-slate-600">${c.dateKey || '2026-11-02'}</td>
-                      <td class="px-6 py-4 font-mono font-bold text-slate-800">${c.time}</td>
-                      <td class="px-6 py-4">
-                        <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">
-                          ${c.status || 'Terkonfirmasi'}
-                        </span>
-                      </td>
-                    </tr>
-                  `).join('')}
+                  ${classBookings.map(c => {
+                    const isHadir = c.status === 'Hadir ✓';
+                    const isNoShow = c.status === 'Tidak Hadir';
+                    const isWaiting = !isHadir && !isNoShow;
+
+                    return `
+                      <tr>
+                        <!-- Tanggal & Jam -->
+                        <td class="px-6 py-4">
+                          <span class="font-mono font-bold text-slate-900 block">${formatDateIndo(c.dateKey || '2026-11-02')}</span>
+                          <span class="text-[11px] text-teal-600 font-mono font-semibold">${c.time}</span>
+                        </td>
+
+                        <!-- Cabang Gym -->
+                        <td class="px-6 py-4 font-medium text-slate-700">
+                          ${c.branch}
+                        </td>
+
+                        <!-- Kelas & Instruktur -->
+                        <td class="px-6 py-4">
+                          <span class="font-black text-slate-900 block">${c.className}</span>
+                          <span class="text-[11px] text-slate-500">Coach: <strong class="text-teal-600">${c.instructor}</strong></span>
+                        </td>
+
+                        <!-- Peserta & Kontak -->
+                        <td class="px-6 py-4">
+                          <span class="font-bold text-slate-900 block leading-tight">${c.userName}</span>
+                          <span class="text-[10px] text-slate-400 font-mono">${c.userPhone || '-'}</span>
+                        </td>
+
+                        <!-- Status Presensi Badge -->
+                        <td class="px-6 py-4">
+                          ${isHadir ? `
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">
+                              ✓ HADIR
+                            </span>
+                          ` : isNoShow ? `
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-rose-100 text-rose-800 border border-rose-300">
+                              ✕ TIDAK HADIR
+                            </span>
+                          ` : `
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-amber-100 text-amber-800 border border-amber-300">
+                              ⏳ MENUNGGU
+                            </span>
+                          `}
+                        </td>
+
+                        <!-- Verifikasi Buttons -->
+                        <td class="px-6 py-4 text-center">
+                          <div class="inline-flex items-center gap-1.5">
+                            <button type="button" onclick="markClassAttendance('${c.id}', 'Hadir ✓')"
+                              class="px-2.5 py-1.5 rounded-lg font-black text-xs transition-all ${isHadir ? 'bg-emerald-600 text-white' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white border border-emerald-300'}"
+                              title="Tandai Hadir">
+                              [Hadir ✓]
+                            </button>
+
+                            <button type="button" onclick="markClassAttendance('${c.id}', 'Tidak Hadir')"
+                              class="px-2.5 py-1.5 rounded-lg font-black text-xs transition-all ${isNoShow ? 'bg-rose-600 text-white' : 'bg-rose-50 text-rose-700 hover:bg-rose-600 hover:text-white border border-rose-300'}"
+                              title="Tandai Tidak Hadir (No-Show)">
+                              [No-Show ✕]
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    `;
+                  }).join('')}
                 </tbody>
               </table>
             </div>
@@ -1015,6 +1499,11 @@
     // ==================== INTERACTION HANDLERS ====================
     window.switchAdminTab = (tab) => {
       currentTab = tab;
+      renderAdminView();
+    };
+
+    window.setMemberStatusFilter = (status) => {
+      memberFilterStatus = status;
       renderAdminView();
     };
 

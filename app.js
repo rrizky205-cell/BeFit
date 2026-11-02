@@ -496,7 +496,7 @@ const DEFAULT_TRAINERS = [
     branchIds: ['dago'],
     name: 'Adi Nugroho',
     fullName: 'Adi Nugroho, CSCS',
-    photo: 'https://images.unsplash.com/photo-1548690312-e3b507d8c110?w=400&h=550&fit=crop&q=80',
+    photo: 'https://images.unsplash.com/photo-1507398941214-572c25f4b1dc?w=400&h=550&fit=crop&q=80',
     clients: 52,
     experience: '7 Tahun',
     specialization: 'Elite Performance Coach',
@@ -1024,7 +1024,8 @@ function getTrainers() {
       if (Array.isArray(parsed) && parsed.length >= DEFAULT_TRAINERS.length && parsed.some(t => t.id === 'TR-5')) {
         return parsed.map(t => {
           const def = DEFAULT_TRAINERS.find(d => d.id === t.id);
-          return { ...t, shift: t.shift || (def ? def.shift : '07:00 – 14:00 WIB') };
+          const photo = (t.id === 'TR-6') ? 'https://images.unsplash.com/photo-1507398941214-572c25f4b1dc?w=400&h=550&fit=crop&q=80' : t.photo;
+          return { ...t, photo, shift: t.shift || (def ? def.shift : '07:00 – 14:00 WIB') };
         });
       }
     }
@@ -2992,11 +2993,12 @@ function completePaymentSuccess(params, billing) {
         branch: getSelectedBranch().name,
         package: pkg.label,
         sessions: pkg.sessions,
+        remainingSessions: pkg.sessions,
         discount: billing.disc || 0,
         voucherCode: voucherCodeUsed,
         totalPaid: billing.total,
         date: dateStr,
-        status: 'Aktif / Berjalan'
+        status: 'Aktif Berjalan'
       });
       localStorage.setItem('befit_pt_bookings', JSON.stringify(ptList));
     } catch (e) {}
@@ -3312,9 +3314,10 @@ function handlePromoClaimAndNavigate(index) {
     if (p.target === 'pt') {
       openAllTrainersSheet();
     } else {
-      openPricingSheet();
+      const defaultPkg = (p.voucherCode === 'GAJIAN100K') ? 'pkg-3m' : 'pkg-1m';
+      openPricingSheet(defaultPkg);
     }
-  }, 350);
+  }, 200);
 }
 
 function openVoucherList() {
@@ -3532,3 +3535,9 @@ function submitAdminLogin() {
 window.openAdminLoginModal = openAdminLoginModal;
 window.toggleAdminModalPassword = toggleAdminModalPassword;
 window.submitAdminLogin = submitAdminLogin;
+window.handlePromoClaimAndNavigate = handlePromoClaimAndNavigate;
+window.openPromoDetail = openPromoDetail;
+window.openPricingSheet = openPricingSheet;
+window.openAllTrainersSheet = openAllTrainersSheet;
+window.claimVoucher = claimVoucher;
+window.openVoucherList = openVoucherList;
