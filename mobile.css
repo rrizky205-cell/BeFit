@@ -114,3 +114,37 @@ html {
   background: #E2E8F0;
   margin: 16px 0;
 }
+
+/* ==========================================================================
+   GOLD & SILVER PREMIUM BRANDING STYLES
+   ========================================================================== */
+.text-gold-gradient {
+  background: linear-gradient(135deg, #BF953F 0%, #FCF6BA 25%, #B38728 50%, #FBF5B7 75%, #AA771C 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+}
+
+.text-silver-gradient {
+  background: linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 30%, #94A3B8 70%, #475569 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+}
+
+.bg-gold-gradient {
+  background: linear-gradient(135deg, #BF953F 0%, #FCF6BA 25%, #B38728 50%, #FBF5B7 75%, #AA771C 100%);
+}
+
+.bg-silver-gradient {
+  background: linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 30%, #94A3B8 70%, #475569 100%);
+}
+
+.gold-glow {
+  filter: drop-shadow(0 4px 14px rgba(212, 175, 55, 0.35));
+}
+
+.gold-border {
+  border: 1px solid rgba(212, 175, 55, 0.4);
+}
+

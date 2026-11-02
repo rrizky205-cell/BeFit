@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Be Fit — Gym & Fitness Center</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%230D9488'><circle cx='12' cy='12' r='10'/><text x='12' y='16' text-anchor='middle' font-size='10' fill='white' font-weight='bold'>BF</text></svg>">
+  <link rel="icon" type="image/svg+xml" href="logo-premium.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
@@ -40,13 +40,45 @@
 
     <!-- Top Sticky App Header -->
     <header class="px-4 py-2.5 bg-white border-b border-slate-200/80 flex items-center justify-between sticky top-0 z-30 shadow-sm">
-      <div class="flex items-center gap-2">
-        <div class="w-8 h-8 rounded-xl bg-teal-550 flex items-center justify-center text-white font-extrabold text-xs shadow-sm">
-          BF
+      <div class="flex items-center gap-2.5 min-w-0">
+        <!-- Compact ~32px Luxury Gold & Silver BF Monogram Emblem -->
+        <div class="w-8 h-8 rounded-xl shrink-0 shadow-sm overflow-hidden flex items-center justify-center bg-[#090D16] border border-amber-500/40" title="Be Fit Gym & Fitness Club">
+          <svg viewBox="0 0 120 120" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="hdr_gold" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#D4AF37"/>
+                <stop offset="25%" stop-color="#FFF2B2"/>
+                <stop offset="50%" stop-color="#AA771C"/>
+                <stop offset="75%" stop-color="#FDE08B"/>
+                <stop offset="100%" stop-color="#8C5C0C"/>
+              </linearGradient>
+              <linearGradient id="hdr_silver" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#F8FAFC"/>
+                <stop offset="35%" stop-color="#E2E8F0"/>
+                <stop offset="70%" stop-color="#94A3B8"/>
+                <stop offset="100%" stop-color="#475569"/>
+              </linearGradient>
+              <radialGradient id="hdr_plate" cx="50%" cy="40%" r="65%">
+                <stop offset="0%" stop-color="#1E293B"/>
+                <stop offset="100%" stop-color="#030712"/>
+              </radialGradient>
+            </defs>
+            <rect x="6" y="6" width="108" height="108" rx="24" fill="url(#hdr_plate)" stroke="url(#hdr_gold)" stroke-width="2.8"/>
+            <rect x="11" y="11" width="98" height="98" rx="19" fill="none" stroke="url(#hdr_silver)" stroke-width="0.8" opacity="0.35"/>
+            <!-- GOLD B -->
+            <path d="M 28 24 L 54 24 C 67 24 76 29 76 39 C 76 45 71 50 64 52 C 73 54 80 60 80 71 C 80 82 70 88 54 88 L 28 88 Z M 41 35 L 41 49 L 53 49 C 59 49 63 46 63 42 C 63 37.5 59 35 53 35 Z M 41 59 L 41 77 L 54 77 C 61 77 66 74 66 68 C 66 62 61 59 54 59 Z" fill="url(#hdr_gold)"/>
+            <!-- SILVER F -->
+            <path d="M 52 28 L 88 28 L 88 38 L 64 38 L 64 51 L 82 51 L 82 60 L 64 60 L 64 85 L 52 85 Z" fill="url(#hdr_silver)" opacity="0.95"/>
+            <!-- Interlock Knot -->
+            <rect x="50" y="49" width="16" height="5" rx="1.5" fill="url(#hdr_gold)"/>
+          </svg>
         </div>
-        <div>
-          <span class="text-sm font-black tracking-tight text-slate-900 uppercase font-sans">Be Fit</span>
-          <span class="text-[9px] text-teal-600 font-bold block -mt-1">FITNESS CLUB</span>
+        <div class="leading-tight min-w-0">
+          <div class="flex items-center gap-1.5">
+            <span class="text-xs font-black tracking-wider text-gold-gradient uppercase font-sans">BE FIT</span>
+            <span class="text-[8px] px-1 py-0.2 rounded font-black uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-200">CLUB</span>
+          </div>
+          <span id="header-branch-name" class="text-[11px] font-semibold text-slate-600 block truncate max-w-[175px]">Be Fit Setiabudi Bandung</span>
         </div>
       </div>
       <div id="header-user-badge">

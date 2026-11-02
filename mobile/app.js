@@ -583,11 +583,54 @@ function requireAuth(nextAction) {
 function openAuthModal(defaultTab = 'login') {
   const html = `
     <div class="mb-5 text-center">
-      <div class="w-12 h-12 rounded-2xl bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-600 mx-auto mb-2.5">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+      <!-- Large 96px Gold & Silver BF Monogram Emblem -->
+      <div class="w-24 h-24 rounded-3xl mx-auto mb-3 shadow-xl p-1 bg-[#090D16] border border-amber-500/40 relative flex items-center justify-center gold-glow">
+        <svg viewBox="0 0 120 120" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="auth_gold" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#D4AF37"/>
+              <stop offset="25%" stop-color="#FFF2B2"/>
+              <stop offset="50%" stop-color="#AA771C"/>
+              <stop offset="75%" stop-color="#FDE08B"/>
+              <stop offset="100%" stop-color="#8C5C0C"/>
+            </linearGradient>
+            <linearGradient id="auth_silver" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#F8FAFC"/>
+              <stop offset="35%" stop-color="#E2E8F0"/>
+              <stop offset="70%" stop-color="#94A3B8"/>
+              <stop offset="100%" stop-color="#475569"/>
+            </linearGradient>
+            <radialGradient id="auth_plate" cx="50%" cy="40%" r="65%">
+              <stop offset="0%" stop-color="#1E293B"/>
+              <stop offset="60%" stop-color="#0F172A"/>
+              <stop offset="100%" stop-color="#030712"/>
+            </radialGradient>
+            <filter id="auth_goldGlow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#D4AF37" flood-opacity="0.4"/>
+            </filter>
+          </defs>
+          <rect x="5" y="5" width="110" height="110" rx="26" fill="url(#auth_plate)" stroke="url(#auth_gold)" stroke-width="2.8"/>
+          <rect x="9" y="9" width="102" height="102" rx="22" fill="none" stroke="url(#auth_silver)" stroke-width="0.9" opacity="0.4"/>
+          <circle cx="60" cy="60" r="48" fill="none" stroke="url(#auth_gold)" stroke-width="0.75" stroke-dasharray="2 3" opacity="0.3"/>
+          <!-- GOLD LETTER B -->
+          <path d="M 28 24 L 54 24 C 67 24 76 29 76 39 C 76 45 71 50 64 52 C 73 54 80 60 80 71 C 80 82 70 88 54 88 L 28 88 Z M 41 35 L 41 49 L 53 49 C 59 49 63 46 63 42 C 63 37.5 59 35 53 35 Z M 41 59 L 41 77 L 54 77 C 61 77 66 74 66 68 C 66 62 61 59 54 59 Z" fill="url(#auth_gold)" filter="url(#auth_goldGlow)"/>
+          <!-- SILVER LETTER F -->
+          <path d="M 52 28 L 88 28 L 88 38 L 64 38 L 64 51 L 82 51 L 82 60 L 64 60 L 64 85 L 52 85 Z" fill="url(#auth_silver)" opacity="0.95"/>
+          <!-- Overlap Knot -->
+          <rect x="50" y="49" width="16" height="5" rx="1.5" fill="url(#auth_gold)"/>
+        </svg>
       </div>
-      <h3 class="text-lg font-black text-slate-900 tracking-tight">Akun Be Fit Member</h3>
-      <p class="text-xs text-slate-500 mt-0.5">Akses jadwal kelas, personal trainer, & membership</p>
+
+      <div class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-amber-50 border border-amber-200/80 mb-2">
+        <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+        <span class="text-[9px] font-extrabold uppercase tracking-widest text-amber-800 font-sans">Official Member Portal</span>
+      </div>
+
+      <h3 class="text-xl font-extrabold tracking-tight">
+        <span class="text-gold-gradient font-black">BE FIT</span>
+      </h3>
+      <p class="text-[9px] uppercase tracking-[0.25em] font-bold text-slate-400 mt-0.5">GYM & FITNESS CLUB</p>
+      <p class="text-xs text-slate-500 mt-1.5">Selamat datang! Akses eksklusif jadwal kelas, PT, & membership</p>
     </div>
 
     <!-- Auth Tabs -->
@@ -807,9 +850,11 @@ function updateBranchUI(branch) {
   const nameEl = document.getElementById('current-branch-name');
   const addrEl = document.getElementById('current-branch-address');
   const crowdContainer = document.getElementById('current-crowd-container');
+  const hdrBranchEl = document.getElementById('header-branch-name');
 
   if (nameEl) nameEl.textContent = branch.name;
   if (addrEl) addrEl.textContent = branch.address;
+  if (hdrBranchEl) hdrBranchEl.textContent = branch.name;
 
   if (crowdContainer) {
     crowdContainer.innerHTML = `

@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Be Fit — High-Performance Gym & Fitness CRM</title>
   
-  <!-- Favicon Dumbbell SVG Data URI -->
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23A3E635'><path d='M6.5 5h-2a1.5 1.5 0 00-1.5 1.5v11A1.5 1.5 0 004.5 19h2a1.5 1.5 0 001.5-1.5v-11A1.5 1.5 0 006.5 5zm13 0h-2a1.5 1.5 0 00-1.5 1.5v11a1.5 1.5 0 001.5 1.5h2a1.5 1.5 0 001.5-1.5v-11A1.5 1.5 0 0019.5 5zM8 11h8v2H8z'/></svg>">
+  <!-- Favicon Premium Logo -->
+  <link rel="icon" type="image/svg+xml" href="logo-premium.svg">
 
   <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -49,26 +49,44 @@
   <aside id="app-sidebar" class="fixed lg:static top-0 bottom-0 left-0 w-[260px] bg-[#111827] border-r border-[#1E293B] flex flex-col justify-between z-40 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out shrink-0">
     <div>
       <!-- Brand Logo Header -->
-      <div class="h-16 px-6 border-b border-[#1E293B] flex items-center justify-between">
+      <div class="h-20 px-5 border-b border-[#1E293B] flex items-center justify-between">
         <a href="admin.html" class="flex items-center gap-3 group">
-          <div class="w-9 h-9 rounded-xl bg-[#A3E635] flex items-center justify-center text-[#090D16] shadow-lg shadow-lime-950/40 group-hover:scale-105 transition-transform">
-            <!-- Dumbbell Icon -->
-            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="m6.5 6.5 11 11"/>
-              <path d="m21 21-1-1"/>
-              <path d="m3 3 1 1"/>
-              <path d="m18 22 4-4"/>
-              <path d="m2 6 4-4"/>
-              <path d="m3 10 7-7"/>
-              <path d="m14 21 7-7"/>
+          <!-- 44px Premium Gold & Silver Monogram Emblem -->
+          <div class="w-11 h-11 rounded-xl bg-[#0B1120] border border-amber-500/40 shadow-lg shadow-amber-950/30 flex items-center justify-center p-1 group-hover:scale-105 transition-transform shrink-0">
+            <svg viewBox="0 0 120 120" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="adm_gold" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#D4AF37"/>
+                  <stop offset="25%" stop-color="#FFF2B2"/>
+                  <stop offset="50%" stop-color="#AA771C"/>
+                  <stop offset="75%" stop-color="#FDE08B"/>
+                  <stop offset="100%" stop-color="#8C5C0C"/>
+                </linearGradient>
+                <linearGradient id="adm_silver" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#F8FAFC"/>
+                  <stop offset="35%" stop-color="#E2E8F0"/>
+                  <stop offset="70%" stop-color="#94A3B8"/>
+                  <stop offset="100%" stop-color="#475569"/>
+                </linearGradient>
+                <radialGradient id="adm_plate" cx="50%" cy="40%" r="65%">
+                  <stop offset="0%" stop-color="#1E293B"/>
+                  <stop offset="100%" stop-color="#050811"/>
+                </radialGradient>
+              </defs>
+              <rect x="5" y="5" width="110" height="110" rx="24" fill="url(#adm_plate)" stroke="url(#adm_gold)" stroke-width="2.5"/>
+              <rect x="10" y="10" width="100" height="100" rx="20" fill="none" stroke="url(#adm_silver)" stroke-width="0.8" opacity="0.4"/>
+              <!-- Interlocking BF Monogram -->
+              <path d="M 28 24 L 54 24 C 67 24 76 29 76 39 C 76 45 71 50 64 52 C 73 54 80 60 80 71 C 80 82 70 88 54 88 L 28 88 Z M 41 35 L 41 49 L 53 49 C 59 49 63 46 63 42 C 63 37.5 59 35 53 35 Z M 41 59 L 41 77 L 54 77 C 61 77 66 74 66 68 C 66 62 61 59 54 59 Z" fill="url(#adm_gold)"/>
+              <path d="M 52 28 L 88 28 L 88 38 L 64 38 L 64 51 L 82 51 L 82 60 L 64 60 L 64 85 L 52 85 Z" fill="url(#adm_silver)" opacity="0.95"/>
+              <rect x="50" y="49" width="16" height="5" rx="1.5" fill="url(#adm_gold)"/>
             </svg>
           </div>
           <div>
             <div class="flex items-center gap-1.5">
-              <span class="text-base font-extrabold tracking-tight text-white uppercase font-sans">Be Fit</span>
-              <span class="px-1.5 py-0.2 rounded text-[10px] font-black uppercase tracking-wider bg-[#A3E635]/20 text-[#A3E635] border border-[#A3E635]/30">CRM</span>
+              <span class="text-base font-black tracking-wider text-gold-gradient uppercase font-sans">BE FIT</span>
+              <span class="px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-amber-500/15 text-amber-300 border border-amber-500/30">CRM</span>
             </div>
-            <span class="text-[10px] text-slate-400 uppercase tracking-wider font-mono block -mt-0.5">High Performance</span>
+            <span class="text-[9px] text-amber-200/60 uppercase tracking-[0.2em] font-medium block">GYM & FITNESS CLUB</span>
           </div>
         </a>
       </div>
