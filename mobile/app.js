@@ -747,45 +747,57 @@ const MEMBERSHIP_PACKAGES = [
 
 const PROMOS_DATA = [
   {
-    title: 'Promo Spesial Member Baru',
-    subtitle: 'Jadi Member Sekarang Bisa Lebih Hemat!',
-    description: 'Dapatkan diskon hingga 15% untuk pendaftaran membership baru dan GRATIS 2x sesi Personal Trainer. Berlaku untuk semua paket membership.',
-    validUntil: '30 November 2026',
-    voucherCode: 'NEWFIT15',
-    discountPercent: 15,
-    terms: [
-      'Berlaku untuk member baru yang mendaftar pada periode promo.',
-      'Diskon 15% langsung dipotong saat checkout.',
-      'Gratis 2 sesi PT otomatis ditambahkan ke akun.',
-      'Kuota terbatas, segera gunakan!'
-    ]
-  },
-  {
-    title: 'Paket Couple & Student Discount',
-    subtitle: 'Hemat hingga 25% untuk 2 Orang atau Pelajar/Mahasiswa',
-    description: 'Ajak pasangan atau temanmu untuk mendaftar bersama dan nikmati potongan harga hingga 25%. Berlaku juga untuk pelajar/mahasiswa aktif.',
+    id: 'promo-memberbaru',
+    title: 'Spesial Member Baru',
+    subtitle: 'Diskon 15% Semua Paket Membership',
+    description: 'Dapatkan diskon 15% untuk pendaftaran pertama kali! Berlaku untuk semua pilihan durasi membership (1, 3, 6, dan 12 bulan).',
     validUntil: '31 Desember 2026',
-    voucherCode: 'COUPLE25',
-    discountPercent: 25,
+    voucherCode: 'MEMBERBARU15',
+    discountBadge: 'Diskon 15%',
+    badgeColor: 'bg-brand-sunny text-slate-900',
+    target: 'membership',
+    ctaText: 'Klaim & Pilih Paket Membership',
     terms: [
-      'Paket Couple: Minimal 2 orang mendaftar bersamaan.',
-      'Student: Tunjukkan kartu pelajar/mahasiswa aktif saat check-in.',
-      'Berlaku untuk paket 3 bulan ke atas.',
-      'Diskon 25% saat checkout.'
+      'Berlaku untuk semua paket membership (1, 3, 6, dan 12 bulan).',
+      'Diskon 15% langsung memotong total pembayaran saat checkout.',
+      'Satu kali penggunaan per akun terdaftar.',
+      'Dapat dibayar melalui QRIS atau Virtual Account.'
     ]
   },
   {
-    title: 'Bundling Membership + 4 Sesi PT',
-    subtitle: 'Mulai dari Rp 799K/bulan – Paket Paling Hemat!',
-    description: 'Paket bundling eksklusif yang menggabungkan membership 1 bulan dengan 4 sesi Personal Trainer pilihan. Hemat hingga Rp 400.000 dibanding beli terpisah.',
-    validUntil: '15 November 2026',
-    voucherCode: 'BUNDLE799',
-    discountAmount: 300000,
+    id: 'promo-komitmen',
+    title: 'Promo Komitmen Jangka Panjang',
+    subtitle: 'Potongan Rp 100.000 Paket 3, 6, & 12 Bulan',
+    description: 'Investasi sehat jangka panjang lebih hemat! Dapatkan potongan langsung Rp 100.000 khusus saat checkout paket membership 3 bulan, 6 bulan, atau 12 bulan.',
+    validUntil: '31 Desember 2026',
+    voucherCode: 'GAJIAN100K',
+    discountBadge: 'Potong Rp 100K',
+    badgeColor: 'bg-teal-550 text-white',
+    target: 'membership',
+    ctaText: 'Klaim & Pilih Paket Membership',
     terms: [
-      'Berlaku untuk member baru dan rejoin.',
-      'Pilih trainer berdasarkan ketersediaan jadwal.',
-      'Sesi PT harus digunakan dalam masa aktif membership.',
-      'Dapat langsung dicicil atau dibayar via QRIS/VA.'
+      'Berlaku khusus untuk Paket Membership 3 Bulan, 6 Bulan, dan 12 Bulan.',
+      'Potongan langsung Rp 100.000 dari total harga paket saat checkout.',
+      'Satu kali penggunaan per akun terdaftar.',
+      'Dapat dibayar melalui QRIS atau Virtual Account.'
+    ]
+  },
+  {
+    id: 'promo-pt',
+    title: 'Promo Personal Trainer',
+    subtitle: 'Diskon 20% Semua Paket Sesi PT',
+    description: 'Raih target bentuk tubuh optimal lebih cepat dengan bimbingan Coach profesional bersertifikat! Dapatkan diskon 20% untuk semua paket sesi Personal Trainer privat.',
+    validUntil: '31 Desember 2026',
+    voucherCode: 'PTPROMO20',
+    discountBadge: 'Diskon 20% PT',
+    badgeColor: 'bg-amber-500 text-white',
+    target: 'pt',
+    ctaText: 'Klaim & Pilih Personal Trainer',
+    terms: [
+      'Berlaku untuk semua paket sesi Personal Trainer (1, 4, 8, atau 12 sesi).',
+      'Diskon 20% otomatis memotong total harga saat checkout.',
+      'Sesi latihan dapat dijadwalkan langsung bersama Coach pilihanmu.',
+      'Satu kali penggunaan per akun terdaftar.'
     ]
   }
 ];
@@ -1784,11 +1796,10 @@ function getCalendarDateList() {
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth();
+  const todayDate = now.getDate();
 
-  // Find Saturday of the current week (or Saturday before today)
-  const dayOfWeek = now.getDay(); // 0 = Sun, 1 = Mon ... 6 = Sat
-  const daysBack = (dayOfWeek + 1) % 7;
-  const startDate = new Date(currentYear, currentMonth, now.getDate() - daysBack);
+  // Start strictly from TODAY (no past dates at all)
+  const startDate = new Date(currentYear, currentMonth, todayDate);
 
   // End of current month
   const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
@@ -1797,15 +1808,15 @@ function getCalendarDateList() {
   const dates = [];
   const cur = new Date(startDate);
 
-  while (cur <= endDate || (cur.getMonth() === currentMonth && cur.getFullYear() === currentYear)) {
+  // Collect all days from today until the end of the month
+  while (cur <= endDate) {
     dates.push(new Date(cur));
     cur.setDate(cur.getDate() + 1);
-    if (cur.getMonth() !== currentMonth && cur > endDate) break;
   }
 
-  // Ensure minimum 8 days if near end of month
-  if (dates.length < 8) {
-    const needed = 8 - dates.length;
+  // Ensure minimum 14 days available so member can plan ahead into next month
+  if (dates.length < 14) {
+    const needed = 14 - dates.length;
     for (let i = 0; i < needed; i++) {
       dates.push(new Date(cur));
       cur.setDate(cur.getDate() + 1);
@@ -1819,13 +1830,13 @@ function renderCalendarDatePicker() {
   const track = document.getElementById('calendar-datepicker-track');
   if (!track) return;
 
-  if (!selectedClassDateKey) {
+  if (!selectedClassDateKey || selectedClassDateKey < getTodayDateKey()) {
     selectedClassDateKey = getTodayDateKey();
   }
 
   const dates = getCalendarDateList();
-  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const dayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
 
   track.innerHTML = dates.map(d => {
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -1857,6 +1868,10 @@ function renderCalendarDatePicker() {
 }
 
 function selectClassDate(key) {
+  if (key < getTodayDateKey()) {
+    showToast('Tanggal yang dipilih sudah terlewat.');
+    return;
+  }
   selectedClassDateKey = key;
   renderCalendarDatePicker();
   renderHomeClasses();
@@ -2034,7 +2049,13 @@ function openClassDetail(classId) {
 
 function handleBookClass(classId) {
   requireAuth(() => {
-    if (!selectedClassDateKey) selectedClassDateKey = getTodayDateKey();
+    if (!selectedClassDateKey || selectedClassDateKey < getTodayDateKey()) {
+      selectedClassDateKey = getTodayDateKey();
+    }
+    if (selectedClassDateKey < getTodayDateKey()) {
+      showToast('Tidak dapat memesan kelas untuk tanggal yang sudah lewat!');
+      return;
+    }
     const currentBranch = getSelectedBranch();
     const classes = getClassesForBranch(currentBranch.id, selectedClassDateKey);
     const cls = classes.find(c => c.id === classId);
@@ -2097,11 +2118,51 @@ function handleBookClass(classId) {
   });
 }
 
-function openAllClassesSheet() {
+function openAllClassesSheet(targetDateKey = null) {
   const currentBranch = getSelectedBranch();
-  if (!selectedClassDateKey) selectedClassDateKey = getTodayDateKey();
+  if (targetDateKey && targetDateKey >= getTodayDateKey()) {
+    selectedClassDateKey = targetDateKey;
+  } else if (!selectedClassDateKey || selectedClassDateKey < getTodayDateKey()) {
+    selectedClassDateKey = getTodayDateKey();
+  }
+
+  // Sync home calendar picker
+  renderCalendarDatePicker();
+  renderHomeClasses();
+
   const classes = getClassesForBranch(currentBranch.id, selectedClassDateKey);
   const currentUser = getCurrentUser();
+
+  const parts = selectedClassDateKey.split('-');
+  const selD = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+  const dayIndo = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'][selD.getDay()];
+  const monthIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][selD.getMonth()];
+  const dateFormatted = `${dayIndo}, ${parts[2]} ${monthIndo} ${parts[0]}`;
+
+  // Horizontal Date Selector (Today Onwards)
+  const dates = getCalendarDateList();
+  const dayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
+  const datePillsHtml = `
+    <div class="hide-scrollbar flex items-center gap-2 overflow-x-auto pb-3 mb-3 border-b border-slate-100">
+      ${dates.map(d => {
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        const isSelected = key === selectedClassDateKey;
+        const isToday = key === getTodayDateKey();
+        const dayName = dayNames[d.getDay()];
+        const dateNum = String(d.getDate()).padStart(2, '0');
+        return `
+          <button type="button" class="shrink-0 flex flex-col items-center justify-center py-1.5 px-3 rounded-xl border transition-all ${isSelected ? 'bg-teal-550 text-white border-teal-550 shadow-sm font-bold ring-2 ring-teal-550/20' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'}"
+            style="min-width: 52px;" onclick="openAllClassesSheet('${key}')">
+            <span class="text-[9px] uppercase ${isSelected ? 'text-teal-100 font-bold' : 'text-slate-400 font-medium'}">${dayName}</span>
+            <span class="text-sm font-black">${dateNum}</span>
+            <span class="text-[8px] ${isSelected ? 'text-teal-100 font-bold' : 'text-slate-400'}">${isToday ? 'Hari Ini' : monthNames[d.getMonth()]}</span>
+          </button>
+        `;
+      }).join('')}
+    </div>
+  `;
 
   const cards = classes.map(cls => {
     const slotInfo = getRealisticClassSlotInfo(cls, selectedClassDateKey, currentUser ? currentUser.id : null);
@@ -2112,15 +2173,15 @@ function openAllClassesSheet() {
     return `
       <button type="button" class="w-full flex items-center gap-3 p-3 rounded-2xl border transition-all ${isRegistered ? 'border-emerald-300 bg-emerald-50/40' : 'border-slate-100 hover:bg-slate-50'} text-left"
         onclick="closeBottomSheet(); setTimeout(() => openClassDetail('${cls.id}'), 350);">
-        <img src="${cls.image}" alt="${sanitize(cls.name)}" class="w-16 h-16 rounded-xl object-cover shrink-0">
+        <img src="${cls.image}" alt="${sanitize(cls.name)}" class="w-16 h-16 rounded-xl object-cover shrink-0 shadow-sm">
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-2">
             <h4 class="text-sm font-bold text-slate-900 truncate">${sanitize(cls.name)}</h4>
-            ${isRegistered ? '<span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-600 text-white shrink-0">Terdaftar</span>' : ''}
+            ${isRegistered ? '<span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-600 text-white shrink-0">✓ Terdaftar</span>' : ''}
           </div>
-          <p class="text-[11px] text-slate-500 mt-0.5">🕒 ${cls.time} • With ${sanitize(cls.instructor)}</p>
-          <span class="text-[10px] font-bold ${slots <= 3 ? 'text-amber-600' : 'text-green-600'}">
-            Sisa ${slots} dari ${cls.capacity} kuota
+          <p class="text-[11px] text-teal-600 font-bold mt-0.5">🕒 ${cls.time} • With ${sanitize(cls.instructor)}</p>
+          <span class="text-[10px] font-bold ${isFull ? 'text-slate-400' : slots <= 3 ? 'text-amber-600' : 'text-green-600'}">
+            ${isFull ? 'Kuota Penuh' : `Sisa ${slots} dari ${cls.capacity} kuota`} • ${cls.room}
           </span>
         </div>
         <svg class="w-4 h-4 text-slate-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
@@ -2129,11 +2190,15 @@ function openAllClassesSheet() {
   }).join('');
 
   openBottomSheet(`
-    <div class="mb-4">
-      <h3 class="text-base font-extrabold text-slate-900">Jadwal Kelas ${currentBranch.name}</h3>
-      <p class="text-xs text-slate-400 mt-0.5">Pilih kelas untuk melihat detail & memesan tempat</p>
+    <div class="mb-3">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-extrabold text-slate-900">Jadwal Kelas — ${currentBranch.name}</h3>
+        <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-teal-50 text-teal-700">Mulai Hari Ini</span>
+      </div>
+      <p class="text-xs text-slate-400 mt-0.5">${dateFormatted} (${classes.length} kelas aktif)</p>
     </div>
-    <div class="space-y-2.5">${cards}</div>
+    ${datePillsHtml}
+    <div class="space-y-2.5 max-h-[50vh] overflow-y-auto">${cards}</div>
   `);
 }
 
@@ -3199,39 +3264,6 @@ function handleTrialClaim() {
   });
 }
 
-function openReferralSheet() {
-  const user = getCurrentUser();
-  const code = user ? `BEFIT-${user.id.replace('BF-', '')}` : 'BEFIT-GIFT2026';
-
-  openBottomSheet(`
-    <div class="text-center mb-5">
-      <span class="text-5xl block mb-2">🎁</span>
-      <h3 class="text-lg font-extrabold text-slate-900">Ajak Teman, Dapat Reward!</h3>
-      <p class="text-xs text-slate-500 mt-1">Bagikan kode referral unikmu. Setiap teman yang mendaftar, kamu mendapatkan perpanjangan membership gratis hingga 12 bulan!</p>
-    </div>
-
-    <div class="p-4 bg-blue-50 border-2 border-dashed border-blue-300 rounded-2xl text-center mb-4">
-      <span class="text-[10px] font-bold text-blue-500 uppercase tracking-wider block mb-1">Kode Referral Kamu</span>
-      <span class="text-xl font-black text-blue-700 tracking-wider font-mono">${code}</span>
-    </div>
-
-    <button type="button" class="w-full py-3 rounded-xl bg-blue-600 text-white text-sm font-bold shadow-md hover:bg-blue-700 active:scale-[0.98] transition-all mb-2"
-      onclick="copyToClipboard('${code}', 'Kode referral disalin!')">
-      📋 Salin Kode Referral
-    </button>
-
-    <button type="button" class="w-full py-3 rounded-xl bg-green-600 text-white text-sm font-bold shadow-md hover:bg-green-700 active:scale-[0.98] transition-all"
-      onclick="shareReferral('${code}')">
-      📤 Bagikan via WhatsApp
-    </button>
-  `);
-}
-
-function shareReferral(code) {
-  const msg = encodeURIComponent(`Hai! Yuk gabung di Be Fit Gym! Gunakan kode referral saya *${code}* untuk dapatkan promo spesial saat pendaftaran: https://befit.vercel.app/`);
-  window.open(`https://wa.me/?text=${msg}`, '_blank');
-}
-
 function copyToClipboard(text, successMsg = 'Teks disalin ke clipboard!') {
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text);
@@ -3244,28 +3276,45 @@ function openPromoDetail(index) {
   const termsList = p.terms.map(t => `<li class="text-slate-500">${sanitize(t)}</li>`).join('');
 
   openBottomSheet(`
-    <h3 class="text-base font-black text-slate-900 mb-1">${sanitize(p.title)}</h3>
-    <p class="text-xs text-teal-600 font-bold mb-3">${sanitize(p.subtitle)}</p>
-    <p class="text-xs text-slate-600 leading-relaxed mb-4">${sanitize(p.description)}</p>
+    <div class="mb-4">
+      <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${p.badgeColor} mb-2 shadow-sm">
+        ${p.discountBadge}
+      </span>
+      <h3 class="text-base font-black text-slate-900 leading-snug">${sanitize(p.title)}</h3>
+      <p class="text-xs text-teal-600 font-bold mt-0.5">${sanitize(p.subtitle)}</p>
+      <p class="text-xs text-slate-600 leading-relaxed mt-2">${sanitize(p.description)}</p>
+    </div>
 
-    <div class="p-3.5 bg-amber-50 border border-amber-300 rounded-xl text-center mb-4">
-      <span class="text-[10px] font-bold text-amber-700 uppercase tracking-wider block mb-1">Kode Voucher Promo</span>
-      <span class="text-lg font-black text-amber-900 font-mono tracking-wider">${p.voucherCode}</span>
+    <!-- Voucher Code Box -->
+    <div class="p-3.5 bg-amber-50 border border-amber-300 rounded-2xl text-center mb-4 shadow-sm">
+      <span class="text-[10px] font-bold text-amber-700 uppercase tracking-wider block mb-1">Kode Voucher Resmi</span>
+      <span class="text-xl font-black text-amber-950 font-mono tracking-wider">${p.voucherCode}</span>
+      <span class="text-[10px] text-amber-700 block mt-0.5 font-medium">Berlaku s/d ${p.validUntil}</span>
     </div>
 
     <div class="sheet-divider"></div>
     <h4 class="text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">Syarat & Ketentuan</h4>
     <ol class="text-xs space-y-1.5 list-decimal list-inside mb-5">${termsList}</ol>
 
-    <button type="button" class="w-full py-3 rounded-xl bg-teal-550 text-white text-sm font-bold shadow-md hover:bg-teal-650 active:scale-[0.98] transition-all mb-2"
-      onclick="copyToClipboard('${p.voucherCode}', 'Kode voucher ${p.voucherCode} berhasil disalin!')">
-      Salin Kode Voucher 📋
-    </button>
-    <button type="button" class="w-full py-2.5 rounded-xl border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-50 transition-colors"
-      onclick="closeBottomSheet(); openPricingSheet();">
-      Gunakan Saat Pilih Paket &rarr;
+    <!-- Main Action Button: Automatically Claims Voucher and Navigates -->
+    <button type="button" class="w-full py-3.5 rounded-xl bg-teal-550 text-white text-xs font-black shadow-lg shadow-teal-550/25 hover:bg-teal-650 active:scale-[0.98] transition-all flex items-center justify-center gap-2 mb-2"
+      onclick="handlePromoClaimAndNavigate(${index})">
+      <span>${p.ctaText} &rarr;</span>
     </button>
   `);
+}
+
+function handlePromoClaimAndNavigate(index) {
+  const p = PROMOS_DATA[index] || PROMOS_DATA[0];
+  claimVoucher(p.voucherCode);
+  closeBottomSheet();
+  setTimeout(() => {
+    if (p.target === 'pt') {
+      openAllTrainersSheet();
+    } else {
+      openPricingSheet();
+    }
+  }, 350);
 }
 
 function openVoucherList() {

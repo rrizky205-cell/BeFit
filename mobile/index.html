@@ -73,7 +73,7 @@
               <span class="inline-block px-2.5 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-brand-sunny text-slate-900 mb-1 shadow-sm">Spesial Member Baru</span>
               <h2 class="text-white text-[15px] font-extrabold leading-snug tracking-tight">Gratis Sesi PT hingga 2x & Diskon 15%</h2>
               <p class="text-white/80 text-[11px] font-medium leading-relaxed mt-0.5 line-clamp-2">Mulai perjalanan sehatmu hari ini dengan fasilitas gym terlengkap dan pelatih profesional.</p>
-              <button class="mt-2 px-4 py-1.5 rounded-lg bg-brand-sunny text-slate-900 text-xs font-bold shadow-md hover:brightness-105 active:scale-95 transition-all" onclick="claimVoucher('MEMBERBARU15')">Klaim Promo</button>
+              <button class="mt-2 px-4 py-1.5 rounded-lg bg-brand-sunny text-slate-900 text-xs font-bold shadow-md hover:brightness-105 active:scale-95 transition-all" onclick="openPromoDetail(0)">Klaim Promo</button>
             </div>
           </div>
           <!-- Slide 2 -->
@@ -177,26 +177,6 @@
         </div>
       </section>
 
-      <!-- ===== F. REFERRAL BANNER ===== -->
-      <section class="px-4 mt-6">
-        <div class="bg-blue-600 rounded-[14px] p-4 flex items-center gap-4 shadow-card overflow-hidden relative">
-          <!-- Gift Icon -->
-          <div class="text-4xl shrink-0 z-10">🎁</div>
-          <!-- Text -->
-          <div class="flex-1 z-10">
-            <h3 class="text-white text-[13px] font-extrabold leading-snug">Dapatkan lebih dari 12 bulan Membership GRATIS!</h3>
-            <p class="text-blue-200 text-[10px] font-medium mt-0.5">Ajak teman & keluargamu bergabung.</p>
-          </div>
-          <!-- Button -->
-          <button type="button" class="px-3.5 py-2 rounded-lg bg-white text-slate-800 text-xs font-bold shadow-md shrink-0 z-10 hover:bg-slate-50 active:scale-95 transition-all" onclick="openReferralSheet()">
-            Undang<br>Teman
-          </button>
-          <!-- Decorative Circles -->
-          <div class="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-blue-500/40"></div>
-          <div class="absolute -right-2 -bottom-8 w-20 h-20 rounded-full bg-blue-500/30"></div>
-        </div>
-      </section>
-
       <!-- ===== G. PROMO SPESIAL UNTUKMU ===== -->
       <section class="mt-6 mb-4">
         <div class="px-4 mb-3">
@@ -204,34 +184,36 @@
         </div>
 
         <div class="hide-scrollbar flex gap-3 overflow-x-auto px-4 pb-2 snap-x snap-mandatory">
-          <!-- Promo Banner 1 -->
+          <!-- Promo Banner 1: Member Baru (Diskon 15%) -->
           <button type="button" class="promo-banner-card relative shrink-0 rounded-[14px] overflow-hidden shadow-card group snap-start text-left" style="width:290px;height:150px;" onclick="openPromoDetail(0)">
             <img src="https://images.unsplash.com/photo-1593079831268-3381b0db4a77?w=580&h=300&fit=crop&q=80" alt="Promo Member Baru" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-            <div class="absolute inset-0 bg-gradient-to-r from-black/75 via-black/40 to-transparent"></div>
+            <div class="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent"></div>
             <div class="absolute bottom-0 left-0 right-0 p-4">
-              <span class="inline-block px-2 py-0.5 rounded text-[9px] font-extrabold uppercase bg-brand-sunny text-slate-900 mb-1.5">Member Baru</span>
-              <h3 class="text-white text-[13px] font-extrabold leading-snug">Jadi Member Sekarang<br>Bisa Lebih Hemat!</h3>
-              <span class="inline-block mt-1.5 px-3 py-1 rounded-md bg-brand-sunny text-slate-900 text-[10px] font-bold shadow-sm">CEK PROMONYA DI SINI!</span>
+              <span class="inline-block px-2 py-0.5 rounded text-[9px] font-extrabold uppercase bg-brand-sunny text-slate-900 mb-1.5">Spesial Member Baru</span>
+              <h3 class="text-white text-[13px] font-extrabold leading-snug">Diskon 15% Semua Paket<br>Membership Be Fit</h3>
+              <span class="inline-block mt-1.5 px-3 py-1 rounded-md bg-brand-sunny text-slate-900 text-[10px] font-bold shadow-sm">KLAIM & PILIH PAKET &gt;</span>
             </div>
           </button>
 
-          <!-- Promo Banner 2 -->
+          <!-- Promo Banner 2: Promo Komitmen (Potongan Rp 100K) -->
           <button type="button" class="promo-banner-card relative shrink-0 rounded-[14px] overflow-hidden shadow-card group snap-start text-left" style="width:290px;height:150px;" onclick="openPromoDetail(1)">
-            <img src="https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=580&h=300&fit=crop&q=80" alt="Promo Couple" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-            <div class="absolute inset-0 bg-gradient-to-r from-teal-900/80 via-teal-900/40 to-transparent"></div>
+            <img src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=580&h=300&fit=crop&q=80" alt="Promo Komitmen" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+            <div class="absolute inset-0 bg-gradient-to-r from-teal-950/85 via-teal-950/45 to-transparent"></div>
             <div class="absolute bottom-0 left-0 right-0 p-4">
-              <span class="inline-block px-2 py-0.5 rounded text-[9px] font-extrabold uppercase bg-teal-400 text-teal-900 mb-1.5">Student & Couple</span>
-              <h3 class="text-white text-[13px] font-extrabold leading-snug">Paket Couple / Student<br>Hemat Hingga 25%</h3>
+              <span class="inline-block px-2 py-0.5 rounded text-[9px] font-extrabold uppercase bg-teal-400 text-teal-950 mb-1.5">Paket 3, 6, & 12 Bulan</span>
+              <h3 class="text-white text-[13px] font-extrabold leading-snug">Potongan Rp 100.000<br>Komitmen Jangka Panjang</h3>
+              <span class="inline-block mt-1.5 px-3 py-1 rounded-md bg-teal-400 text-teal-950 text-[10px] font-bold shadow-sm">KLAIM & PILIH PAKET &gt;</span>
             </div>
           </button>
 
-          <!-- Promo Banner 3 -->
+          <!-- Promo Banner 3: Promo PT (Diskon 20%) -->
           <button type="button" class="promo-banner-card relative shrink-0 rounded-[14px] overflow-hidden shadow-card group snap-start text-left" style="width:290px;height:150px;" onclick="openPromoDetail(2)">
-            <img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=580&h=300&fit=crop&q=80" alt="Promo Bundling" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-            <div class="absolute inset-0 bg-gradient-to-r from-slate-900/80 via-slate-900/40 to-transparent"></div>
+            <img src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=580&h=300&fit=crop&q=80" alt="Promo Personal Trainer" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+            <div class="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/45 to-transparent"></div>
             <div class="absolute bottom-0 left-0 right-0 p-4">
-              <span class="inline-block px-2 py-0.5 rounded text-[9px] font-extrabold uppercase bg-red-500 text-white mb-1.5">Bundling</span>
-              <h3 class="text-white text-[13px] font-extrabold leading-snug">Membership + 4 Sesi PT<br>Mulai Rp 799K/bulan</h3>
+              <span class="inline-block px-2 py-0.5 rounded text-[9px] font-extrabold uppercase bg-amber-500 text-white mb-1.5">Personal Trainer</span>
+              <h3 class="text-white text-[13px] font-extrabold leading-snug">Diskon 20% Semua Paket<br>Sesi Latihan Privat</h3>
+              <span class="inline-block mt-1.5 px-3 py-1 rounded-md bg-amber-500 text-white text-[10px] font-bold shadow-sm">KLAIM & PILIH COACH &gt;</span>
             </div>
           </button>
 
