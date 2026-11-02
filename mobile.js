@@ -249,7 +249,17 @@ const INSTRUCTORS_POOL = [
   'Coach Jessica'
 ];
 
+// Helper: simple deterministic hash for seeded pseudo-random selection
+function _seedHash(str) {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash + str.charCodeAt(i)) & 0x7fffffff;
+  }
+  return hash;
+}
+
 // Helper to generate dynamic schedules for each branch and date
+// Returns 2-4 classes per branch per date (not all 8 slots)
 function getClassesForBranch(branchId, dateKey = null) {
   if (!dateKey) dateKey = getTodayDateKey();
   const dateParts = dateKey.split('-');
@@ -257,12 +267,30 @@ function getClassesForBranch(branchId, dateKey = null) {
   const branchOffsets = { setiabudi: 0, dago: 3, pasirkaliki: 6, buahbatu: 9 };
   const bOffset = branchOffsets[branchId] || 0;
 
-  return CLASS_TIME_SLOTS.map((timeSlot, idx) => {
-    const classIdx = (bOffset + dayNum * 3 + idx * 2) % ENTERPRISE_CLASS_CATALOG.length;
-    const instIdx = (bOffset + dayNum + idx) % INSTRUCTORS_POOL.length;
+  // Determine how many classes today: 2, 3, or 4 (based on date+branch hash)
+  const countSeed = _seedHash(`${branchId}-${dateKey}-count`);
+  const classCount = 2 + (countSeed % 3); // 2, 3, or 4
+
+  // Pick which time slot indices to use (shuffle 8 slots, pick first classCount)
+  const slotIndices = [0, 1, 2, 3, 4, 5, 6, 7];
+  const shuffleSeed = _seedHash(`${branchId}-${dateKey}-shuffle`);
+  for (let i = slotIndices.length - 1; i > 0; i--) {
+    const j = _seedHash(`${shuffleSeed}-${i}`) % (i + 1);
+    [slotIndices[i], slotIndices[j]] = [slotIndices[j], slotIndices[i]];
+  }
+  const selectedSlots = slotIndices.slice(0, classCount).sort((a, b) => a - b);
+
+  return selectedSlots.map((slotIdx) => {
+    const classIdx = (bOffset + dayNum * 3 + slotIdx * 2) % ENTERPRISE_CLASS_CATALOG.length;
+    const instIdx = (bOffset + dayNum + slotIdx) % INSTRUCTORS_POOL.length;
     const base = ENTERPRISE_CLASS_CATALOG[classIdx];
     const instructor = INSTRUCTORS_POOL[instIdx];
-    const classId = `CLS-${branchId.toUpperCase()}-S${idx + 1}-${base.typeId}`;
+    const timeSlot = CLASS_TIME_SLOTS[slotIdx];
+    const classId = `CLS-${branchId.toUpperCase()}-S${slotIdx + 1}-${base.typeId}`;
+
+    // Vary slotsLeft / pre-booked count deterministically per class per date
+    const slotSeed = _seedHash(`${classId}-${dateKey}-slots`);
+    const preBooked = slotSeed % (base.capacity + 1); // 0 to capacity (some will be full)
 
     return {
       id: classId,
@@ -277,7 +305,8 @@ function getClassesForBranch(branchId, dateKey = null) {
       room: base.room,
       calories: base.calories,
       duration: base.duration,
-      dateBookings: {}
+      dateBookings: {},
+      _preBooked: preBooked // pseudo-random pre-existing bookings for visual variety
     };
   });
 }
@@ -289,12 +318,84 @@ const DEFAULT_CLASSES = [
   ...getClassesForBranch('buahbatu')
 ];
 
+// ==================== REALISTIC CLASS SLOTS & BOOKINGS SYNC ====================
+
+function getClassDateBookings(classId, dateKey) {
+  try {
+    const raw = localStorage.getItem('befit_class_date_bookings_v1');
+    const map = raw ? JSON.parse(raw) : {};
+    const key = classId + '_' + dateKey;
+    return Array.isArray(map[key]) ? map[key] : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveClassDateBooking(classId, dateKey, userId) {
+  try {
+    const raw = localStorage.getItem('befit_class_date_bookings_v1');
+    const map = raw ? JSON.parse(raw) : {};
+    const key = classId + '_' + dateKey;
+    map[key] = map[key] || [];
+    if (!map[key].includes(userId)) {
+      map[key].push(userId);
+    }
+    localStorage.setItem('befit_class_date_bookings_v1', JSON.stringify(map));
+  } catch (e) {}
+}
+
+function getRealisticClassSlotInfo(cls, dateKey, userId) {
+  const userBookings = getClassDateBookings(cls.id, dateKey);
+  const currentUser = getCurrentUser();
+  const isUserBooked = Boolean(userId && (
+    userBookings.includes(userId) ||
+    (currentUser && Array.isArray(currentUser.bookedClasses) && currentUser.bookedClasses.some(b => b.classId === cls.id && b.dateKey === dateKey))
+  ));
+
+  // Deterministic baseline slots leftover based on class and date (giving realistic numbers: 0/Penuh, 3, 6, 11, 4, 8)
+  const seed = _seedHash(cls.id + '-' + dateKey);
+  const slotVariant = seed % 6;
+  let baseRemaining;
+  if (slotVariant === 0) {
+    baseRemaining = 0; // Penuh!
+  } else if (slotVariant === 1) {
+    baseRemaining = 3; // 3 slot
+  } else if (slotVariant === 2) {
+    baseRemaining = 6; // 6 slot
+  } else if (slotVariant === 3) {
+    baseRemaining = 11; // 11 slot
+  } else if (slotVariant === 4) {
+    baseRemaining = 4; // 4 slot
+  } else {
+    baseRemaining = 8; // 8 slot
+  }
+
+  baseRemaining = Math.min(cls.capacity, baseRemaining);
+
+  let currentSlots = baseRemaining;
+  if (isUserBooked) {
+    currentSlots = Math.max(0, baseRemaining - 1);
+  } else {
+    const otherBookingsCount = userBookings.filter(u => u !== userId).length;
+    currentSlots = Math.max(0, baseRemaining - otherBookingsCount);
+  }
+
+  return {
+    isRegistered: isUserBooked,
+    currentSlots: currentSlots,
+    isFull: currentSlots <= 0 && !isUserBooked,
+    capacity: cls.capacity
+  };
+}
+
+
 // ==================== 3. PERSONAL TRAINERS (BRANCH-SPECIFIC EXPANSION) ====================
 
 const DEFAULT_TRAINERS = [
   // --- CABANG SETIABUDI (5 Trainers) ---
   {
     id: 'TR-1',
+    shift: '07:00 – 14:00 WIB',
     branchIds: ['setiabudi'],
     name: 'Aby Pratama',
     fullName: 'Muhammad Aby Pratama, CPT',
@@ -313,6 +414,7 @@ const DEFAULT_TRAINERS = [
   },
   {
     id: 'TR-2',
+    shift: '13:00 – 20:00 WIB',
     branchIds: ['setiabudi'],
     name: 'Egi Angga',
     fullName: 'Egi Angga Permana',
@@ -331,6 +433,7 @@ const DEFAULT_TRAINERS = [
   },
   {
     id: 'TR-3',
+    shift: '15:00 – 21:00 WIB',
     branchIds: ['setiabudi'],
     name: 'Nadia Kusuma',
     fullName: 'Nadia Kusuma Wardhani',
@@ -349,6 +452,7 @@ const DEFAULT_TRAINERS = [
   },
   {
     id: 'TR-4',
+    shift: '07:00 – 14:00 WIB',
     branchIds: ['setiabudi'],
     name: 'Kevin Wijaya',
     fullName: 'Kevin Wijaya, CSCS',
@@ -367,6 +471,7 @@ const DEFAULT_TRAINERS = [
   },
   {
     id: 'TR-5',
+    shift: '13:00 – 20:00 WIB',
     branchIds: ['setiabudi'],
     name: 'Rina Maharani',
     fullName: 'Rina Maharani, CPT',
@@ -387,6 +492,7 @@ const DEFAULT_TRAINERS = [
   // --- CABANG DAGO (5 Trainers) ---
   {
     id: 'TR-6',
+    shift: '07:00 – 14:00 WIB',
     branchIds: ['dago'],
     name: 'Adi Nugroho',
     fullName: 'Adi Nugroho, CSCS',
@@ -405,6 +511,7 @@ const DEFAULT_TRAINERS = [
   },
   {
     id: 'TR-7',
+    shift: '13:00 – 20:00 WIB',
     branchIds: ['dago'],
     name: 'Sarah Wijaya',
     fullName: 'Sarah Ayu Wijaya',
@@ -423,6 +530,7 @@ const DEFAULT_TRAINERS = [
   },
   {
     id: 'TR-8',
+    shift: '15:00 – 21:00 WIB',
     branchIds: ['dago'],
     name: 'Marco Santoso',
     fullName: 'Marco Santoso, CF-L2',
@@ -441,6 +549,7 @@ const DEFAULT_TRAINERS = [
   },
   {
     id: 'TR-9',
+    shift: '07:00 – 14:00 WIB',
     branchIds: ['dago'],
     name: 'Dinda Putri',
     fullName: 'Dinda Putri Lestari',
@@ -459,6 +568,7 @@ const DEFAULT_TRAINERS = [
   },
   {
     id: 'TR-10',
+    shift: '13:00 – 20:00 WIB',
     branchIds: ['dago'],
     name: 'Reza Pahlevi',
     fullName: 'Reza Pahlevi Pratama',
@@ -479,6 +589,7 @@ const DEFAULT_TRAINERS = [
   // --- CABANG PASIRKALIKI (4 Trainers) ---
   {
     id: 'TR-11',
+    shift: '07:00 – 14:00 WIB',
     branchIds: ['pasirkaliki'],
     name: 'Bima Sakti',
     fullName: 'Bima Sakti Nugraha',
@@ -497,6 +608,7 @@ const DEFAULT_TRAINERS = [
   },
   {
     id: 'TR-12',
+    shift: '13:00 – 20:00 WIB',
     branchIds: ['pasirkaliki'],
     name: 'Jessica Tan',
     fullName: 'Jessica Tanuwijaya',
@@ -515,6 +627,7 @@ const DEFAULT_TRAINERS = [
   },
   {
     id: 'TR-13',
+    shift: '15:00 – 21:00 WIB',
     branchIds: ['pasirkaliki'],
     name: 'Fajar Ramadhan',
     fullName: 'Fajar Ramadhan, ACSM',
@@ -533,6 +646,7 @@ const DEFAULT_TRAINERS = [
   },
   {
     id: 'TR-14',
+    shift: '07:00 – 14:00 WIB',
     branchIds: ['pasirkaliki'],
     name: 'Maya Sari',
     fullName: 'Maya Sari Kusuma, RYT',
@@ -679,8 +793,8 @@ const PROMOS_DATA = [
 const VOUCHERS_DATA = [
   {
     code: 'MEMBERBARU15',
-    desc: 'Diskon 15% Member Baru (Semua Paket)',
-    type: 'all',
+    desc: 'Diskon 15% Member Baru (Khusus Membership)',
+    type: 'membership',
     percent: 15,
     minAmount: 0,
     expires: '31 Des 2026',
@@ -688,7 +802,7 @@ const VOUCHERS_DATA = [
   },
   {
     code: 'HEMAT50K',
-    desc: 'Potongan Langsung Rp 50.000',
+    desc: 'Potongan Langsung Rp 50.000 (Min. Transaksi Rp 300K)',
     type: 'all',
     amount: 50000,
     minAmount: 300000,
@@ -896,7 +1010,10 @@ function getTrainers() {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length >= DEFAULT_TRAINERS.length && parsed.some(t => t.id === 'TR-5')) {
-        return parsed;
+        return parsed.map(t => {
+          const def = DEFAULT_TRAINERS.find(d => d.id === t.id);
+          return { ...t, shift: t.shift || (def ? def.shift : '07:00 – 14:00 WIB') };
+        });
       }
     }
   } catch (e) {}
@@ -1752,11 +1869,10 @@ function renderHomeClasses() {
   if (!selectedClassDateKey) selectedClassDateKey = getTodayDateKey();
 
   const currentBranch = getSelectedBranch();
-  const allClasses = getClasses();
   const currentUser = getCurrentUser();
 
-  // Filter classes by branch
-  const classes = allClasses.filter(cls => Array.isArray(cls.branchIds) ? cls.branchIds.includes(currentBranch.id) : true);
+  // Dynamic 2-4 classes per date and branch
+  const classes = getClassesForBranch(currentBranch.id, selectedClassDateKey);
 
   if (classes.length === 0) {
     container.innerHTML = `
@@ -1768,16 +1884,10 @@ function renderHomeClasses() {
   }
 
   container.innerHTML = classes.map(cls => {
-    // Check booking for the selected date
-    const dateBookings = (cls.dateBookings && Array.isArray(cls.dateBookings[selectedClassDateKey])) ? cls.dateBookings[selectedClassDateKey] : [];
-    const isRegistered = currentUser && (
-      dateBookings.includes(currentUser.id) ||
-      (Array.isArray(cls.registeredUserIds) && cls.registeredUserIds.includes(currentUser.id) && selectedClassDateKey === getTodayDateKey())
-    );
-
-    const bookedCount = dateBookings.length;
-    const currentSlots = Math.max(0, cls.capacity - bookedCount);
-    const isFull = currentSlots <= 0;
+    const slotInfo = getRealisticClassSlotInfo(cls, selectedClassDateKey, currentUser ? currentUser.id : null);
+    const isRegistered = slotInfo.isRegistered;
+    const currentSlots = slotInfo.currentSlots;
+    const isFull = slotInfo.isFull;
 
     let buttonHtml = '';
     let badgeHtml = '';
@@ -1838,21 +1948,16 @@ function renderHomeClasses() {
 }
 
 function openClassDetail(classId) {
-  const classes = getClasses();
+  if (!selectedClassDateKey) selectedClassDateKey = getTodayDateKey();
+  const currentBranch = getSelectedBranch();
+  const classes = getClassesForBranch(currentBranch.id, selectedClassDateKey);
   const cls = classes.find(c => c.id === classId) || classes[0];
   const currentUser = getCurrentUser();
 
-  if (!selectedClassDateKey) selectedClassDateKey = getTodayDateKey();
-
-  const dateBookings = (cls.dateBookings && Array.isArray(cls.dateBookings[selectedClassDateKey])) ? cls.dateBookings[selectedClassDateKey] : [];
-  const isRegistered = currentUser && (
-    dateBookings.includes(currentUser.id) ||
-    (Array.isArray(cls.registeredUserIds) && cls.registeredUserIds.includes(currentUser.id) && selectedClassDateKey === getTodayDateKey())
-  );
-
-  const bookedCount = dateBookings.length;
-  const currentSlots = Math.max(0, cls.capacity - bookedCount);
-  const isFull = currentSlots <= 0;
+  const slotInfo = getRealisticClassSlotInfo(cls, selectedClassDateKey, currentUser ? currentUser.id : null);
+  const isRegistered = slotInfo.isRegistered;
+  const currentSlots = slotInfo.currentSlots;
+  const isFull = slotInfo.isFull;
 
   const parts = selectedClassDateKey.split('-');
   const selD = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
@@ -1929,35 +2034,28 @@ function openClassDetail(classId) {
 
 function handleBookClass(classId) {
   requireAuth(() => {
-    const classes = getClasses();
+    if (!selectedClassDateKey) selectedClassDateKey = getTodayDateKey();
+    const currentBranch = getSelectedBranch();
+    const classes = getClassesForBranch(currentBranch.id, selectedClassDateKey);
     const cls = classes.find(c => c.id === classId);
     if (!cls) return;
 
     const currentUser = getCurrentUser();
     if (!currentUser) return;
 
-    if (!selectedClassDateKey) selectedClassDateKey = getTodayDateKey();
-
-    cls.dateBookings = cls.dateBookings || {};
-    cls.dateBookings[selectedClassDateKey] = cls.dateBookings[selectedClassDateKey] || [];
-
-    if (cls.dateBookings[selectedClassDateKey].includes(currentUser.id)) {
+    const slotInfo = getRealisticClassSlotInfo(cls, selectedClassDateKey, currentUser.id);
+    if (slotInfo.isRegistered) {
       showToast('Anda sudah terdaftar di kelas ini untuk tanggal tersebut!');
       return;
     }
 
-    if (cls.dateBookings[selectedClassDateKey].length >= cls.capacity) {
+    if (slotInfo.isFull) {
       showToast('Maaf, kuota kelas pada tanggal ini sudah penuh!');
       return;
     }
 
-    // Register booking
-    cls.dateBookings[selectedClassDateKey].push(currentUser.id);
-    cls.registeredUserIds = cls.registeredUserIds || [];
-    if (!cls.registeredUserIds.includes(currentUser.id)) {
-      cls.registeredUserIds.push(currentUser.id);
-    }
-    saveClasses(classes);
+    // Register booking in persistent storage
+    saveClassDateBooking(cls.id, selectedClassDateKey, currentUser.id);
 
     // Save to user history
     currentUser.bookedClasses = currentUser.bookedClasses || [];
@@ -1981,7 +2079,7 @@ function handleBookClass(classId) {
         userPhone: currentUser.phone,
         className: cls.name,
         instructor: cls.instructor,
-        branch: getSelectedBranch().name,
+        branch: currentBranch.name,
         dateKey: selectedClassDateKey,
         time: cls.time,
         status: 'Terkonfirmasi'
@@ -1989,23 +2087,27 @@ function handleBookClass(classId) {
       localStorage.setItem('befit_class_bookings', JSON.stringify(bkList));
     } catch (e) {}
 
+    const parts = selectedClassDateKey.split('-');
+    const selD = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    const dateFormatted = `${parts[2]} ${['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'][selD.getMonth()]}`;
+
     renderHomeClasses();
     openClassDetail(classId);
-    showToast(`✓ Berhasil mendaftar kelas ${cls.name}!`, 3500);
+    showToast(`✓ Berhasil mendaftar kelas ${cls.name} (${dateFormatted})! Sisa kuota berkurang 1.`, 4000);
   });
 }
 
 function openAllClassesSheet() {
   const currentBranch = getSelectedBranch();
-  const classes = getClasses().filter(cls => Array.isArray(cls.branchIds) ? cls.branchIds.includes(currentBranch.id) : true);
+  if (!selectedClassDateKey) selectedClassDateKey = getTodayDateKey();
+  const classes = getClassesForBranch(currentBranch.id, selectedClassDateKey);
   const currentUser = getCurrentUser();
 
-  if (!selectedClassDateKey) selectedClassDateKey = getTodayDateKey();
-
   const cards = classes.map(cls => {
-    const dateBookings = (cls.dateBookings && Array.isArray(cls.dateBookings[selectedClassDateKey])) ? cls.dateBookings[selectedClassDateKey] : [];
-    const isRegistered = currentUser && dateBookings.includes(currentUser.id);
-    const slots = Math.max(0, cls.capacity - dateBookings.length);
+    const slotInfo = getRealisticClassSlotInfo(cls, selectedClassDateKey, currentUser ? currentUser.id : null);
+    const isRegistered = slotInfo.isRegistered;
+    const slots = slotInfo.currentSlots;
+    const isFull = slotInfo.isFull;
 
     return `
       <button type="button" class="w-full flex items-center gap-3 p-3 rounded-2xl border transition-all ${isRegistered ? 'border-emerald-300 bg-emerald-50/40' : 'border-slate-100 hover:bg-slate-50'} text-left"
@@ -2182,6 +2284,9 @@ function renderHomeTrainers() {
       <button type="button" class="trainer-card relative shrink-0 rounded-xl overflow-hidden shadow-lg group snap-start text-left" style="width:145px;height:195px;" onclick="openTrainerDetail('${t.id}')">
         <img src="${t.photo}" alt="${sanitize(t.fullName)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+        <span class="absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-white/95 text-[8.5px] font-bold text-slate-800 backdrop-blur-sm shadow-sm font-mono">
+          🕒 ${t.shift || '07:00 – 14:00 WIB'}
+        </span>
         ${isBooked ? `
           <span class="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md text-[9px] font-black bg-emerald-500 text-slate-950 shadow-sm">
             ✓ AKTIF
@@ -2280,6 +2385,10 @@ function openTrainerDetail(idOrIndex) {
       </div>
     ` : ''}
 
+    <div class="flex items-center gap-2 px-3 py-2 bg-teal-50/80 rounded-xl border border-teal-200/80 mb-3 text-xs font-semibold text-teal-900">
+      <span class="text-sm">🕒</span>
+      <span>Jam Kerja / Operasional: <strong class="text-teal-950 font-bold font-mono">${t.shift || '07:00 – 14:00 WIB'}</strong></span>
+    </div>
     <p class="text-xs text-slate-600 leading-relaxed mb-3.5">${sanitize(t.bio)}</p>
 
     <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-200 mb-4 text-[11px] text-slate-600 flex items-center gap-2">
@@ -2344,7 +2453,7 @@ function openAllTrainersSheet() {
       <div class="flex-1 min-w-0">
         <h4 class="text-sm font-bold text-slate-900 truncate">${sanitize(t.fullName)}</h4>
         <p class="text-[11px] text-teal-600 font-bold mt-0.5 truncate">${sanitize(t.specialization)}</p>
-        <p class="text-[10px] text-slate-400 mt-0.5">📋 ${t.experience} • 👤 ${t.clients} klien aktif</p>
+        <p class="text-[10px] text-slate-400 mt-0.5">📋 ${t.experience} • 👤 ${t.clients} klien • 🕒 <span class="text-teal-600 font-bold">${t.shift || '07:00 – 14:00 WIB'}</span></p>
       </div>
       <svg class="w-4 h-4 text-slate-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
     </button>
@@ -2403,18 +2512,32 @@ function openUnifiedCheckout(params) {
     const v = VOUCHERS_DATA.find(x => x.code === cleanCode);
     if (!v) {
       voucherError = `Kode voucher "${cleanCode}" tidak valid atau kadaluarsa.`;
+      showToast(`Kode voucher "${cleanCode}" tidak valid atau kadaluarsa.`, 3500);
       updateCheckoutUI();
       return;
     }
 
-    // Validate type compatibility
-    if (v.type === 'pt' && type !== 'pt') {
-      voucherError = `Voucher ${v.code} hanya berlaku untuk paket Personal Trainer.`;
+    // Single-use check: every voucher can only be used ONCE per user account
+    const userUsedVouchers = Array.isArray(currentUser.usedVouchers) ? currentUser.usedVouchers : [];
+    if (userUsedVouchers.includes(cleanCode)) {
+      voucherError = `Voucher ${cleanCode} sudah pernah digunakan oleh akun ini!`;
+      showToast(`Voucher ${cleanCode} sudah pernah digunakan oleh akun ini!`, 3500);
       updateCheckoutUI();
       return;
     }
+
+    // Strict Scope: PT voucher can only be used for Personal Trainer checkout
+    if (v.type === 'pt' && type !== 'pt') {
+      voucherError = `Voucher ${v.code} hanya berlaku untuk paket Personal Trainer.`;
+      showToast(`Voucher ${v.code} hanya berlaku untuk paket Personal Trainer.`, 3500);
+      updateCheckoutUI();
+      return;
+    }
+
+    // Strict Scope: Membership voucher can only be used for Membership checkout
     if (v.type === 'membership' && type !== 'membership') {
       voucherError = `Voucher ${v.code} hanya berlaku untuk paket Membership.`;
+      showToast(`Voucher ${v.code} hanya berlaku untuk paket Membership.`, 3500);
       updateCheckoutUI();
       return;
     }
@@ -2422,6 +2545,7 @@ function openUnifiedCheckout(params) {
     // Validate minAmount
     if (v.minAmount && pkg.price < v.minAmount) {
       voucherError = `Voucher ${v.code} berlaku untuk minimal transaksi ${formatRupiah(v.minAmount)}.`;
+      showToast(`Voucher ${v.code} berlaku untuk minimal transaksi ${formatRupiah(v.minAmount)}.`, 3500);
       updateCheckoutUI();
       return;
     }
@@ -2429,6 +2553,7 @@ function openUnifiedCheckout(params) {
     // Special check for GAJIAN100K: 3/6/12 bulan
     if (v.code === 'GAJIAN100K' && pkg.durationDays && pkg.durationDays < 90) {
       voucherError = 'Voucher GAJIAN100K khusus untuk paket Membership 3, 6, atau 12 bulan.';
+      showToast('Voucher GAJIAN100K khusus untuk paket Membership 3, 6, atau 12 bulan.', 3500);
       updateCheckoutUI();
       return;
     }
@@ -2594,6 +2719,19 @@ function openUnifiedCheckout(params) {
             ${VOUCHERS_DATA.map(v => {
               const isClaimed = claimedList.includes(v.code);
               const isCurrent = curVoucher && curVoucher.code === v.code;
+              const isUsed = Array.isArray(currentUser.usedVouchers) && currentUser.usedVouchers.includes(v.code);
+
+              if (isUsed) {
+                return `
+                  <button type="button" disabled
+                    class="px-2.5 py-1 rounded-lg text-[10px] font-bold border border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed opacity-60 flex items-center gap-1 line-through" title="Voucher sudah pernah digunakan">
+                    <span>🏷️</span>
+                    <span class="font-mono">${v.code}</span>
+                    <span class="text-[8px] bg-slate-200 text-slate-600 px-1 rounded font-bold">TERPAKAI</span>
+                  </button>
+                `;
+              }
+
               return `
                 <button type="button" onclick="applyCheckoutVoucher('${v.code}')"
                   class="px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-all flex items-center gap-1 ${isCurrent ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm' : isClaimed ? 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100' : 'bg-white text-slate-700 border-slate-200 hover:border-teal-500'}">
@@ -2713,7 +2851,7 @@ function openUnifiedCheckout(params) {
 
     setTimeout(() => {
       completePaymentSuccess(params, calculateBilling());
-    }, 1000);
+    }, 500);
   };
 
   openBottomSheet(getCheckoutHtml());
@@ -2723,6 +2861,14 @@ function completePaymentSuccess(params, billing) {
   const { type, package: pkg, trainer } = params;
   const currentUser = getCurrentUser();
   if (!currentUser) return;
+
+  // Single-use voucher: persist in currentUser.usedVouchers
+  if (billing.appliedVoucher && billing.appliedVoucher.code) {
+    currentUser.usedVouchers = Array.isArray(currentUser.usedVouchers) ? currentUser.usedVouchers : [];
+    if (!currentUser.usedVouchers.includes(billing.appliedVoucher.code)) {
+      currentUser.usedVouchers.push(billing.appliedVoucher.code);
+    }
+  }
 
   const invoiceNo = `INV-BF-${Math.floor(100000 + Math.random() * 900000)}`;
   const now = new Date();
@@ -2998,8 +3144,7 @@ function updateHeaderUserDisplay() {
     badgeEl.innerHTML = `
       <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/95 border border-slate-200 shadow-sm text-xs cursor-pointer hover:bg-slate-50 transition-colors" onclick="openProfileSheet()">
         <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-        <span class="font-bold text-slate-800 truncate max-w-[110px]">${sanitize(user.name.split(' ')[0])}</span>
-        <span class="text-[10px] text-teal-600 font-bold font-mono">[${user.id}]</span>
+        <span class="font-bold text-slate-800 truncate max-w-[120px]">${sanitize(user.name.split(' ')[0])}</span>
       </div>
     `;
   } else {
@@ -3274,27 +3419,17 @@ function openAdminLoginModal() {
       <p class="text-xs text-slate-500 mt-0.5">Masukkan kredensial admin untuk mengakses panel manajemen</p>
     </div>
 
-    <!-- Credentials Hint Box -->
-    <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 mb-4 text-xs text-amber-900 flex items-start gap-2">
-      <span class="text-base">🔐</span>
-      <div>
-        <p class="font-bold text-amber-950">Kredensial Akses Admin:</p>
-        <p class="font-mono text-[11px] mt-0.5 text-amber-800">Email: <strong>rrizky205@gmail.com</strong></p>
-        <p class="font-mono text-[11px] text-amber-800">Password: <strong>wudinjir1911</strong></p>
-      </div>
-    </div>
-
     <form id="admin-login-modal-form" onsubmit="event.preventDefault(); submitAdminLogin();" class="space-y-3.5">
       <div>
         <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Email Admin</label>
-        <input type="email" id="admin-modal-email" value="rrizky205@gmail.com" required
+        <input type="email" id="admin-modal-email" value="" placeholder="Masukkan email admin" required
           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-teal-550 focus:border-transparent outline-none">
       </div>
 
       <div>
         <label class="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Password Admin</label>
         <div class="relative">
-          <input type="password" id="admin-modal-pass" value="wudinjir1911" required
+          <input type="password" id="admin-modal-pass" value="" placeholder="Masukkan password admin" required
             class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-medium pr-10 focus:ring-2 focus:ring-teal-550 focus:border-transparent outline-none">
           <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold"
             onclick="toggleAdminModalPassword()">
