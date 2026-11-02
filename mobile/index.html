@@ -4,10 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Be Fit — Gym & Fitness Center</title>
-  <link rel="icon" type="image/svg+xml" href="logo-premium.svg">
+  <link rel="icon" type="image/jpeg" href="logo-square.jpg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -41,37 +42,9 @@
     <!-- Top Sticky App Header -->
     <header class="px-4 py-2.5 bg-white border-b border-slate-200/80 flex items-center justify-between sticky top-0 z-30 shadow-sm">
       <div class="flex items-center gap-2.5 min-w-0">
-        <!-- Compact ~32px Luxury Gold & Silver BF Monogram Emblem -->
+        <!-- Compact ~32px Real Logo Emblem from User Image -->
         <div class="w-8 h-8 rounded-xl shrink-0 shadow-sm overflow-hidden flex items-center justify-center bg-[#090D16] border border-amber-500/40" title="Be Fit Gym & Fitness Club">
-          <svg viewBox="0 0 120 120" class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="hdr_gold" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#D4AF37"/>
-                <stop offset="25%" stop-color="#FFF2B2"/>
-                <stop offset="50%" stop-color="#AA771C"/>
-                <stop offset="75%" stop-color="#FDE08B"/>
-                <stop offset="100%" stop-color="#8C5C0C"/>
-              </linearGradient>
-              <linearGradient id="hdr_silver" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#F8FAFC"/>
-                <stop offset="35%" stop-color="#E2E8F0"/>
-                <stop offset="70%" stop-color="#94A3B8"/>
-                <stop offset="100%" stop-color="#475569"/>
-              </linearGradient>
-              <radialGradient id="hdr_plate" cx="50%" cy="40%" r="65%">
-                <stop offset="0%" stop-color="#1E293B"/>
-                <stop offset="100%" stop-color="#030712"/>
-              </radialGradient>
-            </defs>
-            <rect x="6" y="6" width="108" height="108" rx="24" fill="url(#hdr_plate)" stroke="url(#hdr_gold)" stroke-width="2.8"/>
-            <rect x="11" y="11" width="98" height="98" rx="19" fill="none" stroke="url(#hdr_silver)" stroke-width="0.8" opacity="0.35"/>
-            <!-- GOLD B -->
-            <path d="M 28 24 L 54 24 C 67 24 76 29 76 39 C 76 45 71 50 64 52 C 73 54 80 60 80 71 C 80 82 70 88 54 88 L 28 88 Z M 41 35 L 41 49 L 53 49 C 59 49 63 46 63 42 C 63 37.5 59 35 53 35 Z M 41 59 L 41 77 L 54 77 C 61 77 66 74 66 68 C 66 62 61 59 54 59 Z" fill="url(#hdr_gold)"/>
-            <!-- SILVER F -->
-            <path d="M 52 28 L 88 28 L 88 38 L 64 38 L 64 51 L 82 51 L 82 60 L 64 60 L 64 85 L 52 85 Z" fill="url(#hdr_silver)" opacity="0.95"/>
-            <!-- Interlock Knot -->
-            <rect x="50" y="49" width="16" height="5" rx="1.5" fill="url(#hdr_gold)"/>
-          </svg>
+          <img src="logo-square.jpg" alt="Be Fit Logo" class="w-full h-full object-cover">
         </div>
         <div class="leading-tight min-w-0">
           <div class="flex items-center gap-1.5">
@@ -183,15 +156,20 @@
         </div>
       </section>
 
-      <!-- ===== D. KELAS TERSEDIA HARI INI ===== -->
+      <!-- ===== D. KELAS TERSEDIA HARI INI (DILENGKAPI REAL-TIME DATEPICKER) ===== -->
       <section class="mt-6">
         <!-- Section Header -->
-        <div class="px-4 flex items-end justify-between mb-3">
+        <div class="px-4 flex items-end justify-between mb-2">
           <div>
-            <h2 class="text-base font-extrabold text-slate-900 tracking-tight">Kelas Tersedia Hari Ini</h2>
-            <p class="text-[11px] text-slate-400 font-medium mt-0.5">Berdasarkan lokasi club yang dipilih</p>
+            <h2 class="text-base font-extrabold text-slate-900 tracking-tight">Kelas Tersedia</h2>
+            <p id="classes-date-subtitle" class="text-[11px] text-slate-400 font-medium mt-0.5">Pilih tanggal untuk melihat jadwal</p>
           </div>
-          <button class="text-xs font-bold text-teal-550 hover:underline" onclick="openAllClassesSheet()">Lihat Semua</button>
+          <button type="button" class="text-xs font-bold text-teal-550 hover:underline" onclick="openAllClassesSheet()">Lihat Semua</button>
+        </div>
+
+        <!-- Real-Time Date Picker Track (Horizontal Scrollable) -->
+        <div id="calendar-datepicker-track" class="hide-scrollbar flex items-center gap-2 overflow-x-auto px-4 pb-2.5 pt-1">
+          <!-- Dynamically Populated by renderCalendarDatePicker() -->
         </div>
 
         <!-- Horizontal Scroll Class Cards (Dynamically Populated) -->
@@ -205,63 +183,12 @@
         <!-- Header -->
         <div class="px-4 flex items-center justify-between mb-4">
           <h2 class="text-base font-extrabold text-white tracking-tight">Personal Trainer</h2>
-          <button class="text-xs font-bold text-white/80 hover:text-white" onclick="openAllTrainersSheet()">Lihat Semua</button>
+          <button type="button" class="text-xs font-bold text-white/80 hover:text-white" onclick="openAllTrainersSheet()">Lihat Semua</button>
         </div>
 
-        <!-- Content: Price Info + Trainer Scroll -->
-        <div class="flex items-stretch gap-0">
-          <!-- Left: Price Column (Fixed 125px) -->
-          <div class="shrink-0 pl-4 pr-2 flex flex-col items-start justify-center" style="width:130px;">
-            <span class="text-[11px] font-bold text-white/70 uppercase tracking-wider">Mulai Dari</span>
-            <span class="text-2xl font-extrabold text-brand-sunny leading-tight mt-0.5">Rp 199K</span>
-            <span class="text-[11px] font-bold text-white/70 uppercase tracking-wider mt-0.5">Per Sesi</span>
-            <span class="inline-block mt-3 px-3 py-1.5 rounded-full text-[10px] font-bold bg-brand-sunny text-slate-900 text-center leading-tight">Khusus Member<br>Baru & Rejoin</span>
-          </div>
-
-          <!-- Right: Trainer Cards Horizontal Scroll -->
-          <div class="hide-scrollbar flex-1 flex gap-3 overflow-x-auto pr-4 pb-1 snap-x snap-mandatory">
-            <!-- Trainer 1: Aby -->
-            <button type="button" class="trainer-card relative shrink-0 rounded-xl overflow-hidden shadow-lg group snap-start text-left" style="width:145px;height:195px;" onclick="openTrainerDetail(0)">
-              <img src="https://images.unsplash.com/photo-1567013127542-490d757e51fc?w=290&h=390&fit=crop&q=80" alt="Coach Aby" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-              <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-              <div class="absolute bottom-0 left-0 right-0 p-3">
-                <h4 class="text-white text-sm font-extrabold leading-tight">Aby</h4>
-                <p class="text-white/60 text-[10px] font-medium mt-0.5">59 klien aktif</p>
-              </div>
-            </button>
-
-            <!-- Trainer 2: Egi Angga -->
-            <button type="button" class="trainer-card relative shrink-0 rounded-xl overflow-hidden shadow-lg group snap-start text-left" style="width:145px;height:195px;" onclick="openTrainerDetail(1)">
-              <img src="https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=290&h=390&fit=crop&q=80" alt="Coach Egi" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-              <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-              <div class="absolute bottom-0 left-0 right-0 p-3">
-                <h4 class="text-white text-sm font-extrabold leading-tight">Egi Angga</h4>
-                <p class="text-white/60 text-[10px] font-medium mt-0.5">33 klien aktif</p>
-              </div>
-            </button>
-
-            <!-- Trainer 3: Sarah Wijaya -->
-            <button type="button" class="trainer-card relative shrink-0 rounded-xl overflow-hidden shadow-lg group snap-start text-left" style="width:145px;height:195px;" onclick="openTrainerDetail(2)">
-              <img src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=290&h=390&fit=crop&q=80" alt="Coach Sarah" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-              <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-              <div class="absolute bottom-0 left-0 right-0 p-3">
-                <h4 class="text-white text-sm font-extrabold leading-tight">Sarah Wijaya</h4>
-                <p class="text-white/60 text-[10px] font-medium mt-0.5">47 klien aktif</p>
-              </div>
-            </button>
-
-            <!-- Trainer 4: Bima Sakti -->
-            <button type="button" class="trainer-card relative shrink-0 rounded-xl overflow-hidden shadow-lg group snap-start text-left" style="width:145px;height:195px;" onclick="openTrainerDetail(3)">
-              <img src="https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=290&h=390&fit=crop&q=80" alt="Coach Bima" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-              <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-              <div class="absolute bottom-0 left-0 right-0 p-3">
-                <h4 class="text-white text-sm font-extrabold leading-tight">Bima Sakti</h4>
-                <p class="text-white/60 text-[10px] font-medium mt-0.5">28 klien aktif</p>
-              </div>
-            </button>
-
-            <div class="shrink-0 w-1"></div>
-          </div>
+        <!-- Content: Price Info + Trainer Scroll / Empty State (Dynamically Populated based on Selected Branch) -->
+        <div id="home-trainers-wrapper" class="flex items-stretch gap-0">
+          <!-- Dynamically Populated by renderHomeTrainers() -->
         </div>
       </section>
 
