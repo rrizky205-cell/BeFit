@@ -1982,9 +1982,9 @@ function openClassDetail(classId) {
   let actionBtnHtml = '';
   if (isRegistered) {
     actionBtnHtml = `
-      <button type="button" disabled class="w-full py-3.5 rounded-xl bg-emerald-100 text-emerald-800 border border-emerald-300 text-sm font-bold flex items-center justify-center gap-2 cursor-not-allowed">
-        <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-        <span>✓ Anda Sudah Terdaftar di Kelas Ini (${dateFormatted})</span>
+      <button type="button" disabled class="w-full py-3.5 rounded-xl bg-emerald-600 text-white border border-emerald-600 text-sm font-black flex items-center justify-center gap-2 cursor-not-allowed shadow-sm">
+        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+        <span>✓ SUDAH TERDAFTAR</span>
       </button>
     `;
   } else if (isFull) {
@@ -1995,7 +1995,7 @@ function openClassDetail(classId) {
     `;
   } else {
     actionBtnHtml = `
-      <button type="button" class="w-full py-3.5 rounded-xl bg-teal-550 text-white text-sm font-bold shadow-md hover:bg-teal-650 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+      <button type="button" class="w-full py-3.5 rounded-xl bg-teal-550 text-white text-sm font-bold shadow-md hover:bg-teal-650 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
         onclick="handleBookClass('${cls.id}')">
         <span>Daftar Kelas Ini (${dateFormatted})</span>
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
@@ -2115,7 +2115,7 @@ function handleBookClass(classId) {
 
     renderHomeClasses();
     openClassDetail(classId);
-    showToast(`✓ Berhasil mendaftar kelas ${cls.name} (${dateFormatted})! Sisa kuota berkurang 1.`, 4000);
+    showToast(`Berhasil terdaftar di kelas ${cls.name}!`, 3500);
   });
 }
 
@@ -2172,10 +2172,9 @@ function openAllClassesSheet(targetDateKey = null) {
     const isFull = slotInfo.isFull;
 
     return `
-      <button type="button" class="w-full flex items-center gap-3 p-3 rounded-2xl border transition-all ${isRegistered ? 'border-emerald-300 bg-emerald-50/40' : 'border-slate-100 hover:bg-slate-50'} text-left"
-        onclick="closeBottomSheet(); setTimeout(() => openClassDetail('${cls.id}'), 350);">
-        <img src="${cls.image}" alt="${sanitize(cls.name)}" class="w-16 h-16 rounded-xl object-cover shrink-0 shadow-sm">
-        <div class="flex-1 min-w-0">
+      <div class="w-full flex items-center gap-3 p-3 rounded-2xl border transition-all ${isRegistered ? 'border-emerald-300 bg-emerald-50/40' : 'border-slate-100 hover:bg-slate-50'} text-left">
+        <img src="${cls.image}" alt="${sanitize(cls.name)}" class="w-16 h-16 rounded-xl object-cover shrink-0 shadow-sm cursor-pointer" onclick="openClassDetail('${cls.id}')">
+        <div class="flex-1 min-w-0 cursor-pointer" onclick="openClassDetail('${cls.id}')">
           <div class="flex items-center gap-2">
             <h4 class="text-sm font-bold text-slate-900 truncate">${sanitize(cls.name)}</h4>
             ${isRegistered ? '<span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-600 text-white shrink-0">✓ Terdaftar</span>' : ''}
@@ -2185,8 +2184,23 @@ function openAllClassesSheet(targetDateKey = null) {
             ${isFull ? 'Kuota Penuh' : `Sisa ${slots} dari ${cls.capacity} kuota`} • ${cls.room}
           </span>
         </div>
-        <svg class="w-4 h-4 text-slate-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-      </button>
+        <div class="shrink-0">
+          ${isRegistered ? `
+            <button type="button" disabled class="px-2.5 py-1.5 rounded-lg bg-emerald-100 text-emerald-800 text-[10px] font-black border border-emerald-300 cursor-not-allowed">
+              ✓ Terdaftar
+            </button>
+          ` : isFull ? `
+            <button type="button" disabled class="px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-400 text-[10px] font-bold border border-slate-200 cursor-not-allowed">
+              Penuh
+            </button>
+          ` : `
+            <button type="button" class="px-3 py-1.5 rounded-lg bg-teal-550 text-white text-[10px] font-black hover:bg-teal-650 active:scale-95 shadow-sm transition-all"
+              onclick="handleBookClass('${cls.id}')">
+              Daftar
+            </button>
+          `}
+        </div>
+      </div>
     `;
   }).join('');
 
@@ -2208,9 +2222,24 @@ function openAllClassesSheet(targetDateKey = null) {
 function openPricingSheet(selectedPackageId = 'pkg-3m') {
   let activePkgId = selectedPackageId;
 
+  function getPackagePriceInfo(pkg) {
+    const promo = activePromoCode ? VOUCHERS_DATA.find(x => x.code === activePromoCode) : null;
+    let disc = 0;
+    if (promo) {
+      if (promo.code === 'MEMBERBARU15') {
+        disc = Math.round(pkg.price * 0.15);
+      } else if (promo.code === 'GAJIAN100K' && pkg.durationDays >= 90) {
+        disc = 100000;
+      }
+    }
+    const finalPrice = Math.max(0, pkg.price - disc);
+    return { base: pkg.price, disc, finalPrice, promo };
+  }
+
   function renderPackages() {
     return MEMBERSHIP_PACKAGES.map(pkg => {
       const isSelected = pkg.id === activePkgId;
+      const { base, disc, finalPrice } = getPackagePriceInfo(pkg);
 
       return `
         <div class="membership-card p-4 rounded-2xl border-2 transition-all cursor-pointer relative ${isSelected ? 'border-teal-500 bg-teal-50/50 shadow-md ring-2 ring-teal-500/20' : 'border-slate-200 bg-white hover:border-slate-300'}"
@@ -2218,9 +2247,16 @@ function openPricingSheet(selectedPackageId = 'pkg-3m') {
           
           <!-- Top Badge -->
           <div class="flex items-center justify-between gap-2 mb-2">
-            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${pkg.badgeColor} shadow-sm">
-              ${pkg.badge}
-            </span>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${pkg.badgeColor} shadow-sm">
+                ${pkg.badge}
+              </span>
+              ${disc > 0 ? `
+                <span class="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                  Potongan ${formatRupiah(disc)}
+                </span>
+              ` : ''}
+            </div>
             <div class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${isSelected ? 'border-teal-600 bg-teal-600' : 'border-slate-300'}">
               ${isSelected ? '<svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>' : ''}
             </div>
@@ -2229,8 +2265,13 @@ function openPricingSheet(selectedPackageId = 'pkg-3m') {
           <!-- Name & Pricing -->
           <h4 class="text-sm font-black text-slate-900">${sanitize(pkg.name)}</h4>
           <div class="flex items-baseline gap-1.5 mt-1">
-            <span class="text-lg font-black text-teal-600 font-mono">${formatRupiah(pkg.price)}</span>
-            <span class="text-[11px] text-slate-400 font-medium">(${formatRupiah(pkg.pricePerMonth)}/bln)</span>
+            ${disc > 0 ? `
+              <span class="text-lg font-black text-emerald-600 font-mono">${formatRupiah(finalPrice)}</span>
+              <span class="text-xs text-slate-400 line-through font-mono">${formatRupiah(base)}</span>
+            ` : `
+              <span class="text-lg font-black text-teal-600 font-mono">${formatRupiah(base)}</span>
+              <span class="text-[11px] text-slate-400 font-medium">(${formatRupiah(pkg.pricePerMonth)}/bln)</span>
+            `}
           </div>
 
           <!-- Features list -->
@@ -2255,8 +2296,9 @@ function openPricingSheet(selectedPackageId = 'pkg-3m') {
     const selectedPkg = MEMBERSHIP_PACKAGES.find(p => p.id === activePkgId);
     const payBtn = document.getElementById('btn-checkout-membership');
     if (payBtn && selectedPkg) {
+      const { finalPrice } = getPackagePriceInfo(selectedPkg);
       payBtn.innerHTML = `
-        <span>Lanjut ke Pembayaran (${formatRupiah(selectedPkg.price)})</span>
+        <span>Lanjut ke Pembayaran (${formatRupiah(finalPrice)})</span>
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
       `;
     }
@@ -2267,6 +2309,8 @@ function openPricingSheet(selectedPackageId = 'pkg-3m') {
   };
 
   const initialPkg = MEMBERSHIP_PACKAGES.find(p => p.id === activePkgId) || MEMBERSHIP_PACKAGES[0];
+  const { finalPrice: initPrice } = getPackagePriceInfo(initialPkg);
+  const activePromoObj = activePromoCode ? VOUCHERS_DATA.find(x => x.code === activePromoCode) : null;
 
   const html = `
     <div class="mb-4">
@@ -2277,15 +2321,28 @@ function openPricingSheet(selectedPackageId = 'pkg-3m') {
       <p class="text-xs text-slate-400 mt-0.5">Pilih paket latihan yang sesuai dengan target kebugaranmu</p>
     </div>
 
+    ${activePromoObj && (activePromoObj.code === 'MEMBERBARU15' || activePromoObj.code === 'GAJIAN100K') ? `
+      <div class="mb-3.5 p-3 bg-emerald-50 border border-emerald-300 rounded-xl flex items-center justify-between text-xs text-emerald-900">
+        <div class="flex items-center gap-2">
+          <span class="text-base">🏷️</span>
+          <div>
+            <strong class="block leading-tight font-black">Voucher ${activePromoObj.code} Aktif!</strong>
+            <span class="text-[10px] text-emerald-700 font-medium">${activePromoObj.desc}</span>
+          </div>
+        </div>
+        <span class="px-2 py-0.5 rounded font-mono font-bold bg-emerald-100 text-emerald-800 text-[10px] border border-emerald-300">${activePromoObj.badge}</span>
+      </div>
+    ` : ''}
+
     <!-- Interactive Packages Grid -->
     <div id="membership-packages-list" class="space-y-3 mb-5">
       ${renderPackages()}
     </div>
 
     <!-- CTA Checkout Button -->
-    <button type="button" id="btn-checkout-membership" class="w-full py-3.5 rounded-xl bg-teal-550 text-white text-sm font-black shadow-lg shadow-teal-550/30 hover:bg-teal-650 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+    <button type="button" id="btn-checkout-membership" class="w-full py-3.5 rounded-xl bg-teal-550 text-white text-sm font-black shadow-lg shadow-teal-550/30 hover:bg-teal-650 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
       onclick="window.proceedWithActiveMembership()">
-      <span>Lanjut ke Pembayaran (${formatRupiah(initialPkg.price)})</span>
+      <span>Lanjut ke Pembayaran (${formatRupiah(initPrice)})</span>
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
     </button>
   `;
@@ -2296,13 +2353,10 @@ function openPricingSheet(selectedPackageId = 'pkg-3m') {
 function handleMembershipCheckout(pkgId) {
   requireAuth(() => {
     const pkg = MEMBERSHIP_PACKAGES.find(p => p.id === pkgId) || MEMBERSHIP_PACKAGES[0];
-    closeBottomSheet();
-    setTimeout(() => {
-      openUnifiedCheckout({
-        type: 'membership',
-        package: pkg
-      });
-    }, 350);
+    openUnifiedCheckout({
+      type: 'membership',
+      package: pkg
+    });
   });
 }
 
@@ -2411,8 +2465,12 @@ function openTrainerDetail(idOrIndex) {
       `;
     }
 
+    const isPtPromo = activePromoCode === 'PTPROMO20';
+    let disc = isPtPromo ? Math.round(pkg.price * 0.20) : 0;
+    let finalPrice = Math.max(0, pkg.price - disc);
+
     return `
-      <button type="button" class="w-full flex items-center justify-between p-3.5 rounded-2xl border-2 border-slate-200 hover:border-teal-500 hover:bg-teal-50/40 active:bg-teal-50 transition-all text-left group"
+      <button type="button" class="w-full flex items-center justify-between p-3.5 rounded-2xl border-2 border-slate-200 hover:border-teal-500 hover:bg-teal-50/40 active:bg-teal-50 transition-all text-left group cursor-pointer"
         onclick="handleTrainerPackageSelect('${t.id}', ${pi})">
         <div>
           <div class="flex items-center gap-2">
@@ -2420,16 +2478,28 @@ function openTrainerDetail(idOrIndex) {
             <span class="px-2 py-0.5 rounded text-[9px] font-extrabold ${pkg.badge.includes('🔥') ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700'}">
               ${pkg.badge}
             </span>
+            ${disc > 0 ? `
+              <span class="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                -20%
+              </span>
+            ` : ''}
           </div>
           <span class="text-[11px] text-slate-400 block mt-0.5">${formatRupiah(pkg.perSession)}/sesi privat</span>
         </div>
         <div class="text-right">
-          <span class="text-sm font-black text-teal-600 font-mono">${formatRupiah(pkg.price)}</span>
+          ${disc > 0 ? `
+            <span class="text-sm font-black text-emerald-600 font-mono">${formatRupiah(finalPrice)}</span>
+            <span class="text-[10px] text-slate-400 line-through font-mono block">${formatRupiah(pkg.price)}</span>
+          ` : `
+            <span class="text-sm font-black text-teal-600 font-mono">${formatRupiah(pkg.price)}</span>
+          `}
           <span class="text-[10px] text-teal-700 font-bold block mt-0.5 group-hover:underline">Pilih Paket &gt;</span>
         </div>
       </button>
     `;
   }).join('');
+
+  const isPtPromoActive = activePromoCode === 'PTPROMO20';
 
   openBottomSheet(`
     <div class="flex items-start gap-4 mb-4">
@@ -2448,6 +2518,19 @@ function openTrainerDetail(idOrIndex) {
       <div class="p-3 bg-emerald-50 border border-emerald-300 rounded-xl mb-3 flex items-center gap-2 text-xs font-bold text-emerald-800">
         <svg class="w-5 h-5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
         <span>✓ Anda sudah memiliki paket aktif bersama Coach ${sanitize(t.name)}. Hubungi coach untuk sesi latihan!</span>
+      </div>
+    ` : ''}
+
+    ${isPtPromoActive ? `
+      <div class="p-3 bg-emerald-50 border border-emerald-300 rounded-xl mb-3 flex items-center justify-between text-xs text-emerald-900">
+        <div class="flex items-center gap-2">
+          <span class="text-base">🏷️</span>
+          <div>
+            <strong class="block leading-tight font-black">Voucher PTPROMO20 Aktif!</strong>
+            <span class="text-[10px] text-emerald-700 font-medium">Diskon 20% otomatis memotong tagihan saat checkout</span>
+          </div>
+        </div>
+        <span class="px-2 py-0.5 rounded font-mono font-bold bg-emerald-100 text-emerald-800 text-[10px] border border-emerald-300">-20%</span>
       </div>
     ` : ''}
 
@@ -2481,14 +2564,11 @@ function handleTrainerPackageSelect(trainerId, packageIndex) {
       return;
     }
 
-    closeBottomSheet();
-    setTimeout(() => {
-      openUnifiedCheckout({
-        type: 'pt',
-        trainer: t,
-        package: pkg
-      });
-    }, 350);
+    openUnifiedCheckout({
+      type: 'pt',
+      trainer: t,
+      package: pkg
+    });
   });
 }
 
@@ -2513,8 +2593,8 @@ function openAllTrainersSheet() {
   }
 
   const cards = trainers.map(t => `
-    <button type="button" class="w-full flex items-center gap-3.5 p-3 rounded-2xl border border-slate-100 hover:bg-slate-50 transition-colors text-left"
-      onclick="closeBottomSheet(); setTimeout(() => openTrainerDetail('${t.id}'), 350);">
+    <button type="button" class="w-full flex items-center gap-3.5 p-3 rounded-2xl border border-slate-100 hover:bg-slate-50 transition-colors text-left cursor-pointer"
+      onclick="openTrainerDetail('${t.id}')">
       <img src="${t.photo}" alt="${sanitize(t.name)}" class="w-16 h-16 rounded-2xl object-cover shrink-0 shadow-sm">
       <div class="flex-1 min-w-0">
         <h4 class="text-sm font-bold text-slate-900 truncate">${sanitize(t.fullName)}</h4>
@@ -2538,6 +2618,18 @@ function openAllTrainersSheet() {
 
 let activePaymentMethod = 'qris';
 let appliedVoucher = null;
+let activePromoCode = null;
+try {
+  activePromoCode = sessionStorage.getItem('befit_active_promo') || null;
+} catch (e) {}
+
+function setActivePromoCode(code) {
+  activePromoCode = code;
+  try {
+    if (code) sessionStorage.setItem('befit_active_promo', code);
+    else sessionStorage.removeItem('befit_active_promo');
+  } catch (e) {}
+}
 
 function openUnifiedCheckout(params) {
   const currentUser = getCurrentUser();
@@ -2551,6 +2643,27 @@ function openUnifiedCheckout(params) {
   let appliedVoucher = null;
   let voucherError = '';
   const claimedList = getUserClaimedVouchers();
+
+  // Auto-apply active promo code if valid and not yet used
+  if (activePromoCode) {
+    const promo = VOUCHERS_DATA.find(x => x.code === activePromoCode);
+    const userUsed = Array.isArray(currentUser.usedVouchers) ? currentUser.usedVouchers : [];
+    if (promo && !userUsed.includes(promo.code)) {
+      if (type === 'membership') {
+        if (promo.code === 'MEMBERBARU15') {
+          appliedVoucher = promo;
+        } else if (promo.code === 'GAJIAN100K' && (!pkg.durationDays || pkg.durationDays >= 90)) {
+          appliedVoucher = promo;
+        } else if (promo.type === 'membership' && (!promo.minAmount || pkg.price >= promo.minAmount)) {
+          appliedVoucher = promo;
+        }
+      } else if (type === 'pt') {
+        if (promo.code === 'PTPROMO20' || promo.type === 'pt') {
+          appliedVoucher = promo;
+        }
+      }
+    }
+  }
 
   function calculateBilling() {
     let base = pkg.price;
@@ -2625,6 +2738,7 @@ function openUnifiedCheckout(params) {
     }
 
     appliedVoucher = v;
+    setActivePromoCode(v.code);
     voucherError = '';
     showToast(`✓ Voucher ${v.code} berhasil digunakan! Potongan ${v.badge}.`, 3000);
     updateCheckoutUI();
@@ -2632,6 +2746,7 @@ function openUnifiedCheckout(params) {
 
   function removeCheckoutVoucher() {
     appliedVoucher = null;
+    setActivePromoCode(null);
     voucherError = '';
     showToast('Voucher dibatalkan.');
     updateCheckoutUI();
@@ -2903,21 +3018,8 @@ function openUnifiedCheckout(params) {
   };
 
   window.executePaymentProcess = () => {
-    const payBtn = document.getElementById('btn-submit-payment');
-    if (!payBtn) return;
-
-    payBtn.disabled = true;
-    payBtn.innerHTML = `
-      <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-      </svg>
-      <span>Memverifikasi Pembayaran...</span>
-    `;
-
-    setTimeout(() => {
-      completePaymentSuccess(params, calculateBilling());
-    }, 500);
+    // 0ms Instant Synchronous Execution - Zero Artificial Loading Delays
+    completePaymentSuccess(params, calculateBilling());
   };
 
   openBottomSheet(getCheckoutHtml());
@@ -2935,6 +3037,9 @@ function completePaymentSuccess(params, billing) {
       currentUser.usedVouchers.push(billing.appliedVoucher.code);
     }
   }
+
+  // Clear active promo after successful transaction
+  setActivePromoCode(null);
 
   const invoiceNo = `INV-BF-${Math.floor(100000 + Math.random() * 900000)}`;
   const now = new Date();
@@ -3160,13 +3265,10 @@ function extendCurrentMembership() {
 
   const activePackage = MEMBERSHIP_PACKAGES.find(p => p.shortName === currentUser.packageType || p.name === currentUser.packageDuration) || MEMBERSHIP_PACKAGES[1];
 
-  closeBottomSheet();
-  setTimeout(() => {
-    openUnifiedCheckout({
-      type: 'membership',
-      package: activePackage
-    });
-  }, 350);
+  openUnifiedCheckout({
+    type: 'membership',
+    package: activePackage
+  });
 }
 
 function openTransactionHistorySheet() {
@@ -3308,16 +3410,140 @@ function openPromoDetail(index) {
 
 function handlePromoClaimAndNavigate(index) {
   const p = PROMOS_DATA[index] || PROMOS_DATA[0];
-  claimVoucher(p.voucherCode);
-  closeBottomSheet();
-  setTimeout(() => {
+  const currentUser = getCurrentUser();
+  const userUsed = currentUser && Array.isArray(currentUser.usedVouchers) ? currentUser.usedVouchers : [];
+
+  // Check if voucher has already been used by this user account
+  if (userUsed.includes(p.voucherCode)) {
+    showToast(`⚠️ Voucher ${p.voucherCode} sudah pernah digunakan oleh akun ini!`, 3500);
     if (p.target === 'pt') {
       openAllTrainersSheet();
     } else {
-      const defaultPkg = (p.voucherCode === 'GAJIAN100K') ? 'pkg-3m' : 'pkg-1m';
-      openPricingSheet(defaultPkg);
+      openPricingSheet(p.voucherCode === 'GAJIAN100K' ? 'pkg-3m' : 'pkg-1m');
     }
-  }, 200);
+    return;
+  }
+
+  // Auto-claim voucher into user claimed list
+  const list = getUserClaimedVouchers();
+  if (!list.includes(p.voucherCode)) {
+    list.push(p.voucherCode);
+    try {
+      localStorage.setItem('befit_claimed_vouchers', JSON.stringify(list));
+    } catch (e) {}
+    if (currentUser) {
+      currentUser.claimedVouchers = list;
+      setCurrentUser(currentUser);
+    }
+  }
+
+  // Set active promo in session
+  setActivePromoCode(p.voucherCode);
+
+  // Instant notification & 0ms navigation as specified
+  if (p.voucherCode === 'MEMBERBARU15') {
+    showToast('Voucher MEMBERBARU15 (Diskon 15%) aktif! Silakan pilih paket Membership.', 3500);
+    openPricingSheet('pkg-1m');
+  } else if (p.voucherCode === 'GAJIAN100K') {
+    showToast('Voucher GAJIAN100K (Potongan Rp 100rb) aktif! Pilih paket 3, 6, atau 12 bulan.', 3500);
+    openPricingSheet('pkg-3m');
+  } else if (p.voucherCode === 'PTPROMO20') {
+    showToast('Voucher PTPROMO20 (Diskon 20% PT) aktif! Silakan pilih Personal Trainer Anda.', 3500);
+    openAllTrainersSheet();
+  } else {
+    openPricingSheet('pkg-1m');
+  }
+}
+
+function openChatAdminSheet() {
+  const waBaseUrl = 'https://wa.me/6282116156884?text=';
+
+  const templates = [
+    {
+      title: 'Informasi Paket Membership & Promo',
+      desc: 'Detail harga, durasi, dan diskon paket aktif',
+      icon: '⚡',
+      message: 'Halo Admin Be Fit, saya ingin bertanya mengenai detail paket Membership beserta promo yang sedang berlaku saat ini.'
+    },
+    {
+      title: 'Konsultasi & Jadwal Personal Trainer (PT)',
+      desc: 'Pemilihan trainer dan jadwal sesi latihan privat',
+      icon: '🏋️‍♂️',
+      message: 'Halo Admin Be Fit, saya ingin berkonsultasi mengenai pemilihan Personal Trainer (PT) dan ketersediaan jadwal sesi latihan.'
+    },
+    {
+      title: 'Bantuan Pembayaran & Aktivasi Membership',
+      desc: 'Bantuan transfer, verifikasi pembayaran, atau aktivasi',
+      icon: '💳',
+      message: 'Halo Admin Be Fit, saya membutuhkan bantuan terkait proses pembayaran / konfirmasi aktivasi paket saya di aplikasi Be Fit.'
+    },
+    {
+      title: 'Info Jadwal Kelas Studio & Fasilitas Cabang',
+      desc: 'Jadwal Les Mills, Pilates, Yoga, dan fasilitas cabang',
+      icon: '📅',
+      message: 'Halo Admin Be Fit, saya ingin menanyakan info jadwal kelas studio dan fasilitas di cabang Be Fit.'
+    }
+  ];
+
+  window.sendCustomAdminWa = () => {
+    const input = document.getElementById('chat-admin-custom-input');
+    const msg = input ? input.value.trim() : '';
+    if (!msg) {
+      showToast('Silakan ketik pertanyaan Anda terlebih dahulu.');
+      return;
+    }
+    const fullMsg = `Halo Admin Be Fit, saya ingin bertanya:\n\n${msg}`;
+    window.open(waBaseUrl + encodeURIComponent(fullMsg), '_blank');
+  };
+
+  const templateButtons = templates.map(t => `
+    <a href="${waBaseUrl + encodeURIComponent(t.message)}" target="_blank" rel="noopener noreferrer"
+      class="w-full flex items-center justify-between p-3.5 rounded-2xl border border-slate-200 bg-white hover:border-emerald-500 hover:bg-emerald-50/40 transition-all text-left group shadow-sm">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-lg shrink-0">
+          ${t.icon}
+        </div>
+        <div class="min-w-0">
+          <h4 class="text-xs font-black text-slate-900 group-hover:text-emerald-700 transition-colors leading-snug">${t.title}</h4>
+          <p class="text-[11px] text-slate-500 truncate mt-0.5">${t.desc}</p>
+        </div>
+      </div>
+      <svg class="w-4 h-4 text-slate-300 group-hover:text-emerald-600 shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+    </a>
+  `).join('');
+
+  openBottomSheet(`
+    <div class="mb-4">
+      <div class="flex items-center gap-2 mb-1">
+        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 text-base font-bold">💬</span>
+        <h3 class="text-base font-black text-slate-900 tracking-tight">Halo! Ada yang bisa dibantu Admin Be Fit?</h3>
+      </div>
+      <p class="text-xs text-slate-500 leading-relaxed">
+        Pilih topik pertanyaan di bawah ini untuk terhubung langsung ke WhatsApp Admin (<span class="font-bold text-emerald-700 font-mono">0821-1615-6884</span>):
+      </p>
+    </div>
+
+    <!-- 4 Template Opsi Siap Klik -->
+    <div class="space-y-2 mb-4">
+      ${templateButtons}
+    </div>
+
+    <!-- Opsi 5: Custom Pertanyaan -->
+    <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
+      <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider flex items-center gap-1.5">
+        <span>✏️</span>
+        <span>Atau Tulis Pertanyaan Sendiri:</span>
+      </label>
+      <div class="flex items-center gap-2">
+        <input type="text" id="chat-admin-custom-input" placeholder="Ketik pertanyaan kamu di sini..."
+          class="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none bg-white">
+        <button type="button" onclick="sendCustomAdminWa()"
+          class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold shadow-sm transition-all whitespace-nowrap">
+          Kirim ke WA &rarr;
+        </button>
+      </div>
+    </div>
+  `);
 }
 
 function openVoucherList() {
@@ -3539,5 +3765,9 @@ window.handlePromoClaimAndNavigate = handlePromoClaimAndNavigate;
 window.openPromoDetail = openPromoDetail;
 window.openPricingSheet = openPricingSheet;
 window.openAllTrainersSheet = openAllTrainersSheet;
+window.openAllClassesSheet = openAllClassesSheet;
+window.openClassDetail = openClassDetail;
+window.handleBookClass = handleBookClass;
 window.claimVoucher = claimVoucher;
 window.openVoucherList = openVoucherList;
+window.openChatAdminSheet = openChatAdminSheet;
