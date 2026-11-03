@@ -52,6 +52,38 @@
     // Fallback seed members with realistic CRM expiry dates & status
     const SEED_MEMBERS = [
       {
+        id: 'BF-USER-101',
+        name: 'Rizky Test User',
+        email: 'rizky.member@gmail.com',
+        phone: '082116156884',
+        packageDuration: 'Paket 3 Bulan (Pro Transformation)',
+        packageType: 'Pro Transformation',
+        voucherUsed: 'MEMBERBARU15',
+        totalPaid: 900000,
+        paymentMethod: 'QRIS INSTANT',
+        dateJoined: '06 Agu 2026',
+        expiryDate: '2026-11-06', // 3 Hari Lagi (Segera Berakhir)
+        branch: 'Setiabudi',
+        status: 'Active',
+        isFrozen: false
+      },
+      {
+        id: 'BF-USER-102',
+        name: 'Mimah',
+        email: 'mimah.member@gmail.com',
+        phone: '089513102470',
+        packageDuration: 'Paket 1 Bulan (Basic Starter)',
+        packageType: 'Basic Starter',
+        voucherUsed: 'HEMAT50K',
+        totalPaid: 350000,
+        paymentMethod: 'BCA VA',
+        dateJoined: '04 Okt 2026',
+        expiryDate: '2026-11-06', // 3 Hari Lagi (Segera Berakhir)
+        branch: 'Dago',
+        status: 'Active',
+        isFrozen: false
+      },
+      {
         id: 'BF-1001',
         name: 'Dimas Arya Pratama',
         email: 'dimas.arya@gmail.com',
@@ -62,7 +94,7 @@
         totalPaid: 765000,
         paymentMethod: 'QRIS INSTANT',
         dateJoined: '06 Agu 2026',
-        expiryDate: '2026-11-06', // 4 days remaining (expiring <= 7 days)
+        expiryDate: '2026-11-07', // 4 days remaining (expiring <= 7 days)
         branch: 'Setiabudi',
         status: 'Active',
         isFrozen: false
@@ -316,10 +348,11 @@
     }
 
     function createRetentionPromoWaUrl(m) {
-      const daysLeft = Math.max(0, getDaysRemaining(m.expiryDate));
+      const daysLeft = Math.max(1, getDaysRemaining(m.expiryDate));
       const waNumber = formatWhatsAppNumber(m.phone);
-      const magicLink = `${window.location.origin}/?action=renew&voucher=RENEWLOYAL25&email=${encodeURIComponent(m.email || '')}`;
-      const message = `Halo Kak ${m.name || 'Member'}! 👋\n\nKami dari tim Be Fit Gym ingin mengapresiasi semangat latihan Kakak selama ini! 💪\n\nMengingatkan bahwa masa aktif paket membership Kakak tersisa ${daysLeft} hari lagi. Supaya latihan Kakak tidak terputus, kami memberikan Promo Spesial Loyalitas: DISKON 25% untuk perpanjangan paket membership!\n\n🎟️ Kode Promo: RENEWLOYAL25 (Otomatis Aktif)\n\nKlik link khusus di bawah ini untuk langsung memilih paket perpanjangan dengan harga yang sudah didiskon 25%:\n👉 ${magicLink}\n\nYuk klaim sekarang sebelum masa aktif berakhir ya, Kak! 😊`;
+      const emailParam = encodeURIComponent(m.email || '');
+      const magicLink = `${window.location.origin}/?action=renew&voucher=RENEWLOYAL25&email=${emailParam}`;
+      const message = `Halo Kak ${m.name || 'Member'}! 👋\n\nKami dari tim Be Fit Gym ingin mengapresiasi komitmen latihan Kakak selama ini! 💪\n\nMengingatkan bahwa masa aktif paket membership Kakak tersisa ${daysLeft} hari lagi. Khusus untuk Kakak, kami memberikan tautan rahasia DISKON 25% untuk perpanjangan paket membership.\n\nVoucher ini terkunci dan HANYA BISA DIAKTIFKAN dengan mengklik tautan resmi di bawah ini:\n👉 ${magicLink}\n\nKlik link di atas sekarang untuk mengklaim potongan harga sebelum masa aktif habis ya, Kak! 😊`;
 
       return `https://wa.me/${waNumber}?text=${encodeURIComponent(message)}`;
     }
@@ -388,28 +421,30 @@
           if (Array.isArray(parsed) && parsed.length > 0) {
             const map = new Map();
             // Seed members first
-            SEED_MEMBERS.forEach(s => map.set(s.email || s.id, { ...s }));
+            SEED_MEMBERS.forEach(s => map.set((s.email || s.id).toLowerCase(), { ...s }));
             // Merge stored members
             parsed.forEach(m => {
-              const key = m.email || m.id;
+              const key = (m.email || m.id || '').toLowerCase();
               const existing = map.get(key) || {};
               map.set(key, {
                 ...existing,
                 ...m,
-                id: m.id || existing.id || 'BF-' + Math.floor(1000 + Math.random() * 9000),
-                name: m.name || existing.name || 'Member Be Fit',
-                email: m.email || existing.email || '-',
-                phone: m.phone || existing.phone || '08123456789',
-                expiryDate: m.expiryDate || existing.expiryDate || '2026-11-20',
+                id: existing.id || m.id || 'BF-' + Math.floor(1000 + Math.random() * 9000),
+                name: existing.name || m.name || 'Member Be Fit',
+                email: existing.email || m.email || '-',
+                phone: existing.phone || m.phone || '08123456789',
+                expiryDate: existing.expiryDate || m.expiryDate || '2026-11-06',
                 status: m.status || existing.status || 'Active',
                 isFrozen: m.isFrozen !== undefined ? m.isFrozen : (existing.isFrozen || false),
                 totalPaid: m.totalPaid || existing.totalPaid || 765000,
-                branch: m.branch || existing.branch || 'Setiabudi',
-                packageType: m.packageType || existing.packageType || 'Pro Transformation',
-                packageDuration: m.packageDuration || existing.packageDuration || 'Paket 3 Bulan'
+                branch: existing.branch || m.branch || 'Setiabudi',
+                packageType: existing.packageType || m.packageType || 'Pro Transformation',
+                packageDuration: existing.packageDuration || m.packageDuration || 'Paket 3 Bulan'
               });
             });
-            return Array.from(map.values());
+            const result = Array.from(map.values());
+            saveMembers(result);
+            return result;
           }
         }
       } catch (e) {}

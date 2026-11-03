@@ -1054,6 +1054,31 @@ const VOUCHERS_DATA = [
   }
 ];
 
+function isRetentionUnlocked() {
+  try {
+    return sessionStorage.getItem('befit_retention_unlocked') === 'true' ||
+           localStorage.getItem('befit_retention_unlocked') === 'true';
+  } catch (e) {
+    return false;
+  }
+}
+
+function setRetentionUnlocked(val = true) {
+  try {
+    if (val) {
+      sessionStorage.setItem('befit_retention_unlocked', 'true');
+      localStorage.setItem('befit_retention_unlocked', 'true');
+    } else {
+      sessionStorage.removeItem('befit_retention_unlocked');
+      localStorage.removeItem('befit_retention_unlocked');
+    }
+  } catch (e) {}
+}
+
+function clearRetentionUnlock() {
+  setRetentionUnlocked(false);
+}
+
 function getUserClaimedVouchers() {
   const u = getCurrentUser();
   if (u && Array.isArray(u.claimedVouchers) && u.claimedVouchers.length > 0) {
@@ -1107,6 +1132,38 @@ const DEFAULT_USERS = [
     role: 'member'
   },
   {
+    id: 'BF-1002',
+    name: 'Rizky Test User',
+    phone: '082116156884',
+    email: 'rizky.member@gmail.com',
+    password: '123456',
+    branch: 'Setiabudi',
+    packageType: 'Pro Transformation',
+    packageDuration: 'Paket 3 Bulan (Pro Transformation)',
+    expiryDate: '2026-11-06',
+    status: 'Active',
+    ptSessions: 0,
+    totalPaid: 900000,
+    joinDate: '2026-08-08',
+    role: 'member'
+  },
+  {
+    id: 'BF-1003',
+    name: 'Mimah',
+    phone: '089513102470',
+    email: 'mimah.member@gmail.com',
+    password: '123456',
+    branch: 'Dago',
+    packageType: 'Basic Starter',
+    packageDuration: 'Paket 1 Bulan (Basic Starter)',
+    expiryDate: '2026-11-06',
+    status: 'Active',
+    ptSessions: 0,
+    totalPaid: 350000,
+    joinDate: '2026-10-07',
+    role: 'member'
+  },
+  {
     id: 'ADM-01',
     name: 'Administrator Be Fit',
     email: 'admin@befit.id',
@@ -1146,8 +1203,61 @@ function getUsers() {
   try {
     const raw = localStorage.getItem(USERS_STORAGE_KEY);
     if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      let parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        let updated = false;
+        const seedRetention = [
+          {
+            id: 'BF-1002',
+            name: 'Rizky Test User',
+            phone: '082116156884',
+            email: 'rizky.member@gmail.com',
+            password: '123456',
+            branch: 'Setiabudi',
+            packageType: 'Pro Transformation',
+            packageDuration: 'Paket 3 Bulan (Pro Transformation)',
+            expiryDate: '2026-11-06',
+            status: 'Active',
+            ptSessions: 0,
+            totalPaid: 900000,
+            joinDate: '2026-08-08',
+            role: 'member'
+          },
+          {
+            id: 'BF-1003',
+            name: 'Mimah',
+            phone: '089513102470',
+            email: 'mimah.member@gmail.com',
+            password: '123456',
+            branch: 'Dago',
+            packageType: 'Basic Starter',
+            packageDuration: 'Paket 1 Bulan (Basic Starter)',
+            expiryDate: '2026-11-06',
+            status: 'Active',
+            ptSessions: 0,
+            totalPaid: 350000,
+            joinDate: '2026-10-07',
+            role: 'member'
+          }
+        ];
+        seedRetention.forEach(sr => {
+          const idx = parsed.findIndex(u => (u.email || '').toLowerCase() === sr.email.toLowerCase() || u.phone === sr.phone);
+          if (idx === -1) {
+            parsed.push(sr);
+            updated = true;
+          } else {
+            if (parsed[idx].expiryDate !== '2026-11-06' && !parsed[idx].voucherUsed) {
+              parsed[idx].expiryDate = '2026-11-06';
+              parsed[idx].phone = sr.phone;
+              updated = true;
+            }
+          }
+        });
+        if (updated) {
+          localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(parsed));
+        }
+        return parsed;
+      }
     }
   } catch (e) {}
   localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(DEFAULT_USERS));
@@ -2456,11 +2566,14 @@ function openPricingSheet(selectedPackageId = 'pkg-3m') {
   let activePkgId = selectedPackageId;
 
   function getPackagePriceInfo(pkg) {
+    const isUnlocked = isRetentionUnlocked();
     const promo = activePromoCode ? VOUCHERS_DATA.find(x => x.code === activePromoCode) : null;
     let disc = 0;
     if (promo) {
       if (promo.code === 'RENEWLOYAL25') {
-        disc = Math.round(pkg.price * 0.25);
+        if (isUnlocked) {
+          disc = Math.round(pkg.price * 0.25);
+        }
       } else if (promo.code === 'MEMBERBARU15') {
         disc = Math.round(pkg.price * 0.15);
       } else if (promo.code === 'GAJIAN100K' && pkg.durationDays >= 90) {
@@ -2468,7 +2581,7 @@ function openPricingSheet(selectedPackageId = 'pkg-3m') {
       }
     }
     const finalPrice = Math.max(0, pkg.price - disc);
-    return { base: pkg.price, disc, finalPrice, promo };
+    return { base: pkg.price, disc, finalPrice, promo: (promo && promo.code === 'RENEWLOYAL25' && !isUnlocked) ? null : promo };
   }
 
   function renderPackages() {
@@ -2556,12 +2669,12 @@ function openPricingSheet(selectedPackageId = 'pkg-3m') {
       <p class="text-xs text-slate-400 mt-0.5">Pilih paket latihan yang sesuai dengan target kebugaranmu</p>
     </div>
 
-    ${activePromoObj && activePromoObj.code === 'RENEWLOYAL25' ? `
+    ${activePromoObj && activePromoObj.code === 'RENEWLOYAL25' && isRetentionUnlocked() ? `
       <div class="mb-3.5 p-3.5 bg-emerald-50 border-2 border-emerald-400 rounded-2xl flex items-center justify-between text-xs text-emerald-950 shadow-sm animate-pulse">
         <div class="flex items-center gap-2.5">
           <span class="text-xl">🎉</span>
           <div>
-            <strong class="block leading-tight font-black text-emerald-900">Promo Perpanjangan Loyalitas 25% (RENEWLOYAL25) Aktif Otomatis!</strong>
+            <strong class="block leading-tight font-black text-emerald-900">🎉 Undangan Khusus: Diskon Perpanjangan 25% Berhasil Diaktifkan Melalui WhatsApp!</strong>
             <span class="text-[11px] text-emerald-700 font-semibold mt-0.5 block">Harga di bawah ini sudah dipotong 25% secara langsung.</span>
           </div>
         </div>
@@ -3324,7 +3437,9 @@ function openUnifiedCheckout(params) {
     if (promo && !userUsed.includes(promo.code)) {
       if (type === 'membership') {
         if (promo.code === 'RENEWLOYAL25') {
-          appliedVoucher = promo;
+          if (isRetentionUnlocked()) {
+            appliedVoucher = promo;
+          }
         } else if (promo.code === 'MEMBERBARU15') {
           appliedVoucher = promo;
         } else if (promo.code === 'GAJIAN100K' && (!pkg.durationDays || pkg.durationDays >= 90)) {
@@ -3359,6 +3474,13 @@ function openUnifiedCheckout(params) {
     const cleanCode = (code || '').trim().toUpperCase();
     if (!cleanCode) {
       voucherError = 'Masukkan kode voucher terlebih dahulu.';
+      updateCheckoutUI();
+      return;
+    }
+
+    if (cleanCode === 'RENEWLOYAL25' && !isRetentionUnlocked()) {
+      voucherError = 'Voucher ini khusus undangan perpanjangan via WhatsApp Admin!';
+      showToast('Voucher ini khusus undangan perpanjangan via WhatsApp Admin!', 4000);
       updateCheckoutUI();
       return;
     }
@@ -3572,7 +3694,7 @@ function openUnifiedCheckout(params) {
         <div class="pt-2 border-t border-slate-100">
           <span class="text-[10px] font-bold text-slate-400 block mb-1.5 uppercase tracking-wider">Pilihan Voucher (Klik untuk Pakai Langsung):</span>
           <div class="flex flex-wrap gap-1.5">
-            ${VOUCHERS_DATA.map(v => {
+            ${VOUCHERS_DATA.filter(v => v.code !== 'RENEWLOYAL25').map(v => {
               const isClaimed = claimedList.includes(v.code);
               const isCurrent = curVoucher && curVoucher.code === v.code;
               const isUsed = Array.isArray(currentUser.usedVouchers) && currentUser.usedVouchers.includes(v.code);
@@ -3715,6 +3837,7 @@ function completePaymentSuccess(params, billing) {
 
   // Clear active promo after successful transaction
   setActivePromoCode(null);
+  clearRetentionUnlock();
 
   const invoiceNo = `INV-BF-${Math.floor(100000 + Math.random() * 900000)}`;
   const now = new Date();
@@ -4226,7 +4349,7 @@ function openChatAdminSheet() {
 function openVoucherList() {
   const claimedList = getUserClaimedVouchers();
 
-  const items = VOUCHERS_DATA.map(v => {
+  const items = VOUCHERS_DATA.filter(v => v.code !== 'RENEWLOYAL25').map(v => {
     const isClaimed = claimedList.includes(v.code);
     return `
       <div class="flex items-center justify-between p-3.5 rounded-2xl border ${isClaimed ? 'border-emerald-300 bg-emerald-50/40' : 'border-slate-200 hover:bg-slate-50'} transition-colors">
@@ -4474,7 +4597,10 @@ function checkDeepLinkParams() {
     if (isRenew) {
       const promoCode = 'RENEWLOYAL25';
 
-      // 1. Activate Promo in state & persistence
+      // 1. Mark retention unlock flag strictly
+      setRetentionUnlocked(true);
+
+      // 2. Activate Promo in state & persistence
       setActivePromoCode(promoCode);
 
       // 2. Member sync / auto-login
@@ -4506,7 +4632,7 @@ function checkDeepLinkParams() {
       }
 
       // 5. Toast notification
-      showToast('🎉 Promo Perpanjangan Loyalitas 25% (RENEWLOYAL25) Aktif Otomatis! Harga di bawah ini sudah dipotong 25%.', 4500);
+      showToast('🎉 Undangan Khusus: Diskon Perpanjangan 25% Berhasil Diaktifkan Melalui WhatsApp!', 4500);
 
       // 6. Direct transition to Pricing Sheet
       setTimeout(() => {
