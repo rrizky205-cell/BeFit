@@ -12,7 +12,7 @@ const BRANCH_STORAGE_KEY = 'befit_selected_branch';
 const USERS_STORAGE_KEY = 'befit_users';
 const CURRENT_USER_KEY = 'befit_current_user';
 const CLASSES_STORAGE_KEY = 'befit_mobile_classes_v3';
-const TRAINERS_STORAGE_KEY = 'befit_mobile_trainers_v3';
+const TRAINERS_STORAGE_KEY = 'befit_mobile_trainers_v5';
 const TRANSACTIONS_KEY = 'befit_mobile_transactions';
 const CLAIMED_VOUCHERS_KEY = 'befit_claimed_vouchers';
 const CLASS_BOOKINGS_KEY = 'befit_class_bookings';
@@ -391,6 +391,8 @@ function getRealisticClassSlotInfo(cls, dateKey, userId) {
 
 // ==================== 3. PERSONAL TRAINERS (BRANCH-SPECIFIC EXPANSION) ====================
 
+// ==================== 3. PERSONAL TRAINERS (BRANCH-SPECIFIC EXPANSION) ====================
+
 const DEFAULT_TRAINERS = [
   // --- CABANG SETIABUDI (5 Trainers) ---
   {
@@ -399,11 +401,29 @@ const DEFAULT_TRAINERS = [
     branchIds: ['setiabudi'],
     name: 'Aby Pratama',
     fullName: 'Muhammad Aby Pratama, CPT',
+    gender: 'Pria',
+    categories: ['Shape', 'Athletic'],
+    tier: 'FIT PRO',
     photo: 'https://images.unsplash.com/photo-1567013127542-490d757e51fc?w=400&h=550&fit=crop&q=80',
     clients: 59,
     experience: '6 Tahun',
-    specialization: 'Strength & Conditioning, Functional Mobility',
-    certifications: 'Head Coach • ACE Certified Personal Trainer, NSCA-CPT',
+    summarySpecialization: 'Body Building, Endurance, Fat Loss, Muscle Gain',
+    specialization: 'Body Building, Endurance, Fat Loss, Muscle Gain',
+    specializations: [
+      'BODY BUILDING TRAINER',
+      'ENDURANCE TRAINER',
+      'FAT LOSS',
+      'KETTLEBELL TRAINER',
+      'MOVEMENT & MOBILITY TRAINER',
+      'MUSCLE GAIN'
+    ],
+    certifications: [
+      'PT Foundation Be Fit Academy',
+      'First Aid Training Level 1 - RosMedika Karya',
+      'Kettlebell Training Level 1 - Functional Training Institute (FTI)',
+      'Functional Mobility - FTI',
+      'Rehab FX - FTI'
+    ],
     bio: 'Head Coach di Be Fit Setiabudi dengan pengalaman 6 tahun mencetak transformasi tubuh atletis dan peningkatan performa atletik.',
     packages: [
       { sessions: 1, price: 199000, label: '1 Sesi', perSession: 199000, badge: 'Trial Sesi' },
@@ -418,12 +438,28 @@ const DEFAULT_TRAINERS = [
     branchIds: ['setiabudi'],
     name: 'Egi Angga',
     fullName: 'Egi Angga Permana',
+    gender: 'Pria',
+    categories: ['Athletic', 'Shape'],
+    tier: 'FIT MASTER',
     photo: 'https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=400&h=550&fit=crop&q=80',
     clients: 33,
-    experience: '4 Tahun',
-    specialization: 'Fat Loss & Body Recomposition',
-    certifications: 'ISSA Certified Fitness Trainer',
-    bio: 'Spesialis program pembakaran lemak optimal dan rekomposisi massa otot berbasis target kalori terukur di Be Fit Setiabudi.',
+    experience: '5 Tahun',
+    summarySpecialization: 'Fat Loss, HIIT & Conditioning, Functional Strength',
+    specialization: 'Fat Loss, HIIT & Conditioning, Functional Strength',
+    specializations: [
+      'FAT LOSS',
+      'HIIT & METABOLIC CONDITIONING',
+      'CORE TRAINER',
+      'ENDURANCE TRAINER',
+      'FUNCTIONAL STRENGTH'
+    ],
+    certifications: [
+      'APKI Certified Personal Trainer',
+      'Metabolic Conditioning Specialist - FTI',
+      'First Aid CPR/AED Certified',
+      'TRX Suspension Training Course'
+    ],
+    bio: 'Spesialis program pembakaran lemak optimal, HIIT metabolisme tinggi, dan rekomposisi massa otot berbasis target terukur di Be Fit Setiabudi.',
     packages: [
       { sessions: 1, price: 199000, label: '1 Sesi', perSession: 199000, badge: 'Trial Sesi' },
       { sessions: 4, price: 750000, label: '4 Sesi', perSession: 187500, badge: 'Starter' },
@@ -437,12 +473,28 @@ const DEFAULT_TRAINERS = [
     branchIds: ['setiabudi'],
     name: 'Nadia Kusuma',
     fullName: 'Nadia Kusuma Wardhani',
+    gender: 'Wanita',
+    categories: ['Shape'],
+    tier: 'FIT PRO',
     photo: 'https://images.unsplash.com/photo-1594381898411-846e7d193883?w=400&h=550&fit=crop&q=80',
     clients: 41,
-    experience: '5 Tahun',
-    specialization: 'Posture & Mobility Specialist',
-    certifications: 'NASM-CPT, FMS Level 2 Certified',
-    bio: 'Membantu member memperbaiki postur tubuh, menghilangkan nyeri punggung/bahu akibat duduk lama, dan meningkatkan fleksibilitas sendi.',
+    experience: '6 Tahun',
+    summarySpecialization: 'Reformer Pilates, Post-Injury Rehab, Posture Correction',
+    specialization: 'Reformer Pilates, Post-Injury Rehab, Posture Correction',
+    specializations: [
+      'REFORMER & MAT PILATES',
+      'POST-INJURY REHAB',
+      'POSTURE CORRECTION',
+      'CORE & FLEXIBILITY',
+      'WOMEN TONING'
+    ],
+    certifications: [
+      'STOTT Pilates Certified Instructor',
+      'Rehab FX - Functional Training Institute (FTI)',
+      'Pre & Postnatal Fitness Specialist',
+      'First Aid Training Level 1'
+    ],
+    bio: 'Fokus pada latihan pilates reformer, rehabilitasi pasca cedera, koreksi postur tubuh, serta penguatan core dan pembentukan tubuh wanita.',
     packages: [
       { sessions: 1, price: 199000, label: '1 Sesi', perSession: 199000, badge: 'Trial Sesi' },
       { sessions: 4, price: 750000, label: '4 Sesi', perSession: 187500, badge: 'Starter' },
@@ -456,12 +508,27 @@ const DEFAULT_TRAINERS = [
     branchIds: ['setiabudi'],
     name: 'Kevin Wijaya',
     fullName: 'Kevin Wijaya, CSCS',
+    gender: 'Pria',
+    categories: ['Athletic'],
+    tier: 'FIT TRAINER',
     photo: 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?w=400&h=550&fit=crop&q=80',
-    clients: 38,
-    experience: '4 Tahun',
-    specialization: 'Hypertrophy & Muscle Building',
-    certifications: 'CSCS • Certified Strength & Conditioning Specialist',
-    bio: 'Fokus pada hipertrofi dan pembentukan massa otot bersih dengan teknik angkat beban berprogresi beban terstruktur.',
+    clients: 28,
+    experience: '3 Tahun',
+    summarySpecialization: 'Athletic Performance, Agility & Speed, Plyometrics',
+    specialization: 'Athletic Performance, Agility & Speed, Plyometrics',
+    specializations: [
+      'ATHLETIC PERFORMANCE',
+      'AGILITY & SPEED TRAINING',
+      'PLYOMETRICS',
+      'ENDURANCE TRAINER',
+      'SPORTS CONDITIONING'
+    ],
+    certifications: [
+      'Certified Strength & Conditioning Specialist (CSCS Prep)',
+      'PT Foundation Be Fit Academy',
+      'Functional Movement Screen (FMS Level 1)'
+    ],
+    bio: 'Membimbing atlet dan fitness enthusiast meningkatkan daya ledak, kelincahan gerak, kecepatan, dan ketahanan kardiovaskular tinggi.',
     packages: [
       { sessions: 1, price: 199000, label: '1 Sesi', perSession: 199000, badge: 'Trial Sesi' },
       { sessions: 4, price: 750000, label: '4 Sesi', perSession: 187500, badge: 'Starter' },
@@ -475,12 +542,26 @@ const DEFAULT_TRAINERS = [
     branchIds: ['setiabudi'],
     name: 'Rina Maharani',
     fullName: 'Rina Maharani, CPT',
+    gender: 'Wanita',
+    categories: ['Shape'],
+    tier: 'FIT MASTER',
     photo: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=550&fit=crop&q=80',
-    clients: 45,
-    experience: '5 Tahun',
-    specialization: 'Functional Fitness & Core Training',
-    certifications: 'ACE-CPT, EXOS Performance Specialist',
-    bio: 'Pelatih kebugaran fungsional yang menggabungkan latihan beban tubuh, kettlebell, dan stabilitas core untuk stamina prima.',
+    clients: 36,
+    experience: '4 Tahun',
+    summarySpecialization: 'Glute & Lower Body, Fat Loss, Body Shaping & Toning',
+    specialization: 'Glute & Lower Body, Fat Loss, Body Shaping & Toning',
+    specializations: [
+      'GLUTE & LOWER BODY SHAPING',
+      'FAT LOSS',
+      'BODY SHAPING & TONING',
+      'NUTRITION & WEIGHT MANAGEMENT'
+    ],
+    certifications: [
+      'APKI Certified Fitness Trainer',
+      "Women's Fitness & Glute Lab Specialist",
+      'Precision Nutrition Level 1'
+    ],
+    bio: 'Spesialis pembentukan tubuh bawah (glutes & legs), penurunan persentase lemak, dan edukasi manajemen nutrisi harian yang berkelanjutan.',
     packages: [
       { sessions: 1, price: 199000, label: '1 Sesi', perSession: 199000, badge: 'Trial Sesi' },
       { sessions: 4, price: 750000, label: '4 Sesi', perSession: 187500, badge: 'Starter' },
@@ -496,12 +577,26 @@ const DEFAULT_TRAINERS = [
     branchIds: ['dago'],
     name: 'Adi Nugroho',
     fullName: 'Adi Nugroho, CSCS',
+    gender: 'Pria',
+    categories: ['Shape', 'Athletic'],
+    tier: 'FIT PRO',
     photo: 'https://images.unsplash.com/photo-1507398941214-572c25f4b1dc?w=400&h=550&fit=crop&q=80',
-    clients: 52,
+    clients: 47,
     experience: '7 Tahun',
-    specialization: 'Elite Performance Coach',
-    certifications: 'Head Coach Dago • NSCA Certified Strength Coach',
-    bio: 'Mengarahkan atlet dan member profesional di Be Fit Dago untuk mencapai kekuatan puncak, kecepatan, dan ketahanan kardiovaskular.',
+    summarySpecialization: 'Powerlifting, Strength, Muscle Gain, Biomechanics',
+    specialization: 'Powerlifting, Strength, Muscle Gain, Biomechanics',
+    specializations: [
+      'POWERLIFTING & STRENGTH',
+      'MUSCLE GAIN',
+      'BARBELL BIOMECHANICS',
+      'BODY BUILDING TRAINER'
+    ],
+    certifications: [
+      'APKI Master Trainer Certification',
+      'Powerlifting Club Coach Level 2',
+      'Functional Hypertrophy Specialist'
+    ],
+    bio: 'Spesialis biomekanika angkat beban, powerlifting, peningkatan massa otot masif, dan teknik dasar barbell teraman di Be Fit Dago.',
     packages: [
       { sessions: 1, price: 199000, label: '1 Sesi', perSession: 199000, badge: 'Trial Sesi' },
       { sessions: 4, price: 750000, label: '4 Sesi', perSession: 187500, badge: 'Starter' },
@@ -514,13 +609,27 @@ const DEFAULT_TRAINERS = [
     shift: '13:00 – 20:00 WIB',
     branchIds: ['dago'],
     name: 'Sarah Wijaya',
-    fullName: 'Sarah Ayu Wijaya',
+    fullName: 'Sarah Wijaya, RYT',
+    gender: 'Wanita',
+    categories: ['Shape', 'Athletic'],
+    tier: 'FIT PRO',
     photo: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400&h=550&fit=crop&q=80',
-    clients: 47,
+    clients: 52,
     experience: '5 Tahun',
-    specialization: 'Pilates & Rehab Conditioning',
-    certifications: 'NASM-CPT, Polestar Pilates Certified',
-    bio: 'Berpengalaman dalam pemulihan pasca cedera sendi, pilates core alignment, dan penguatan otot punggung di Be Fit Dago.',
+    summarySpecialization: 'Movement & Mobility, Yoga Therapy, Flexibility',
+    specialization: 'Movement & Mobility, Yoga Therapy, Flexibility',
+    specializations: [
+      'MOVEMENT & MOBILITY TRAINER',
+      'YOGA THERAPY & CORE',
+      'FLEXIBILITY & BALANCE',
+      'FAT LOSS'
+    ],
+    certifications: [
+      '200-Hour Registered Yoga Teacher (RYT)',
+      'Functional Mobility - FTI',
+      'PT Foundation Be Fit Academy'
+    ],
+    bio: 'Pendekatan holistik menggabungkan fleksibilitas, stabilitas core yoga, mobilitas fungsional, dan pembakaran lemak efisien.',
     packages: [
       { sessions: 1, price: 199000, label: '1 Sesi', perSession: 199000, badge: 'Trial Sesi' },
       { sessions: 4, price: 750000, label: '4 Sesi', perSession: 187500, badge: 'Starter' },
@@ -533,13 +642,27 @@ const DEFAULT_TRAINERS = [
     shift: '15:00 – 21:00 WIB',
     branchIds: ['dago'],
     name: 'Marco Santoso',
-    fullName: 'Marco Santoso, CF-L2',
+    fullName: 'Marco Santoso',
+    gender: 'Pria',
+    categories: ['Athletic'],
+    tier: 'FIT MASTER',
     photo: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=400&h=550&fit=crop&q=80',
-    clients: 39,
-    experience: '6 Tahun',
-    specialization: 'CrossFit & Powerlifting',
-    certifications: 'CrossFit Level 2 Trainer, USAPL Coach',
-    bio: 'Ahli dalam teknik squat, bench press, deadlift, dan sirkuit ketahanan intensif untuk membangun kekuatan maksimal.',
+    clients: 31,
+    experience: '4 Tahun',
+    summarySpecialization: 'Calisthenics, Core Trainer, Bodyweight Mastery',
+    specialization: 'Calisthenics, Core Trainer, Bodyweight Mastery',
+    specializations: [
+      'CALISTHENICS & BODYWEIGHT',
+      'CORE TRAINER',
+      'GYMNASTIC STRENGTH',
+      'ENDURANCE TRAINER'
+    ],
+    certifications: [
+      'World Calisthenics Organization (WCO) Level 1',
+      'Functional Training Institute (FTI) Bodyweight Mastery',
+      'First Aid Training Level 1'
+    ],
+    bio: 'Menguasai seni penguasaan bobot tubuh (bodyweight mastery), kekuatan inti gymnastics, dan ketahanan stamina berintensitas tinggi.',
     packages: [
       { sessions: 1, price: 199000, label: '1 Sesi', perSession: 199000, badge: 'Trial Sesi' },
       { sessions: 4, price: 750000, label: '4 Sesi', perSession: 187500, badge: 'Starter' },
@@ -553,12 +676,26 @@ const DEFAULT_TRAINERS = [
     branchIds: ['dago'],
     name: 'Dinda Putri',
     fullName: 'Dinda Putri Lestari',
+    gender: 'Wanita',
+    categories: ['Shape'],
+    tier: 'FIT TRAINER',
     photo: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=400&h=550&fit=crop&q=80',
-    clients: 36,
-    experience: '4 Tahun',
-    specialization: "Women's Weight Training & Tone",
-    certifications: 'ACE Certified Personal Trainer, Women Fitness Specialist',
-    bio: 'Spesialis program latihan beban wanita untuk membentuk pinggul, mengecilkan lingkar pinggang, dan mengencangkan tubuh.',
+    clients: 39,
+    experience: '3 Tahun',
+    summarySpecialization: 'Fat Loss, Weight Loss Transformation, Body Toning',
+    specialization: 'Fat Loss, Weight Loss Transformation, Body Toning',
+    specializations: [
+      'FAT LOSS',
+      'WEIGHT LOSS TRANSFORMATION',
+      'CARDIO CONDITIONING',
+      'BODY TONING'
+    ],
+    certifications: [
+      'PT Foundation Be Fit Academy',
+      'Certified Weight Loss Specialist',
+      'Les Mills Group Fitness Basic'
+    ],
+    bio: 'Mendampingi member baru dalam program penurunan berat badan aman, pengencangan otot tubuh, dan latihan kardio menyenangkan.',
     packages: [
       { sessions: 1, price: 199000, label: '1 Sesi', perSession: 199000, badge: 'Trial Sesi' },
       { sessions: 4, price: 750000, label: '4 Sesi', perSession: 187500, badge: 'Starter' },
@@ -571,13 +708,27 @@ const DEFAULT_TRAINERS = [
     shift: '13:00 – 20:00 WIB',
     branchIds: ['dago'],
     name: 'Reza Pahlevi',
-    fullName: 'Reza Pahlevi Pratama',
+    fullName: 'Reza Pahlevi',
+    gender: 'Pria',
+    categories: ['Athletic'],
+    tier: 'FIT MASTER',
     photo: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&h=550&fit=crop&q=80',
     clients: 44,
     experience: '5 Tahun',
-    specialization: 'HIIT & Calisthenics',
-    certifications: 'WSWCF Calisthenics Coach, ACE-CPT',
-    bio: 'Menguasai senam kalistenik tingkat lanjut, muscle-up, handstand, dan sirkuit HIIT pembakar lemak intensif.',
+    summarySpecialization: 'Boxing & Muay Thai Conditioning, Combat Cardio, Stamina',
+    specialization: 'Boxing & Muay Thai Conditioning, Combat Cardio, Stamina',
+    specializations: [
+      'BOXING & MUAY THAI CONDITIONING',
+      'COMBAT CARDIO',
+      'AGILITY & STAMINA',
+      'FAT LOSS'
+    ],
+    certifications: [
+      'Certified Boxing Fitness Coach',
+      'Padwork & Striking Conditioning Level 2',
+      'First Aid Training Level 1 - RosMedika Karya'
+    ],
+    bio: 'Pelatih padwork tinju & muay thai conditioning berkecepatan tinggi, memacu denyut jantung, ketahanan fisik, dan fokus refleks.',
     packages: [
       { sessions: 1, price: 199000, label: '1 Sesi', perSession: 199000, badge: 'Trial Sesi' },
       { sessions: 4, price: 750000, label: '4 Sesi', perSession: 187500, badge: 'Starter' },
@@ -592,13 +743,27 @@ const DEFAULT_TRAINERS = [
     shift: '07:00 – 14:00 WIB',
     branchIds: ['pasirkaliki'],
     name: 'Bima Sakti',
-    fullName: 'Bima Sakti Nugraha',
+    fullName: 'Bima Sakti Perkasa',
+    gender: 'Pria',
+    categories: ['Shape'],
+    tier: 'FIT PRO',
     photo: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400&h=550&fit=crop&q=80',
-    clients: 48,
-    experience: '6 Tahun',
-    specialization: 'Strength & Boxing Coach',
-    certifications: 'Head Coach Pasirkaliki • WBC Conditioning, AIBA Coach',
-    bio: 'Kombinasi padat antara latihan kekuatan fisik dan teknik tinju kardio eksplosif di Be Fit Pasirkaliki.',
+    clients: 45,
+    experience: '8 Tahun',
+    summarySpecialization: 'Body Building Trainer, Contest Prep, Extreme Muscle Gain',
+    specialization: 'Body Building Trainer, Contest Prep, Extreme Muscle Gain',
+    specializations: [
+      'BODY BUILDING TRAINER',
+      'CONTEST PREP & PHYSIQUE',
+      'EXTREME MUSCLE GAIN',
+      'FAT LOSS'
+    ],
+    certifications: [
+      'APKI Certified Personal Trainer',
+      'Advanced Hypertrophy & Contest Nutrition',
+      'PT Foundation Be Fit Academy'
+    ],
+    bio: 'Veteran binaraga dan pelatih kontes physique dengan dedikasi tinggi pada program hipertrofi lanjut dan pemotongan lemak ekstrem.',
     packages: [
       { sessions: 1, price: 199000, label: '1 Sesi', perSession: 199000, badge: 'Trial Sesi' },
       { sessions: 4, price: 750000, label: '4 Sesi', perSession: 187500, badge: 'Starter' },
@@ -611,13 +776,27 @@ const DEFAULT_TRAINERS = [
     shift: '13:00 – 20:00 WIB',
     branchIds: ['pasirkaliki'],
     name: 'Jessica Tan',
-    fullName: 'Jessica Tanuwijaya',
+    fullName: 'Jessica Tanujaya',
+    gender: 'Wanita',
+    categories: ['Athletic', 'Shape'],
+    tier: 'FIT MASTER',
     photo: 'https://images.unsplash.com/photo-1518310383802-640c2de311b2?w=400&h=550&fit=crop&q=80',
-    clients: 42,
+    clients: 38,
     experience: '4 Tahun',
-    specialization: 'Body Shaping & Toning',
-    certifications: 'ISSA Certified Fitness Coach',
-    bio: 'Membimbing pembentukan proporsi tubuh ideal wanita dengan teknik glute & core sculpting terarah.',
+    summarySpecialization: 'Bootcamp & Circuit, Kettlebell Trainer, HIIT Training',
+    specialization: 'Bootcamp & Circuit, Kettlebell Trainer, HIIT Training',
+    specializations: [
+      'BOOTCAMP & CIRCUIT TRAINING',
+      'FAT LOSS',
+      'KETTLEBELL TRAINER',
+      'HIGH INTENSITY INTERVAL (HIIT)'
+    ],
+    certifications: [
+      'Kettlebell Training Level 1 - FTI',
+      'Les Mills Grit & Circuit Certified',
+      'First Aid Training Level 1'
+    ],
+    bio: 'Enerjik dan memotivasi, ahli dalam merancang sirkuit latihan intensif kettlebell, bootcamp atletik, dan interval cardio pembakar kalori.',
     packages: [
       { sessions: 1, price: 199000, label: '1 Sesi', perSession: 199000, badge: 'Trial Sesi' },
       { sessions: 4, price: 750000, label: '4 Sesi', perSession: 187500, badge: 'Starter' },
@@ -630,13 +809,27 @@ const DEFAULT_TRAINERS = [
     shift: '15:00 – 21:00 WIB',
     branchIds: ['pasirkaliki'],
     name: 'Fajar Ramadhan',
-    fullName: 'Fajar Ramadhan, ACSM',
+    fullName: 'Fajar Ramadhan',
+    gender: 'Pria',
+    categories: ['Athletic'],
+    tier: 'FIT TRAINER',
     photo: 'https://images.unsplash.com/photo-1549060279-7e168fcee0c2?w=400&h=550&fit=crop&q=80',
-    clients: 35,
-    experience: '5 Tahun',
-    specialization: 'Cardiovascular & Endurance',
-    certifications: 'ACSM Certified Exercise Physiologist',
-    bio: 'Fokus pada peningkatan kapasitas VO2 Max, lari jarak jauh, dan ketahanan fungsional jantung-paru.',
+    clients: 24,
+    experience: '3 Tahun',
+    summarySpecialization: 'Endurance Trainer, Marathon & Running, VO2 Max',
+    specialization: 'Endurance Trainer, Marathon & Running, VO2 Max',
+    specializations: [
+      'ENDURANCE TRAINER',
+      'MARATHON & RUNNING PREP',
+      'VO2 MAX CONDITIONING',
+      'LOWER BODY MOBILITY'
+    ],
+    certifications: [
+      'Certified Running & Endurance Coach',
+      'Functional Mobility - FTI',
+      'PT Foundation Be Fit Academy'
+    ],
+    bio: 'Spesialis persiapan pelari maraton, penguatan stabilitas sendi tungkai, peningkatan efisiensi ritme lari, dan kapasitas VO2 Max.',
     packages: [
       { sessions: 1, price: 199000, label: '1 Sesi', perSession: 199000, badge: 'Trial Sesi' },
       { sessions: 4, price: 750000, label: '4 Sesi', perSession: 187500, badge: 'Starter' },
@@ -649,13 +842,27 @@ const DEFAULT_TRAINERS = [
     shift: '07:00 – 14:00 WIB',
     branchIds: ['pasirkaliki'],
     name: 'Maya Sari',
-    fullName: 'Maya Sari Kusuma, RYT',
+    fullName: 'Maya Sari Kusuma',
+    gender: 'Wanita',
+    categories: ['Shape'],
+    tier: 'FIT MASTER',
     photo: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400&h=550&fit=crop&q=80',
-    clients: 50,
-    experience: '6 Tahun',
-    specialization: 'Yoga & Flexibility Specialist',
-    certifications: 'RYT-500 Yoga Alliance Registered Teacher',
-    bio: 'Pakar peregangan asana, latihan pernapasan pranayama, dan mobilitas tubuh untuk keseimbangan fisik dan mental.',
+    clients: 30,
+    experience: '5 Tahun',
+    summarySpecialization: 'Postnatal Fitness, Pelvic Core Strength, Body Shaping',
+    specialization: 'Postnatal Fitness, Pelvic Core Strength, Body Shaping',
+    specializations: [
+      'POSTNATAL FITNESS',
+      'PELVIC & CORE STRENGTH',
+      'LOW IMPACT FAT LOSS',
+      'BODY SHAPING'
+    ],
+    certifications: [
+      'Pre & Postnatal Exercise Specialist',
+      'Rehab FX - Functional Training Institute (FTI)',
+      'APKI Certified Personal Trainer'
+    ],
+    bio: 'Spesialis pemulihan kebugaran pasca melahirkan, penguatan otot dasar panggul & core, serta restorasi bentuk tubuh ideal secara aman.',
     packages: [
       { sessions: 1, price: 199000, label: '1 Sesi', perSession: 199000, badge: 'Trial Sesi' },
       { sessions: 4, price: 750000, label: '4 Sesi', perSession: 187500, badge: 'Starter' },
@@ -663,10 +870,7 @@ const DEFAULT_TRAINERS = [
       { sessions: 12, price: 1950000, label: '12 Sesi', perSession: 162500, badge: 'Pro Athlete ⚡' }
     ]
   }
-  // CATATAN WAJIB: Cabang Buah Batu TIDAK memiliki Personal Trainer (0 Trainer)
 ];
-
-// ==================== 4. MEMBERSHIP PACKAGES ====================
 
 const MEMBERSHIP_PACKAGES = [
   {
@@ -1016,16 +1220,27 @@ function saveClasses(classes) {
 }
 
 // Trainers Storage
+// Trainers Storage
 function getTrainers() {
   try {
     const raw = localStorage.getItem(TRAINERS_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length >= DEFAULT_TRAINERS.length && parsed.some(t => t.id === 'TR-5')) {
+      if (Array.isArray(parsed) && parsed.length >= DEFAULT_TRAINERS.length && parsed.some(t => t.id === 'TR-14')) {
         return parsed.map(t => {
           const def = DEFAULT_TRAINERS.find(d => d.id === t.id);
-          const photo = (t.id === 'TR-6') ? 'https://images.unsplash.com/photo-1507398941214-572c25f4b1dc?w=400&h=550&fit=crop&q=80' : t.photo;
-          return { ...t, photo, shift: t.shift || (def ? def.shift : '07:00 – 14:00 WIB') };
+          return {
+            ...def,
+            ...t,
+            photo: (def && def.photo) || t.photo,
+            shift: t.shift || (def ? def.shift : '07:00 – 14:00 WIB'),
+            tier: t.tier || (def ? def.tier : 'FIT PRO'),
+            gender: t.gender || (def ? def.gender : 'Pria'),
+            categories: (Array.isArray(t.categories) && t.categories.length) ? t.categories : (def ? def.categories : ['Shape']),
+            summarySpecialization: t.summarySpecialization || (def ? def.summarySpecialization : t.specialization),
+            specializations: (Array.isArray(t.specializations) && t.specializations.length) ? t.specializations : (def ? def.specializations : []),
+            certifications: (Array.isArray(t.certifications) && t.certifications.length) ? t.certifications : (def ? def.certifications : [])
+          };
         });
       }
     }
@@ -1686,6 +1901,13 @@ function updateBranchUI(branch) {
   renderCalendarDatePicker();
   renderHomeClasses();
   renderHomeTrainers();
+
+  if (typeof renderFullTrainerScreen === 'function') {
+    const fullScreen = document.getElementById('full-trainer-screen');
+    if (fullScreen && !fullScreen.classList.contains('hidden')) {
+      renderFullTrainerScreen();
+    }
+  }
 }
 
 function openBranchSheet() {
@@ -2401,11 +2623,11 @@ function renderHomeTrainers() {
   const trainerCards = trainers.map(t => {
     const isBooked = currentUser && Array.isArray(currentUser.bookedTrainers) && currentUser.bookedTrainers.includes(t.id);
     return `
-      <button type="button" class="trainer-card relative shrink-0 rounded-xl overflow-hidden shadow-lg group snap-start text-left" style="width:145px;height:195px;" onclick="openTrainerDetail('${t.id}')">
+      <button type="button" class="trainer-card relative shrink-0 rounded-xl overflow-hidden shadow-lg group snap-start text-left cursor-pointer" style="width:145px;height:195px;" onclick="openTrainerDetail('${t.id}')">
         <img src="${t.photo}" alt="${sanitize(t.fullName)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-        <span class="absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-white/95 text-[8.5px] font-bold text-slate-800 backdrop-blur-sm shadow-sm font-mono">
-          🕒 ${t.shift || '07:00 – 14:00 WIB'}
+        <span class="absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-black/60 text-[8.5px] font-black text-white backdrop-blur-sm shadow-sm border border-white/20">
+          ${t.tier || 'FIT PRO'}
         </span>
         ${isBooked ? `
           <span class="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md text-[9px] font-black bg-emerald-500 text-slate-950 shadow-sm">
@@ -2414,7 +2636,7 @@ function renderHomeTrainers() {
         ` : ''}
         <div class="absolute bottom-0 left-0 right-0 p-3">
           <h4 class="text-white text-sm font-extrabold leading-tight">${sanitize(t.name)}</h4>
-          <p class="text-white/70 text-[10px] font-medium mt-0.5">${t.clients} klien aktif</p>
+          <p class="text-white/80 text-[10px] font-medium mt-0.5">${t.clients} klien aktif</p>
         </div>
       </button>
     `;
@@ -2437,119 +2659,529 @@ function renderHomeTrainers() {
   `;
 }
 
+// ==================== PERSONAL TRAINER STATE, FULL-SCREEN VIEWS & FILTERS ====================
+
+let activeTrainerFilters = {
+  gender: null,    // 'Pria' | 'Wanita'
+  category: null,  // 'Athletic' | 'Shape'
+  tier: null       // 'FIT TRAINER' | 'FIT MASTER' | 'FIT PRO'
+};
+let activeTrainerDetailTab = 'specialization'; // 'specialization' | 'certification' | 'packages'
+let currentDetailTrainerId = null;
+
+function toggleTrainerFilter(type, value) {
+  if (activeTrainerFilters[type] === value) {
+    activeTrainerFilters[type] = null;
+  } else {
+    activeTrainerFilters[type] = value;
+  }
+  renderFullTrainerScreen();
+}
+
+function resetTrainerFilters() {
+  activeTrainerFilters = { gender: null, category: null, tier: null };
+  renderFullTrainerScreen();
+}
+
+function openAllTrainersSheet() {
+  closeBottomSheet();
+  closeFullTrainerDetailScreen();
+  setActiveNav('trainer');
+  const screen = document.getElementById('full-trainer-screen');
+  if (screen) {
+    screen.classList.remove('hidden');
+    renderFullTrainerScreen();
+    screen.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+function closeFullTrainerScreen() {
+  const screen = document.getElementById('full-trainer-screen');
+  if (screen) {
+    screen.classList.add('hidden');
+  }
+  setActiveNav('home');
+}
+
+function renderFullTrainerScreen() {
+  const container = document.getElementById('full-trainer-screen');
+  if (!container) return;
+
+  const currentBranch = getSelectedBranch();
+  const allTrainers = getTrainers();
+  const branchTrainers = allTrainers.filter(t => Array.isArray(t.branchIds) ? t.branchIds.includes(currentBranch.id) : true);
+  const currentUser = getCurrentUser();
+
+  const isAnyFilterActive = Boolean(activeTrainerFilters.gender || activeTrainerFilters.category || activeTrainerFilters.tier);
+
+  // Filter logic
+  const filteredTrainers = branchTrainers.filter(t => {
+    if (activeTrainerFilters.gender && t.gender !== activeTrainerFilters.gender) {
+      return false;
+    }
+    if (activeTrainerFilters.category) {
+      const cats = Array.isArray(t.categories) ? t.categories : [t.categories];
+      if (!cats.includes(activeTrainerFilters.category)) return false;
+    }
+    if (activeTrainerFilters.tier && t.tier !== activeTrainerFilters.tier) {
+      return false;
+    }
+    return true;
+  });
+
+  const filterBtnClass = (isActive) => isActive
+    ? 'px-3.5 py-1.5 rounded-full text-xs font-black transition-all cursor-pointer bg-teal-600 text-white border-2 border-teal-600 shadow-sm shrink-0'
+    : 'px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer bg-white text-slate-700 border border-slate-200 hover:border-teal-400 hover:text-teal-700 shrink-0';
+
+  let contentHtml = '';
+
+  if (currentBranch.id === 'buahbatu') {
+    contentHtml = `
+      <div class="p-6 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 text-white text-center flex flex-col items-center justify-center my-6">
+        <div class="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center text-3xl mb-3 shadow-inner">🏋️‍♂️</div>
+        <h4 class="text-base font-black tracking-tight leading-snug">Belum Ada Personal Trainer Tersedia di Cabang Ini</h4>
+        <p class="text-xs text-white/80 mt-1.5 leading-relaxed max-w-[280px]">
+          Layanan Personal Trainer segera hadir untuk cabang <strong>${sanitize(currentBranch.name)}</strong>. Silakan kunjungi cabang Setiabudi, Dago, atau Pasirkaliki untuk sesi latihan privat.
+        </p>
+        <button type="button" onclick="openBranchSheet()" class="mt-4 px-4 py-2 rounded-xl bg-white text-teal-900 text-xs font-black shadow-md hover:bg-slate-100 active:scale-95 transition-all cursor-pointer">
+          Pilih Cabang Lain
+        </button>
+      </div>
+    `;
+  } else if (filteredTrainers.length === 0) {
+    contentHtml = `
+      <div class="p-6 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 text-white text-center flex flex-col items-center justify-center my-6">
+        <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-2xl mb-2.5 shadow-inner">🔍</div>
+        <h4 class="text-sm font-black tracking-tight leading-snug">Tidak Ada Trainer Sesuai Filter</h4>
+        <p class="text-xs text-white/80 mt-1 max-w-[260px] leading-relaxed">
+          Tidak ditemukan pelatih dengan kombinasi filter yang dipilih di ${sanitize(currentBranch.name)}.
+        </p>
+        <button type="button" onclick="resetTrainerFilters()" class="mt-4 px-4 py-2 rounded-xl bg-amber-400 text-slate-950 text-xs font-black shadow-md hover:brightness-105 active:scale-95 transition-all cursor-pointer">
+          Reset Filter (${branchTrainers.length} Trainer Tersedia)
+        </button>
+      </div>
+    `;
+  } else {
+    const cards = filteredTrainers.map(t => {
+      const isBooked = currentUser && Array.isArray(currentUser.bookedTrainers) && currentUser.bookedTrainers.includes(t.id);
+      const specSummary = t.summarySpecialization || (Array.isArray(t.specializations) ? t.specializations.slice(0, 3).join(', ') : t.specialization);
+
+      return `
+        <button type="button" class="w-full text-left group cursor-pointer flex flex-col focus:outline-none" onclick="openTrainerDetail('${t.id}')">
+          <!-- Photo Box -->
+          <div class="relative w-full rounded-2xl overflow-hidden aspect-[3/4] shadow-md group-hover:shadow-xl transition-all bg-slate-900">
+            <img src="${t.photo}" alt="${sanitize(t.fullName)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 pointer-events-none">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent pointer-events-none"></div>
+
+            <!-- Tier Badge Solid Top Left -->
+            <span class="absolute top-2 left-2 px-1.5 py-0.5 rounded-md text-[8.5px] font-black uppercase tracking-wider backdrop-blur-md bg-black/60 text-white border border-white/25">
+              ${t.tier}
+            </span>
+
+            ${isBooked ? `
+              <span class="absolute top-2 right-2 px-1.5 py-0.5 rounded-md text-[8px] font-black bg-emerald-500 text-slate-950 shadow-sm">
+                ✓ AKTIF
+              </span>
+            ` : ''}
+
+            <!-- Bottom Content inside Photo -->
+            <div class="absolute bottom-0 left-0 right-0 p-2.5 pointer-events-none">
+              <h3 class="text-white text-xs font-black leading-tight group-hover:text-amber-300 transition-colors truncate">
+                ${sanitize(t.name)}
+              </h3>
+              <p class="text-white/80 text-[10px] font-medium mt-0.5 flex items-center gap-1">
+                <span>👤</span> <strong>${t.clients} klien aktif</strong>
+              </p>
+            </div>
+          </div>
+
+          <!-- Bottom Summary outside Photo (on top of tosca background) -->
+          <div class="mt-2 px-0.5 pointer-events-none">
+            <p class="text-[11px] text-white/95 font-semibold leading-snug line-clamp-2">
+              ${sanitize(specSummary)}
+            </p>
+          </div>
+        </button>
+      `;
+    }).join('');
+
+    contentHtml = `
+      <div class="grid grid-cols-2 gap-3.5">
+        ${cards}
+      </div>
+    `;
+  }
+
+  container.innerHTML = `
+    <div class="min-h-screen bg-slate-50 flex flex-col pb-24">
+      <!-- 1. Header & Club Selector (Clean White) -->
+      <div class="sticky top-0 z-30 bg-white border-b border-slate-200/90 px-4 pt-3 pb-3 shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2.5">
+            <button type="button" onclick="closeFullTrainerScreen()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 active:scale-95 flex items-center justify-center text-slate-700 cursor-pointer transition-all" title="Kembali ke Beranda">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+            </button>
+            <h1 class="text-lg font-black text-slate-900 tracking-tight">Personal Trainer</h1>
+          </div>
+          <span class="text-[11px] font-extrabold px-2.5 py-1 rounded-full bg-teal-50 text-teal-700 border border-teal-200">
+            ${branchTrainers.length} Pelatih
+          </span>
+        </div>
+
+        <!-- Kartu Dropdown Lokasi (Club Selector) -->
+        <button type="button" onclick="openBranchSheet()" class="w-full flex items-center justify-between p-3 rounded-2xl border border-slate-200 hover:border-teal-500 bg-white shadow-sm cursor-pointer group transition-all text-left">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 border border-teal-200/60 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+            </div>
+            <div>
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block leading-none">Club dipilih</span>
+              <span class="text-xs font-black text-slate-900 group-hover:text-teal-600 transition-colors mt-0.5 block">${sanitize(currentBranch.name)}</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5 text-slate-400 group-hover:text-teal-600 font-bold text-xs pr-1">
+            <span>Ganti</span>
+            <svg class="w-4 h-4 text-slate-400 group-hover:text-teal-600 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+          </div>
+        </button>
+
+        <!-- 2. Sistem Filter Kategori ("Filter sesuai kebutuhanmu") -->
+        <div class="mt-3 pt-3 border-t border-slate-100">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-[11px] font-extrabold text-slate-700 tracking-tight">Filter sesuai kebutuhanmu</span>
+            ${isAnyFilterActive ? `
+              <button type="button" onclick="resetTrainerFilters()" class="text-[10px] font-black text-teal-600 hover:text-teal-800 underline cursor-pointer">
+                Reset Filter
+              </button>
+            ` : ''}
+          </div>
+
+          <!-- Baris 1: Filter Gender & Tujuan Latihan -->
+          <div class="flex items-center gap-1.5 overflow-x-auto hide-scrollbar pb-1.5">
+            <button type="button" onclick="toggleTrainerFilter('gender', 'Pria')" class="${filterBtnClass(activeTrainerFilters.gender === 'Pria')}">
+              🧍‍♂️ Pria
+            </button>
+            <button type="button" onclick="toggleTrainerFilter('gender', 'Wanita')" class="${filterBtnClass(activeTrainerFilters.gender === 'Wanita')}">
+              🧍‍♀️ Wanita
+            </button>
+            <button type="button" onclick="toggleTrainerFilter('category', 'Athletic')" class="${filterBtnClass(activeTrainerFilters.category === 'Athletic')}">
+              🏃 Athletic
+            </button>
+            <button type="button" onclick="toggleTrainerFilter('category', 'Shape')" class="${filterBtnClass(activeTrainerFilters.category === 'Shape')}">
+              🏋️ Shape
+            </button>
+          </div>
+
+          <!-- Baris 2: Filter Level / Tier Trainer -->
+          <div class="flex items-center gap-1.5 overflow-x-auto hide-scrollbar pt-0.5">
+            <button type="button" onclick="toggleTrainerFilter('tier', 'FIT TRAINER')" class="${filterBtnClass(activeTrainerFilters.tier === 'FIT TRAINER')}">
+              ^ FIT TRAINER
+            </button>
+            <button type="button" onclick="toggleTrainerFilter('tier', 'FIT MASTER')" class="${filterBtnClass(activeTrainerFilters.tier === 'FIT MASTER')}">
+              ^^ FIT MASTER
+            </button>
+            <button type="button" onclick="toggleTrainerFilter('tier', 'FIT PRO')" class="${filterBtnClass(activeTrainerFilters.tier === 'FIT PRO')}">
+              ^^^ FIT PRO
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Seksi Katalog Trainer (Full-Width Teal Gradient Container) -->
+      <div class="flex-1 bg-gradient-to-b from-[#0D9488] via-[#0F766E] to-[#115E59] px-4 pt-5 pb-10">
+        <!-- Headline Promo -->
+        <div class="mb-3.5">
+          <h2 class="text-xl font-black text-white tracking-tight leading-snug">Hemat hingga 36% 🎉</h2>
+          <p class="text-xs text-teal-100 font-medium mt-0.5">Khusus member baru dan rejoin</p>
+        </div>
+
+        <!-- Tombol Banner Konsultasi WhatsApp -->
+        <a href="https://wa.me/6282116156884?text=Halo%20Admin%20Be%20Fit%2C%20saya%20ingin%20konsultasi%20gratis%20untuk%20memilih%20Personal%20Trainer%20yang%20paling%20sesuai%20dengan%20target%20latihan%20saya." target="_blank" rel="noopener noreferrer"
+          class="w-full bg-white rounded-xl p-3.5 shadow-md flex items-center justify-between text-left group cursor-pointer hover:bg-slate-50 active:scale-[0.99] transition-all mb-4">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 text-emerald-600">
+              <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.592 2.654-.697c.974.57 1.761.854 2.806.854 3.18 0 5.767-2.587 5.768-5.766.001-3.182-2.585-5.768-5.768-5.768zm7.421 5.766c-.002 4.092-3.329 7.42-7.422 7.42-1.31 0-2.327-.333-3.328-.881l-3.693.968.986-3.597c-.608-.999-.958-2.127-.957-3.91.002-4.091 3.33-7.419 7.422-7.419 4.092 0 7.421 3.328 7.421 7.421z"/></svg>
+            </div>
+            <span class="text-xs font-black text-slate-800 leading-snug">Konsultasi GRATIS untuk pilih trainer terbaik</span>
+          </div>
+          <span class="text-teal-600 font-black text-base shrink-0 group-hover:translate-x-1 transition-transform ml-2">→</span>
+        </a>
+
+        <!-- Trainer Grid / Empty State -->
+        ${contentHtml}
+      </div>
+    </div>
+  `;
+}
+
 function openTrainerDetail(idOrIndex) {
+  closeBottomSheet();
   const trainers = getTrainers();
   const t = typeof idOrIndex === 'string'
     ? (trainers.find(x => x.id === idOrIndex) || trainers[0])
     : (trainers[idOrIndex] || trainers[0]);
+
+  currentDetailTrainerId = t.id;
+  activeTrainerDetailTab = 'specialization';
+
+  const screen = document.getElementById('full-trainer-detail-screen');
+  if (!screen) return;
+  screen.classList.remove('hidden');
+  renderFullTrainerDetailScreen(t);
+  screen.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function closeFullTrainerDetailScreen() {
+  const screen = document.getElementById('full-trainer-detail-screen');
+  if (screen) {
+    screen.classList.add('hidden');
+    screen.innerHTML = '';
+  }
+}
+
+function setTrainerDetailTab(tabName) {
+  activeTrainerDetailTab = tabName;
+  renderTrainerDetailTabContent();
+}
+
+function renderFullTrainerDetailScreen(t) {
+  const screen = document.getElementById('full-trainer-detail-screen');
+  if (!screen || !t) return;
+
+  const currentBranch = getSelectedBranch();
+  const waBranchName = currentBranch.name;
+  const waMsg = `Halo Admin Be Fit, saya ingin bertanya informasi selengkapnya mengenai Personal Trainer ${t.name} di cabang ${waBranchName}.`;
+  const waUrl = `https://wa.me/6282116156884?text=${encodeURIComponent(waMsg)}`;
+
+  screen.innerHTML = `
+    <div class="min-h-screen bg-slate-50 flex flex-col pb-12 relative">
+      <!-- A. Foto Header Besar (300px) & Tombol Kembali -->
+      <div class="relative w-full h-[300px] overflow-hidden bg-slate-900 shrink-0">
+        <img src="${t.photo}" alt="${sanitize(t.fullName)}" class="w-full h-full object-cover">
+        <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
+
+        <!-- Tombol Kembali Bulat Putih (←) -->
+        <button type="button" onclick="closeFullTrainerDetailScreen()" class="absolute top-4 left-4 w-10 h-10 rounded-full bg-white/95 text-slate-800 shadow-xl flex items-center justify-center hover:bg-white active:scale-90 transition-all cursor-pointer z-20" title="Kembali">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+
+        <div class="absolute bottom-4 left-4 right-4">
+          <span class="inline-block px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider backdrop-blur-md bg-black/60 text-white border border-white/30">
+            ${t.gender} • ${Array.isArray(t.categories) ? t.categories.join(' & ') : t.categories}
+          </span>
+        </div>
+      </div>
+
+      <!-- B. Informasi Utama Trainer (Area Putih Bersih) -->
+      <div class="bg-white -mt-6 rounded-t-3xl relative z-10 px-5 pt-5 pb-8 shadow-sm flex-1">
+        <!-- 1. Tombol WhatsApp Outlined -->
+        <a href="${waUrl}" target="_blank" rel="noopener noreferrer"
+          class="w-full border-2 border-[#0D9488] bg-teal-50/50 hover:bg-teal-50 active:scale-[0.99] rounded-xl p-3 flex items-center justify-between text-left group cursor-pointer mb-4 transition-all shadow-sm">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <div class="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 text-emerald-600">
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.592 2.654-.697c.974.57 1.761.854 2.806.854 3.18 0 5.767-2.587 5.768-5.766.001-3.182-2.585-5.768-5.768-5.768zm7.421 5.766c-.002 4.092-3.329 7.42-7.422 7.42-1.31 0-2.327-.333-3.328-.881l-3.693.968.986-3.597c-.608-.999-.958-2.127-.957-3.91.002-4.091 3.33-7.419 7.422-7.419 4.092 0 7.421 3.328 7.421 7.421z"/></svg>
+            </div>
+            <span class="text-xs font-black text-teal-950 leading-snug">Hubungi untuk informasi selengkapnya</span>
+          </div>
+          <span class="text-teal-700 font-black text-base shrink-0 group-hover:translate-x-1 transition-transform">→</span>
+        </a>
+
+        <!-- 2. Nama & Badge Tier -->
+        <div class="flex items-start justify-between gap-3 mb-3.5">
+          <div class="min-w-0">
+            <h1 class="text-xl font-black text-slate-900 tracking-tight leading-snug">${sanitize(t.name)}</h1>
+            <p class="text-xs text-slate-500 font-bold mt-0.5">${sanitize(t.fullName)}</p>
+          </div>
+          <span class="px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider text-white bg-[#14B8A6] shadow-sm shrink-0 whitespace-nowrap">
+            ${t.tier}
+          </span>
+        </div>
+
+        <!-- 3. 4 Baris Info Kredensial + Jam Operasional -->
+        <div class="grid grid-cols-2 gap-2 mb-3.5">
+          <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">🏋️ Lokasi Club</span>
+            <span class="text-xs font-black text-slate-800 mt-0.5 block truncate">Be Fit ${currentBranch.name.replace('Be Fit ', '')}</span>
+          </div>
+          <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">👥 Client</span>
+            <span class="text-xs font-black text-slate-800 mt-0.5 block">${t.clients} Active Client</span>
+          </div>
+          <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">⭐ Pengalaman</span>
+            <span class="text-xs font-black text-slate-800 mt-0.5 block">${t.experience}</span>
+          </div>
+          <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">🕒 Jam Operasional</span>
+            <span class="text-xs font-black text-teal-700 font-mono mt-0.5 block">${t.shift || '07:00 – 14:00 WIB'}</span>
+          </div>
+        </div>
+
+        <!-- Bio Trainer -->
+        <p class="text-xs text-slate-600 leading-relaxed mb-4">${sanitize(t.bio)}</p>
+
+        <!-- C. 3 Tab Navigasi Pill Interaktif (Spesialisasi | Sertifikasi | Paket Sesi) -->
+        <div class="flex items-center justify-between gap-1.5 p-1 bg-slate-100/90 rounded-full mb-4 border border-slate-200/80">
+          <button type="button" onclick="setTrainerDetailTab('specialization')"
+            id="tab-btn-specialization"
+            style="border-radius: 9999px; ${activeTrainerDetailTab === 'specialization' ? 'background: #CCFBF1; color: #0F766E; border: 1.5px solid #0D9488;' : 'background: #FFFFFF; color: #64748B; border: 1.5px solid #CBD5E1;'}"
+            class="flex-1 py-2 text-xs text-center cursor-pointer transition-all ${activeTrainerDetailTab === 'specialization' ? 'font-extrabold shadow-sm' : 'font-semibold'}">
+            Spesialisasi
+          </button>
+          <button type="button" onclick="setTrainerDetailTab('certification')"
+            id="tab-btn-certification"
+            style="border-radius: 9999px; ${activeTrainerDetailTab === 'certification' ? 'background: #CCFBF1; color: #0F766E; border: 1.5px solid #0D9488;' : 'background: #FFFFFF; color: #64748B; border: 1.5px solid #CBD5E1;'}"
+            class="flex-1 py-2 text-xs text-center cursor-pointer transition-all ${activeTrainerDetailTab === 'certification' ? 'font-extrabold shadow-sm' : 'font-semibold'}">
+            Sertifikasi
+          </button>
+          <button type="button" onclick="setTrainerDetailTab('packages')"
+            id="tab-btn-packages"
+            style="border-radius: 9999px; ${activeTrainerDetailTab === 'packages' ? 'background: #CCFBF1; color: #0F766E; border: 1.5px solid #0D9488;' : 'background: #FFFFFF; color: #64748B; border: 1.5px solid #CBD5E1;'}"
+            class="flex-1 py-2 text-xs text-center cursor-pointer transition-all ${activeTrainerDetailTab === 'packages' ? 'font-extrabold shadow-sm' : 'font-semibold'}">
+            Paket Sesi
+          </button>
+        </div>
+
+        <!-- Tab Content Container -->
+        <div id="trainer-detail-tab-content">
+          <!-- Populated by renderTrainerDetailTabContent() -->
+        </div>
+      </div>
+    </div>
+  `;
+
+  renderTrainerDetailTabContent();
+}
+
+function renderTrainerDetailTabContent() {
+  const container = document.getElementById('trainer-detail-tab-content');
+  if (!container) return;
+
+  const trainers = getTrainers();
+  const t = trainers.find(x => x.id === currentDetailTrainerId) || trainers[0];
   const currentUser = getCurrentUser();
   const isBooked = currentUser && Array.isArray(currentUser.bookedTrainers) && currentUser.bookedTrainers.includes(t.id);
 
-  const packageRows = t.packages.map((pkg, pi) => {
-    if (isBooked) {
+  // Update tab buttons styles
+  ['specialization', 'certification', 'packages'].forEach(tabName => {
+    const btn = document.getElementById(`tab-btn-${tabName}`);
+    if (btn) {
+      if (activeTrainerDetailTab === tabName) {
+        btn.style.cssText = 'border-radius: 9999px; background: #CCFBF1; color: #0F766E; border: 1.5px solid #0D9488;';
+        btn.className = 'flex-1 py-2 text-xs text-center cursor-pointer transition-all font-extrabold shadow-sm';
+      } else {
+        btn.style.cssText = 'border-radius: 9999px; background: #FFFFFF; color: #64748B; border: 1.5px solid #CBD5E1;';
+        btn.className = 'flex-1 py-2 text-xs text-center cursor-pointer transition-all font-semibold';
+      }
+    }
+  });
+
+  if (activeTrainerDetailTab === 'specialization') {
+    const list = Array.isArray(t.specializations) ? t.specializations : [t.specialization];
+    container.innerHTML = `
+      <div class="space-y-2">
+        ${list.map(spec => `
+          <div class="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200/80 text-xs font-black shadow-2xs" style="background-color: #F1F5F9; color: #1E293B;">
+            <span class="text-base shrink-0">🎯</span>
+            <span class="uppercase tracking-wider">${sanitize(spec)}</span>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  } else if (activeTrainerDetailTab === 'certification') {
+    const list = Array.isArray(t.certifications) ? t.certifications : [t.certifications];
+    container.innerHTML = `
+      <div class="space-y-2">
+        ${list.map(cert => `
+          <div class="border border-slate-200/80 text-xs font-bold flex items-start gap-3 shadow-2xs" style="background-color: #F1F5F9; padding: 12px 16px; border-radius: 8px; color: #334155;">
+            <span class="text-base shrink-0 text-amber-500">🏆</span>
+            <span class="leading-relaxed">${sanitize(cert)}</span>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  } else if (activeTrainerDetailTab === 'packages') {
+    const isPtPromoActive = activePromoCode === 'PTPROMO20';
+
+    const packageRows = t.packages.map((pkg, pi) => {
+      if (isBooked) {
+        return `
+          <div class="w-full flex items-center justify-between p-3.5 rounded-2xl border-2 border-emerald-300 bg-emerald-50/70 text-left opacity-95">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-bold text-slate-900">${pkg.label}</span>
+                <span class="px-2 py-0.5 rounded text-[9px] font-extrabold bg-emerald-100 text-emerald-800">Aktif</span>
+              </div>
+              <span class="text-[11px] text-slate-500 block mt-0.5">${formatRupiah(pkg.perSession)}/sesi privat</span>
+            </div>
+            <div class="text-right">
+              <span class="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wider">
+                ✓ PAKET AKTIF / SUDAH DIBELI
+              </span>
+            </div>
+          </div>
+        `;
+      }
+
+      const disc = isPtPromoActive ? Math.round(pkg.price * 0.20) : 0;
+      const finalPrice = Math.max(0, pkg.price - disc);
+
       return `
-        <div class="w-full flex items-center justify-between p-3.5 rounded-2xl border-2 border-emerald-300 bg-emerald-50/70 text-left opacity-95">
+        <button type="button" class="w-full flex items-center justify-between p-3.5 rounded-2xl border-2 border-slate-200 hover:border-teal-500 hover:bg-teal-50/40 active:bg-teal-50 transition-all text-left group cursor-pointer"
+          onclick="handleTrainerPackageSelect('${t.id}', ${pi})">
           <div>
             <div class="flex items-center gap-2">
-              <span class="text-sm font-bold text-slate-900">${pkg.label}</span>
-              <span class="px-2 py-0.5 rounded text-[9px] font-extrabold bg-emerald-100 text-emerald-800">Aktif</span>
+              <span class="text-sm font-bold text-slate-900 group-hover:text-teal-700">${pkg.label}</span>
+              <span class="px-2 py-0.5 rounded text-[9px] font-extrabold ${pkg.badge && pkg.badge.includes('🔥') ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700'}">
+                ${pkg.badge || ''}
+              </span>
+              ${disc > 0 ? `
+                <span class="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                  -20%
+                </span>
+              ` : ''}
             </div>
-            <span class="text-[11px] text-slate-500 block mt-0.5">${formatRupiah(pkg.perSession)}/sesi privat</span>
+            <span class="text-[11px] text-slate-400 block mt-0.5">${formatRupiah(pkg.perSession)}/sesi privat</span>
           </div>
           <div class="text-right">
-            <span class="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wider">
-              ✓ PAKET AKTIF / SUDAH DIBELI
-            </span>
-          </div>
-        </div>
-      `;
-    }
-
-    const isPtPromo = activePromoCode === 'PTPROMO20';
-    let disc = isPtPromo ? Math.round(pkg.price * 0.20) : 0;
-    let finalPrice = Math.max(0, pkg.price - disc);
-
-    return `
-      <button type="button" class="w-full flex items-center justify-between p-3.5 rounded-2xl border-2 border-slate-200 hover:border-teal-500 hover:bg-teal-50/40 active:bg-teal-50 transition-all text-left group cursor-pointer"
-        onclick="handleTrainerPackageSelect('${t.id}', ${pi})">
-        <div>
-          <div class="flex items-center gap-2">
-            <span class="text-sm font-bold text-slate-900 group-hover:text-teal-700">${pkg.label}</span>
-            <span class="px-2 py-0.5 rounded text-[9px] font-extrabold ${pkg.badge.includes('🔥') ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700'}">
-              ${pkg.badge}
-            </span>
             ${disc > 0 ? `
-              <span class="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                -20%
-              </span>
-            ` : ''}
+              <span class="text-sm font-black text-emerald-600 font-mono">${formatRupiah(finalPrice)}</span>
+              <span class="text-[10px] text-slate-400 line-through font-mono block">${formatRupiah(pkg.price)}</span>
+            ` : `
+              <span class="text-sm font-black text-teal-600 font-mono">${formatRupiah(pkg.price)}</span>
+            `}
+            <span class="text-[10px] text-teal-700 font-bold block mt-0.5 group-hover:underline">Pilih & Lanjut Bayar &gt;</span>
           </div>
-          <span class="text-[11px] text-slate-400 block mt-0.5">${formatRupiah(pkg.perSession)}/sesi privat</span>
+        </button>
+      `;
+    }).join('');
+
+    container.innerHTML = `
+      ${isBooked ? `
+        <div class="p-3 bg-emerald-50 border border-emerald-300 rounded-xl mb-3 flex items-center gap-2 text-xs font-bold text-emerald-800">
+          <svg class="w-5 h-5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+          <span>✓ Anda sudah memiliki paket aktif bersama Coach ${sanitize(t.name)}. Hubungi coach untuk sesi latihan!</span>
         </div>
-        <div class="text-right">
-          ${disc > 0 ? `
-            <span class="text-sm font-black text-emerald-600 font-mono">${formatRupiah(finalPrice)}</span>
-            <span class="text-[10px] text-slate-400 line-through font-mono block">${formatRupiah(pkg.price)}</span>
-          ` : `
-            <span class="text-sm font-black text-teal-600 font-mono">${formatRupiah(pkg.price)}</span>
-          `}
-          <span class="text-[10px] text-teal-700 font-bold block mt-0.5 group-hover:underline">Pilih Paket &gt;</span>
+      ` : ''}
+
+      ${isPtPromoActive ? `
+        <div class="p-3 bg-emerald-50 border border-emerald-300 rounded-xl mb-3 flex items-center justify-between text-xs text-emerald-900">
+          <div class="flex items-center gap-2">
+            <span class="text-base">🏷️</span>
+            <div>
+              <strong class="block leading-tight font-black">Voucher PTPROMO20 Aktif!</strong>
+              <span class="text-[10px] text-emerald-700 font-medium">Diskon 20% otomatis memotong tagihan saat checkout</span>
+            </div>
+          </div>
+          <span class="px-2 py-0.5 rounded font-mono font-bold bg-emerald-100 text-emerald-800 text-[10px] border border-emerald-300">-20%</span>
         </div>
-      </button>
+      ` : ''}
+
+      <div class="space-y-2.5">
+        ${packageRows}
+      </div>
     `;
-  }).join('');
-
-  const isPtPromoActive = activePromoCode === 'PTPROMO20';
-
-  openBottomSheet(`
-    <div class="flex items-start gap-4 mb-4">
-      <img src="${t.photo}" alt="${sanitize(t.fullName)}" class="w-20 h-20 rounded-2xl object-cover border-2 border-slate-100 shrink-0 shadow-sm">
-      <div class="flex-1 min-w-0">
-        <h3 class="text-base font-black text-slate-900 leading-snug truncate">${sanitize(t.fullName)}</h3>
-        <p class="text-xs text-teal-600 font-bold mt-0.5">${sanitize(t.specialization)}</p>
-        <div class="flex items-center gap-3 mt-2 text-[11px] text-slate-500 font-medium">
-          <span>📋 ${t.experience}</span>
-          <span>👤 <strong>${t.clients} klien aktif</strong></span>
-        </div>
-      </div>
-    </div>
-
-    ${isBooked ? `
-      <div class="p-3 bg-emerald-50 border border-emerald-300 rounded-xl mb-3 flex items-center gap-2 text-xs font-bold text-emerald-800">
-        <svg class="w-5 h-5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-        <span>✓ Anda sudah memiliki paket aktif bersama Coach ${sanitize(t.name)}. Hubungi coach untuk sesi latihan!</span>
-      </div>
-    ` : ''}
-
-    ${isPtPromoActive ? `
-      <div class="p-3 bg-emerald-50 border border-emerald-300 rounded-xl mb-3 flex items-center justify-between text-xs text-emerald-900">
-        <div class="flex items-center gap-2">
-          <span class="text-base">🏷️</span>
-          <div>
-            <strong class="block leading-tight font-black">Voucher PTPROMO20 Aktif!</strong>
-            <span class="text-[10px] text-emerald-700 font-medium">Diskon 20% otomatis memotong tagihan saat checkout</span>
-          </div>
-        </div>
-        <span class="px-2 py-0.5 rounded font-mono font-bold bg-emerald-100 text-emerald-800 text-[10px] border border-emerald-300">-20%</span>
-      </div>
-    ` : ''}
-
-    <div class="flex items-center gap-2 px-3 py-2 bg-teal-50/80 rounded-xl border border-teal-200/80 mb-3 text-xs font-semibold text-teal-900">
-      <span class="text-sm">🕒</span>
-      <span>Jam Kerja / Operasional: <strong class="text-teal-950 font-bold font-mono">${t.shift || '07:00 – 14:00 WIB'}</strong></span>
-    </div>
-    <p class="text-xs text-slate-600 leading-relaxed mb-3.5">${sanitize(t.bio)}</p>
-
-    <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-200 mb-4 text-[11px] text-slate-600 flex items-center gap-2">
-      <span class="text-sm">🏆</span>
-      <span class="font-medium">${sanitize(t.certifications)}</span>
-    </div>
-
-    <div class="sheet-divider"></div>
-
-    <h4 class="text-xs font-black uppercase tracking-wider text-slate-700 mb-2.5">Pilih Paket Sesi Latihan Privat</h4>
-    <div class="space-y-2.5">${packageRows}</div>
-  `);
+  }
 }
 
 function handleTrainerPackageSelect(trainerId, packageIndex) {
@@ -2572,46 +3204,58 @@ function handleTrainerPackageSelect(trainerId, packageIndex) {
   });
 }
 
-function openAllTrainersSheet() {
-  const currentBranch = getSelectedBranch();
-  const allTrainers = getTrainers();
-  const trainers = allTrainers.filter(t => Array.isArray(t.branchIds) ? t.branchIds.includes(currentBranch.id) : true);
+function setActiveNav(tab) {
+  const items = document.querySelectorAll('.bottom-nav-item');
+  items.forEach(item => {
+    const isThisTab = item.dataset.tab === tab;
+    let pill = item.querySelector('.nav-active-pill');
+    if (isThisTab) {
+      item.classList.remove('text-slate-400');
+      item.classList.add('text-teal-550', 'text-teal-600');
+      const textSpan = item.querySelector('span:last-child');
+      if (textSpan) {
+        textSpan.classList.add('font-bold');
+        textSpan.classList.remove('font-medium');
+      }
+      if (!pill) {
+        pill = document.createElement('span');
+        pill.className = 'nav-active-pill absolute -top-0.5 w-8 h-0.5 rounded-full bg-teal-550';
+        item.style.position = 'relative';
+        item.prepend(pill);
+      }
+    } else {
+      item.classList.remove('text-teal-550', 'text-teal-600');
+      item.classList.add('text-slate-400');
+      const textSpan = item.querySelector('span:last-child');
+      if (textSpan) {
+        textSpan.classList.remove('font-bold');
+        textSpan.classList.add('font-medium');
+      }
+      if (pill) pill.remove();
+    }
+  });
+}
 
-  if (currentBranch.id === 'buahbatu' || trainers.length === 0) {
-    openBottomSheet(`
-      <div class="mb-4">
-        <h3 class="text-base font-extrabold text-slate-900">Personal Trainer</h3>
-        <p class="text-xs text-slate-400 mt-0.5">${currentBranch.name}</p>
-      </div>
-      <div class="p-6 rounded-2xl bg-slate-50 border border-slate-200 text-center">
-        <div class="text-3xl mb-2">🏋️‍♂️</div>
-        <h4 class="text-sm font-bold text-slate-800">Belum ada trainer tersedia di cabang ini</h4>
-        <p class="text-xs text-slate-500 mt-1">Layanan Personal Trainer segera hadir untuk cabang ${currentBranch.name}.</p>
-      </div>
-    `);
-    return;
+function navigateToTab(tab) {
+  if (tab === 'home') {
+    closeFullTrainerScreen();
+    closeFullTrainerDetailScreen();
+    closeBottomSheet();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setActiveNav('home');
+  } else if (tab === 'trainer') {
+    openAllTrainersSheet();
+  } else if (tab === 'class') {
+    closeFullTrainerScreen();
+    closeFullTrainerDetailScreen();
+    openAllClassesSheet();
+    setActiveNav('class');
+  } else if (tab === 'profile') {
+    closeFullTrainerScreen();
+    closeFullTrainerDetailScreen();
+    openProfileSheet();
+    setActiveNav('profile');
   }
-
-  const cards = trainers.map(t => `
-    <button type="button" class="w-full flex items-center gap-3.5 p-3 rounded-2xl border border-slate-100 hover:bg-slate-50 transition-colors text-left cursor-pointer"
-      onclick="openTrainerDetail('${t.id}')">
-      <img src="${t.photo}" alt="${sanitize(t.name)}" class="w-16 h-16 rounded-2xl object-cover shrink-0 shadow-sm">
-      <div class="flex-1 min-w-0">
-        <h4 class="text-sm font-bold text-slate-900 truncate">${sanitize(t.fullName)}</h4>
-        <p class="text-[11px] text-teal-600 font-bold mt-0.5 truncate">${sanitize(t.specialization)}</p>
-        <p class="text-[10px] text-slate-400 mt-0.5">📋 ${t.experience} • 👤 ${t.clients} klien • 🕒 <span class="text-teal-600 font-bold">${t.shift || '07:00 – 14:00 WIB'}</span></p>
-      </div>
-      <svg class="w-4 h-4 text-slate-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-    </button>
-  `).join('');
-
-  openBottomSheet(`
-    <div class="mb-4">
-      <h3 class="text-base font-extrabold text-slate-900">Personal Trainer Be Fit</h3>
-      <p class="text-xs text-slate-400 mt-0.5">${currentBranch.name}</p>
-    </div>
-    <div class="space-y-2.5">${cards}</div>
-  `);
 }
 
 // ==================== 5. UNIFIED PAYMENT CHECKOUT SYSTEM (NO CREDIT CARD) ====================
@@ -3111,6 +3755,8 @@ function completePaymentSuccess(params, billing) {
     syncWithCRMState(currentUser, 'Pembelian Sesi Personal Trainer', `${pkg.sessions} Sesi bersama Coach ${trainer.name} (${formatRupiah(billing.total)})`);
     showToast(`Paket PT bersama Coach ${trainer.name} berhasil dibeli!`, 4500);
     renderHomeTrainers();
+    if (typeof renderFullTrainerScreen === 'function') renderFullTrainerScreen();
+    if (typeof renderTrainerDetailTabContent === 'function') renderTrainerDetailTabContent();
   }
 
   // Record Transaction
@@ -3765,6 +4411,15 @@ window.handlePromoClaimAndNavigate = handlePromoClaimAndNavigate;
 window.openPromoDetail = openPromoDetail;
 window.openPricingSheet = openPricingSheet;
 window.openAllTrainersSheet = openAllTrainersSheet;
+window.closeFullTrainerScreen = closeFullTrainerScreen;
+window.openTrainerDetail = openTrainerDetail;
+window.closeFullTrainerDetailScreen = closeFullTrainerDetailScreen;
+window.toggleTrainerFilter = toggleTrainerFilter;
+window.resetTrainerFilters = resetTrainerFilters;
+window.setTrainerDetailTab = setTrainerDetailTab;
+window.handleTrainerPackageSelect = handleTrainerPackageSelect;
+window.setActiveNav = setActiveNav;
+window.navigateToTab = navigateToTab;
 window.openAllClassesSheet = openAllClassesSheet;
 window.openClassDetail = openClassDetail;
 window.handleBookClass = handleBookClass;
