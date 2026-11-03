@@ -352,7 +352,7 @@
       const waNumber = formatWhatsAppNumber(m.phone);
       const emailParam = encodeURIComponent(m.email || '');
       const magicLink = `${window.location.origin}/?action=renew&voucher=RENEWLOYAL25&email=${emailParam}`;
-      const message = `Halo Kak ${m.name || 'Member'}! 👋\n\nKami dari tim Be Fit Gym ingin mengapresiasi komitmen latihan Kakak selama ini! 💪\n\nMengingatkan bahwa masa aktif paket membership Kakak tersisa ${daysLeft} hari lagi. Khusus untuk Kakak, kami memberikan tautan rahasia DISKON 25% untuk perpanjangan paket membership.\n\nVoucher ini terkunci dan HANYA BISA DIAKTIFKAN dengan mengklik tautan resmi di bawah ini:\n👉 ${magicLink}\n\nKlik link di atas sekarang untuk mengklaim potongan harga sebelum masa aktif habis ya, Kak! 😊`;
+      const message = `Halo Kak ${m.name || 'Member'}! 👋\n\nKami dari tim Be Fit Gym ingin mengapresiasi latihan Kakak selama ini! 💪\n\nMasa aktif membership Kakak tersisa ${daysLeft} hari lagi. Khusus untuk Kakak, kami berikan tautan rahasia DISKON 25% untuk perpanjangan paket membership.\n\n🎟️ Kode Voucher: RENEWLOYAL25 (Diskon 25%)\n\nKlik tautan resmi di bawah ini untuk langsung memilih paket dengan harga yang sudah dipotong 25%:\n👉 ${magicLink}\n\nYuk perpanjang sekarang sebelum masa aktif habis ya, Kak! 😊`;
 
       return `https://wa.me/${waNumber}?text=${encodeURIComponent(message)}`;
     }
