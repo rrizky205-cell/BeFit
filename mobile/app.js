@@ -1008,6 +1008,15 @@ const PROMOS_DATA = [
 
 const VOUCHERS_DATA = [
   {
+    code: 'RENEWLOYAL25',
+    desc: 'Diskon 25% Promo Perpanjangan Loyalitas (Khusus Membership)',
+    type: 'membership',
+    percent: 25,
+    minAmount: 0,
+    expires: '31 Des 2026',
+    badge: '25% OFF RENEWAL'
+  },
+  {
     code: 'MEMBERBARU15',
     desc: 'Diskon 15% Member Baru (Khusus Membership)',
     type: 'membership',
@@ -1460,11 +1469,13 @@ function openAuthModal(defaultTab = 'login') {
 }
 
 function getLoginFormHtml() {
+  const prefillEmail = sessionStorage.getItem('befit_prefill_email') || '';
   return `
     <form id="form-login" class="space-y-3.5" onsubmit="handleLoginSubmit(event)">
       <div>
         <label class="block text-xs font-bold text-slate-700 mb-1">Email atau No. WhatsApp</label>
         <input type="text" id="login-identifier" required placeholder="Contoh: member@befit.id atau 08123456789"
+          value="${sanitize(prefillEmail)}"
           class="w-full border border-slate-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 rounded-xl px-3.5 py-2.5 text-sm outline-none transition-colors placeholder:text-slate-400 bg-white" />
       </div>
       <div>
@@ -2448,7 +2459,9 @@ function openPricingSheet(selectedPackageId = 'pkg-3m') {
     const promo = activePromoCode ? VOUCHERS_DATA.find(x => x.code === activePromoCode) : null;
     let disc = 0;
     if (promo) {
-      if (promo.code === 'MEMBERBARU15') {
+      if (promo.code === 'RENEWLOYAL25') {
+        disc = Math.round(pkg.price * 0.25);
+      } else if (promo.code === 'MEMBERBARU15') {
         disc = Math.round(pkg.price * 0.15);
       } else if (promo.code === 'GAJIAN100K' && pkg.durationDays >= 90) {
         disc = 100000;
@@ -2543,7 +2556,18 @@ function openPricingSheet(selectedPackageId = 'pkg-3m') {
       <p class="text-xs text-slate-400 mt-0.5">Pilih paket latihan yang sesuai dengan target kebugaranmu</p>
     </div>
 
-    ${activePromoObj && (activePromoObj.code === 'MEMBERBARU15' || activePromoObj.code === 'GAJIAN100K') ? `
+    ${activePromoObj && activePromoObj.code === 'RENEWLOYAL25' ? `
+      <div class="mb-3.5 p-3.5 bg-emerald-50 border-2 border-emerald-400 rounded-2xl flex items-center justify-between text-xs text-emerald-950 shadow-sm animate-pulse">
+        <div class="flex items-center gap-2.5">
+          <span class="text-xl">🎉</span>
+          <div>
+            <strong class="block leading-tight font-black text-emerald-900">Promo Perpanjangan Loyalitas 25% (RENEWLOYAL25) Aktif Otomatis!</strong>
+            <span class="text-[11px] text-emerald-700 font-semibold mt-0.5 block">Harga di bawah ini sudah dipotong 25% secara langsung.</span>
+          </div>
+        </div>
+        <span class="px-2.5 py-1 rounded-lg font-mono font-black bg-emerald-600 text-white text-[11px] shadow-sm shrink-0">-25%</span>
+      </div>
+    ` : (activePromoObj && (activePromoObj.code === 'MEMBERBARU15' || activePromoObj.code === 'GAJIAN100K') ? `
       <div class="mb-3.5 p-3 bg-emerald-50 border border-emerald-300 rounded-xl flex items-center justify-between text-xs text-emerald-900">
         <div class="flex items-center gap-2">
           <span class="text-base">🏷️</span>
@@ -2554,7 +2578,7 @@ function openPricingSheet(selectedPackageId = 'pkg-3m') {
         </div>
         <span class="px-2 py-0.5 rounded font-mono font-bold bg-emerald-100 text-emerald-800 text-[10px] border border-emerald-300">${activePromoObj.badge}</span>
       </div>
-    ` : ''}
+    ` : '')}
 
     <!-- Interactive Packages Grid -->
     <div id="membership-packages-list" class="space-y-3 mb-5">
@@ -3264,14 +3288,19 @@ let activePaymentMethod = 'qris';
 let appliedVoucher = null;
 let activePromoCode = null;
 try {
-  activePromoCode = sessionStorage.getItem('befit_active_promo') || null;
+  activePromoCode = sessionStorage.getItem('befit_active_promo') || localStorage.getItem('befit_pending_promo') || null;
 } catch (e) {}
 
 function setActivePromoCode(code) {
   activePromoCode = code;
   try {
-    if (code) sessionStorage.setItem('befit_active_promo', code);
-    else sessionStorage.removeItem('befit_active_promo');
+    if (code) {
+      sessionStorage.setItem('befit_active_promo', code);
+      localStorage.setItem('befit_pending_promo', code);
+    } else {
+      sessionStorage.removeItem('befit_active_promo');
+      localStorage.removeItem('befit_pending_promo');
+    }
   } catch (e) {}
 }
 
@@ -3294,7 +3323,9 @@ function openUnifiedCheckout(params) {
     const userUsed = Array.isArray(currentUser.usedVouchers) ? currentUser.usedVouchers : [];
     if (promo && !userUsed.includes(promo.code)) {
       if (type === 'membership') {
-        if (promo.code === 'MEMBERBARU15') {
+        if (promo.code === 'RENEWLOYAL25') {
+          appliedVoucher = promo;
+        } else if (promo.code === 'MEMBERBARU15') {
           appliedVoucher = promo;
         } else if (promo.code === 'GAJIAN100K' && (!pkg.durationDays || pkg.durationDays >= 90)) {
           appliedVoucher = promo;
@@ -4327,6 +4358,9 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && sheetOpen) closeBottomSheet();
   });
+
+  // 6. Check URL Deep-Link Parameters for Smart Retention Promo
+  checkDeepLinkParams();
 });
 
 
@@ -4426,3 +4460,70 @@ window.handleBookClass = handleBookClass;
 window.claimVoucher = claimVoucher;
 window.openVoucherList = openVoucherList;
 window.openChatAdminSheet = openChatAdminSheet;
+
+// ==================== DEEP-LINK RETENTION PROMO LISTENER ====================
+
+function checkDeepLinkParams() {
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const action = urlParams.get('action');
+    const voucher = urlParams.get('voucher');
+    const email = urlParams.get('email');
+
+    const isRenew = action === 'renew' || (voucher && voucher.toUpperCase() === 'RENEWLOYAL25');
+    if (isRenew) {
+      const promoCode = 'RENEWLOYAL25';
+
+      // 1. Activate Promo in state & persistence
+      setActivePromoCode(promoCode);
+
+      // 2. Member sync / auto-login
+      if (email) {
+        const cleanEmail = decodeURIComponent(email).trim().toLowerCase();
+        try {
+          const users = getUsers();
+          const matchedUser = users.find(u => (u.email || '').toLowerCase() === cleanEmail);
+          if (matchedUser) {
+            setCurrentUser(matchedUser);
+            if (typeof updateHeaderUserDisplay === 'function') updateHeaderUserDisplay();
+            if (typeof updateTrialButton === 'function') updateTrialButton();
+          } else {
+            sessionStorage.setItem('befit_prefill_email', cleanEmail);
+          }
+        } catch (e) {}
+      }
+
+      // 3. Ensure UI is NOT in Admin Mode
+      try {
+        sessionStorage.removeItem('befit_admin_logged_in');
+        localStorage.removeItem('befit_admin_page');
+        localStorage.removeItem('current_page');
+      } catch (e) {}
+
+      // 4. Clean query parameters from URL so address bar is clean
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+
+      // 5. Toast notification
+      showToast('🎉 Promo Perpanjangan Loyalitas 25% (RENEWLOYAL25) Aktif Otomatis! Harga di bawah ini sudah dipotong 25%.', 4500);
+
+      // 6. Direct transition to Pricing Sheet
+      setTimeout(() => {
+        closeBottomSheet();
+        if (typeof closeFullTrainerScreen === 'function') closeFullTrainerScreen();
+        if (typeof closeFullTrainerDetailScreen === 'function') closeFullTrainerDetailScreen();
+        openPricingSheet('pkg-3m');
+      }, 150);
+    }
+  } catch (err) {
+    console.error('Error handling deep link params:', err);
+  }
+}
+
+window.checkDeepLinkParams = checkDeepLinkParams;
+
+// Execute immediately in case DOM is already ready
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+  checkDeepLinkParams();
+}

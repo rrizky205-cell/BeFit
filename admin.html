@@ -315,6 +315,15 @@
       return dateStr;
     }
 
+    function createRetentionPromoWaUrl(m) {
+      const daysLeft = Math.max(0, getDaysRemaining(m.expiryDate));
+      const waNumber = formatWhatsAppNumber(m.phone);
+      const magicLink = `${window.location.origin}/?action=renew&voucher=RENEWLOYAL25&email=${encodeURIComponent(m.email || '')}`;
+      const message = `Halo Kak ${m.name || 'Member'}! 👋\n\nKami dari tim Be Fit Gym ingin mengapresiasi semangat latihan Kakak selama ini! 💪\n\nMengingatkan bahwa masa aktif paket membership Kakak tersisa ${daysLeft} hari lagi. Supaya latihan Kakak tidak terputus, kami memberikan Promo Spesial Loyalitas: DISKON 25% untuk perpanjangan paket membership!\n\n🎟️ Kode Promo: RENEWLOYAL25 (Otomatis Aktif)\n\nKlik link khusus di bawah ini untuk langsung memilih paket perpanjangan dengan harga yang sudah didiskon 25%:\n👉 ${magicLink}\n\nYuk klaim sekarang sebelum masa aktif berakhir ya, Kak! 😊`;
+
+      return `https://wa.me/${waNumber}?text=${encodeURIComponent(message)}`;
+    }
+
     function showToast(msg, duration = 3000) {
       const toast = document.getElementById('admin-toast');
       if (!toast) return;
@@ -846,10 +855,8 @@
             ` : `
               <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 ${followUpTodayMembers.map(m => {
-                  const daysLeft = getDaysRemaining(m.expiryDate);
-                  const waNumber = formatWhatsAppNumber(m.phone);
-                  const waMessage = encodeURIComponent(`Halo Kak ${m.name}, kami dari Be Fit Gym. Mengingatkan bahwa paket membership Kakak tersisa ${daysLeft} hari lagi (berakhir ${formatDateIndo(m.expiryDate)}). Yuk perpanjang sekarang dan dapatkan diskon retensi khusus untuk Kakak!`);
-                  const waUrl = `https://wa.me/${waNumber}?text=${waMessage}`;
+                  const daysLeft = Math.max(0, getDaysRemaining(m.expiryDate));
+                  const waUrl = createRetentionPromoWaUrl(m);
 
                   return `
                     <div class="p-4 rounded-xl border border-amber-200 bg-amber-50/40 hover:bg-amber-50 transition-all flex flex-col justify-between">
@@ -867,8 +874,9 @@
                       <div class="mt-4 pt-3 border-t border-amber-200/60 flex items-center justify-between">
                         <span class="text-xs font-mono font-bold text-slate-600">${m.phone}</span>
                         <a href="${waUrl}" target="_blank" rel="noopener noreferrer"
-                          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black shadow-sm transition-all">
-                          <span>💬 WhatsApp Follow-Up</span>
+                          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black shadow-sm transition-all"
+                          title="Kirim Promo 25% (WA) dengan Deep-Link Perpanjangan">
+                          <span>💬 Kirim Promo 25% (WA)</span>
                         </a>
                       </div>
                     </div>
@@ -1127,9 +1135,7 @@
                   }
 
                   // WhatsApp CRM Direct Link
-                  const waNumber = formatWhatsAppNumber(m.phone);
-                  const waText = encodeURIComponent(`Halo Kak ${m.name}, kami dari Be Fit Gym. Mengingatkan bahwa paket membership Kakak ${days > 0 ? `tersisa ${days} hari lagi (berakhir ${formatDateIndo(m.expiryDate)})` : 'sudah berakhir'}. Yuk perpanjang sekarang dan dapatkan diskon retensi khusus untuk Kakak!`);
-                  const waUrl = `https://wa.me/${waNumber}?text=${waText}`;
+                  const waUrl = createRetentionPromoWaUrl(m);
 
                   return `
                     <tr>
@@ -1173,9 +1179,9 @@
                         <div class="flex items-center justify-center gap-1.5 flex-wrap">
                           <!-- WhatsApp Button -->
                           <a href="${waUrl}" target="_blank" rel="noopener noreferrer"
-                            class="px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white border border-emerald-300 font-black text-[11px] transition-all inline-flex items-center gap-1"
-                            title="Kirim Pesan Retensi via WhatsApp">
-                            <span>💬 WA</span>
+                            class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[11px] transition-all inline-flex items-center gap-1 shadow-sm whitespace-nowrap"
+                            title="Kirim Promo 25% (WA) dengan Deep-Link Perpanjangan">
+                            <span>💬 Kirim Promo 25% (WA)</span>
                           </a>
 
                           <!-- Cuti / Freeze Button -->
