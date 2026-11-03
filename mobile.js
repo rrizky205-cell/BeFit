@@ -1054,12 +1054,98 @@ const VOUCHERS_DATA = [
   }
 ];
 
-function isRetentionUnlocked() {
+function getDaysRemaining(expiryDateStr) {
+  if (!expiryDateStr) return 999;
   try {
-    return sessionStorage.getItem('befit_retention_unlocked') === 'true' ||
-           localStorage.getItem('befit_retention_unlocked') === 'true';
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const expiry = new Date(expiryDateStr);
+    expiry.setHours(0, 0, 0, 0);
+    return Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
   } catch (e) {
-    return false;
+    return 999;
+  }
+}
+
+function checkAndInjectRetentionVoucher(user) {
+  if (!user || user.role === 'admin') return { isExpiringSoon: false, daysRemaining: 999 };
+
+  const days = getDaysRemaining(user.expiryDate);
+  const usedVouchers = Array.isArray(user.usedVouchers) ? user.usedVouchers : [];
+  const alreadyUsed = usedVouchers.includes('RENEWLOYAL25');
+
+  const isExpiringSoon = days >= 1 && days <= 10 && !alreadyUsed;
+
+  if (isExpiringSoon) {
+    user.injectedVouchers = Array.isArray(user.injectedVouchers) ? user.injectedVouchers : [];
+    if (!user.injectedVouchers.includes('RENEWLOYAL25')) {
+      user.injectedVouchers.push('RENEWLOYAL25');
+    }
+    setRetentionUnlocked(true);
+    setActivePromoCode('RENEWLOYAL25');
+  } else {
+    if (user.injectedVouchers && user.injectedVouchers.includes('RENEWLOYAL25')) {
+      user.injectedVouchers = user.injectedVouchers.filter(v => v !== 'RENEWLOYAL25');
+    }
+    if (activePromoCode === 'RENEWLOYAL25' && (days > 10 || alreadyUsed)) {
+      clearRetentionUnlock();
+    }
+  }
+
+  return { isExpiringSoon, daysRemaining: days };
+}
+
+function isRetentionUnlocked() {
+  const user = getCurrentUser();
+  if (!user || user.role === 'admin') return false;
+  const days = getDaysRemaining(user.expiryDate);
+  const usedVouchers = Array.isArray(user.usedVouchers) ? user.usedVouchers : [];
+  if (usedVouchers.includes('RENEWLOYAL25')) return false;
+
+  const hasInjected = Array.isArray(user.injectedVouchers) && user.injectedVouchers.includes('RENEWLOYAL25');
+  const isWithinDays = days >= 1 && days <= 10;
+
+  return isWithinDays || hasInjected;
+}
+
+function renderHomeRetentionBanner() {
+  const container = document.getElementById('home-retention-banner-container');
+  if (!container) return;
+
+  const user = getCurrentUser();
+  if (!user || user.role === 'admin') {
+    container.innerHTML = '';
+    return;
+  }
+
+  const { isExpiringSoon, daysRemaining } = checkAndInjectRetentionVoucher(user);
+
+  if (isExpiringSoon) {
+    container.innerHTML = `
+      <div class="px-4 pt-3 pb-1">
+        <div class="p-3.5 rounded-2xl bg-[#FEF3C7] border-2 border-[#F59E0B] shadow-sm flex flex-col gap-2.5">
+          <div class="flex items-start gap-2.5">
+            <span class="text-2xl shrink-0">⚠️</span>
+            <div class="flex-1 min-w-0">
+              <h4 class="text-xs font-black text-amber-950 leading-tight">
+                Masa Aktif Membership Tersisa ${daysRemaining} Hari Lagi!
+              </h4>
+              <p class="text-[11px] text-amber-900 mt-1 leading-snug font-medium">
+                Khusus untuk Anda, sistem telah menyuntikkan Voucher Diskon Perpanjangan 25% (RENEWLOYAL25) secara otomatis ke akun Anda.
+              </p>
+            </div>
+          </div>
+          <div class="pt-2 border-t border-amber-300/70 flex justify-end">
+            <button type="button" onclick="navigateToTab('pricing')"
+              class="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 active:scale-95 text-white text-xs font-black shadow-sm transition-all flex items-center gap-1.5 cursor-pointer">
+              <span>Perpanjang Sekarang (Diskon 25%) &rarr;</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  } else {
+    container.innerHTML = '';
   }
 }
 
@@ -1145,7 +1231,7 @@ const DEFAULT_USERS = [
     branch: 'Setiabudi',
     packageType: 'Pro Transformation',
     packageDuration: 'Paket 3 Bulan (Pro Transformation)',
-    expiryDate: '2026-11-06',
+    expiryDate: '2026-11-08',
     status: 'Active',
     ptSessions: 0,
     totalPaid: 900000,
@@ -1161,7 +1247,7 @@ const DEFAULT_USERS = [
     branch: 'Dago',
     packageType: 'Basic Starter',
     packageDuration: 'Paket 1 Bulan (Basic Starter)',
-    expiryDate: '2026-11-06',
+    expiryDate: '2026-11-08',
     status: 'Active',
     ptSessions: 0,
     totalPaid: 350000,
@@ -1221,7 +1307,7 @@ function getUsers() {
             branch: 'Setiabudi',
             packageType: 'Pro Transformation',
             packageDuration: 'Paket 3 Bulan (Pro Transformation)',
-            expiryDate: '2026-11-06',
+            expiryDate: '2026-11-08',
             status: 'Active',
             ptSessions: 0,
             totalPaid: 900000,
@@ -1237,7 +1323,7 @@ function getUsers() {
             branch: 'Dago',
             packageType: 'Basic Starter',
             packageDuration: 'Paket 1 Bulan (Basic Starter)',
-            expiryDate: '2026-11-06',
+            expiryDate: '2026-11-08',
             status: 'Active',
             ptSessions: 0,
             totalPaid: 350000,
@@ -1251,8 +1337,8 @@ function getUsers() {
             parsed.push(sr);
             updated = true;
           } else {
-            if (parsed[idx].expiryDate !== '2026-11-06' && !parsed[idx].voucherUsed) {
-              parsed[idx].expiryDate = '2026-11-06';
+            if (parsed[idx].expiryDate !== '2026-11-08' && !parsed[idx].voucherUsed) {
+              parsed[idx].expiryDate = '2026-11-08';
               parsed[idx].phone = sr.phone;
               updated = true;
             }
@@ -1301,6 +1387,7 @@ function setCurrentUser(user) {
   updateHeaderUserDisplay();
   renderHomeClasses();
   updateTrialButton();
+  renderHomeRetentionBanner();
 }
 
 // Branch Storage
@@ -2687,9 +2774,9 @@ function openPricingSheet(selectedPackageId = 'pkg-3m') {
     ${isRetentionUnlocked() ? `
       <div class="mb-3.5 p-3.5 bg-emerald-50 border-2 border-emerald-400 rounded-2xl flex items-center justify-between text-xs text-emerald-950 shadow-sm animate-pulse">
         <div class="flex items-center gap-2.5">
-          <span class="text-xl">🎁</span>
+          <span class="text-xl">🎉</span>
           <div>
-            <strong class="block leading-tight font-black text-emerald-900">🎁 Undangan Khusus WhatsApp: Voucher RENEWLOYAL25 (Diskon 25%) Aktif Otomatis! Silakan pilih paket di bawah ini.</strong>
+            <strong class="block leading-tight font-black text-emerald-900">🎉 Voucher Perpanjangan 25% (RENEWLOYAL25) Aktif Otomatis di Akun Anda!</strong>
             <span class="text-[11px] text-emerald-700 font-semibold mt-0.5 block">Harga di bawah ini sudah dipotong 25% secara langsung.</span>
           </div>
         </div>
@@ -3519,8 +3606,8 @@ function openUnifiedCheckout(params) {
     }
 
     if (cleanCode === 'RENEWLOYAL25' && !isRetentionUnlocked()) {
-      voucherError = 'Voucher ini khusus undangan perpanjangan via WhatsApp Admin!';
-      showToast('Voucher ini khusus undangan perpanjangan via WhatsApp Admin!', 4000);
+      voucherError = 'Voucher ini khusus member dengan masa aktif tersisa 1-10 hari!';
+      showToast('Voucher ini khusus member dengan masa aktif tersisa 1-10 hari!', 4000);
       updateCheckoutUI();
       return;
     }
@@ -3875,6 +3962,11 @@ function completePaymentSuccess(params, billing) {
     }
   }
 
+  // Clear injected retention voucher if RENEWLOYAL25 used
+  if (currentUser.injectedVouchers) {
+    currentUser.injectedVouchers = currentUser.injectedVouchers.filter(v => v !== 'RENEWLOYAL25');
+  }
+
   // Clear active promo after successful transaction
   setActivePromoCode(null);
   clearRetentionUnlock();
@@ -4040,21 +4132,47 @@ function openProfileSheet() {
     return;
   }
 
+  // Check retention eligibility & inject voucher if 1-10 days remaining
+  const { isExpiringSoon, daysRemaining } = checkAndInjectRetentionVoucher(currentUser);
+
   // Active membership package
   const activePackage = MEMBERSHIP_PACKAGES.find(p => p.shortName === currentUser.packageType || p.name === currentUser.packageDuration) || MEMBERSHIP_PACKAGES[1];
 
   const html = `
     <!-- User Profile Header: Clean, NO Member ID Clutter -->
-    <div class="text-center mb-5 pb-4 border-b border-slate-100">
-      <div class="w-16 h-16 rounded-full bg-gradient-to-br from-teal-500 to-teal-700 text-white font-black text-xl flex items-center justify-center mx-auto mb-2.5 shadow-md">
+    <div class="text-center mb-4 pb-3 border-b border-slate-100">
+      <div class="w-16 h-16 rounded-full bg-gradient-to-br from-teal-500 to-teal-700 text-white font-black text-xl flex items-center justify-center mx-auto mb-2 shadow-md">
         ${currentUser.name.substring(0, 2).toUpperCase()}
       </div>
       <h3 class="text-base font-black text-slate-900">${sanitize(currentUser.name)}</h3>
       <p class="text-xs text-slate-500 mt-0.5">${currentUser.phone} • ${currentUser.email || 'member@befit.id'}</p>
-      <span class="inline-block mt-2 px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
+      <span class="inline-block mt-1.5 px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
         Status: ${currentUser.status || 'Active'}
       </span>
     </div>
+
+    ${isExpiringSoon ? `
+      <!-- Amber Retention Warning Card in Profile -->
+      <div class="mb-4 p-3.5 rounded-2xl bg-[#FEF3C7] border-2 border-[#F59E0B] shadow-sm flex flex-col gap-2.5 text-left">
+        <div class="flex items-start gap-2.5">
+          <span class="text-2xl shrink-0">⚠️</span>
+          <div class="flex-1 min-w-0">
+            <h4 class="text-xs font-black text-amber-950 leading-tight">
+              Masa Aktif Membership Tersisa ${daysRemaining} Hari Lagi!
+            </h4>
+            <p class="text-[11px] text-amber-900 mt-1 leading-snug font-medium">
+              Khusus untuk Anda, sistem telah menyuntikkan Voucher Diskon Perpanjangan 25% (RENEWLOYAL25) secara otomatis ke akun Anda.
+            </p>
+          </div>
+        </div>
+        <div class="pt-2 border-t border-amber-300/70 flex justify-end">
+          <button type="button" onclick="closeBottomSheet(); openPricingSheet('pkg-3m');"
+            class="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 active:scale-95 text-white text-xs font-black shadow-sm transition-all flex items-center gap-1.5 cursor-pointer">
+            <span>Perpanjang Sekarang (Diskon 25%) &rarr;</span>
+          </button>
+        </div>
+      </div>
+    ` : ''}
 
     <!-- Active Membership Status Card: Clean, NO Member ID -->
     <div class="p-4 bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl mb-4 shadow-md border border-amber-500/20">
@@ -4063,7 +4181,7 @@ function openProfileSheet() {
         <span class="text-[10px] font-bold text-amber-300">✦ MEMBER RESMI ✦</span>
       </div>
       <h4 class="text-base font-black">${sanitize(currentUser.packageType || 'Pro Transformation')}</h4>
-      <p class="text-xs text-slate-300 mt-0.5">Berlaku s/d: <strong class="text-white">${currentUser.expiryDate || 'Aktif'}</strong></p>
+      <p class="text-xs text-slate-300 mt-0.5">Berlaku s/d: <strong class="text-white">${currentUser.expiryDate || 'Aktif'}</strong> ${isExpiringSoon ? `<span class="ml-1 text-amber-300 font-bold">(${daysRemaining} Hari Lagi)</span>` : ''}</p>
       
       <div class="mt-3 pt-2.5 border-t border-slate-700/80 flex items-center justify-between text-xs">
         <span class="text-slate-300">Sisa Sesi PT:</span>
@@ -4071,18 +4189,18 @@ function openProfileSheet() {
       </div>
     </div>
 
-    <!-- Primary Action: Perpanjang Membership (Aman & Membuka Checkout Paket Aktif) -->
+    <!-- Primary Action: Perpanjang Membership (Aman & Membuka Pemilihan Paket / Checkout) -->
     <div class="space-y-2.5 mb-4">
-      <button type="button" class="w-full flex items-center justify-between p-3.5 rounded-xl bg-teal-550 text-white hover:bg-teal-650 active:scale-[0.98] text-xs font-bold shadow-md shadow-teal-550/20 transition-all text-left"
+      <button type="button" class="w-full flex items-center justify-between p-3.5 rounded-xl bg-teal-550 text-white hover:bg-teal-650 active:scale-[0.98] text-xs font-bold shadow-md shadow-teal-550/20 transition-all text-left cursor-pointer"
         onclick="extendCurrentMembership()">
         <span class="flex items-center gap-2">
           <span class="text-base">⚡</span>
-          <span>Perpanjang Membership (${sanitize(activePackage.shortName)})</span>
+          <span>Perpanjang Membership ${isExpiringSoon ? '(Diskon 25% Aktif)' : `(${sanitize(activePackage.shortName)})`}</span>
         </span>
         <svg class="w-4 h-4 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
       </button>
 
-      <button type="button" class="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-800 text-left transition-colors"
+      <button type="button" class="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-800 text-left transition-colors cursor-pointer"
         onclick="openTransactionHistorySheet()">
         <span class="flex items-center gap-2"><span>🧾</span> Riwayat Transaksi & Invoice</span>
         <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
@@ -4090,7 +4208,7 @@ function openProfileSheet() {
     </div>
 
     <!-- Logout Button -->
-    <button type="button" class="w-full py-2.5 rounded-xl bg-red-50 text-red-600 border border-red-200 text-xs font-bold hover:bg-red-100 transition-colors"
+    <button type="button" class="w-full py-2.5 rounded-xl bg-red-50 text-red-600 border border-red-200 text-xs font-bold hover:bg-red-100 transition-colors cursor-pointer"
       onclick="handleLogout()">
       Keluar (Logout)
     </button>
@@ -4103,12 +4221,8 @@ function extendCurrentMembership() {
   const currentUser = getCurrentUser();
   if (!currentUser) return;
 
-  const activePackage = MEMBERSHIP_PACKAGES.find(p => p.shortName === currentUser.packageType || p.name === currentUser.packageDuration) || MEMBERSHIP_PACKAGES[1];
-
-  openUnifiedCheckout({
-    type: 'membership',
-    package: activePackage
-  });
+  closeBottomSheet();
+  openPricingSheet('pkg-3m');
 }
 
 function openTransactionHistorySheet() {
@@ -4162,6 +4276,9 @@ function updateHeaderUserDisplay() {
         Masuk / Daftar
       </button>
     `;
+  }
+  if (typeof renderHomeRetentionBanner === 'function') {
+    renderHomeRetentionBanner();
   }
 }
 
@@ -4522,8 +4639,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'Escape' && sheetOpen) closeBottomSheet();
   });
 
-  // 6. Check URL Deep-Link Parameters for Smart Retention Promo
-  handleDeepLinkRouting();
+  // 6. Initialize Auto-Inject Retention Voucher for Expiring Members (1-10 Days Remaining)
+  initRetentionSystem();
 });
 
 
@@ -4624,100 +4741,31 @@ window.claimVoucher = claimVoucher;
 window.openVoucherList = openVoucherList;
 window.openChatAdminSheet = openChatAdminSheet;
 
-// ==================== DEEP-LINK RETENTION PROMO LISTENER & ROUTER ====================
+// ==================== AUTO-INJECT RETENTION VOUCHER SYSTEM ====================
 
-function handleDeepLinkRouting() {
+function initRetentionSystem() {
   try {
-    const urlParams = new URLSearchParams(window.location.search);
-    const action = urlParams.get('action');
-    const voucher = urlParams.get('voucher') || 'RENEWLOYAL25';
-    const email = urlParams.get('email');
-
-    if (action === 'renew' || (voucher && voucher.toUpperCase() === 'RENEWLOYAL25')) {
-      const cleanVoucher = (voucher || 'RENEWLOYAL25').toUpperCase();
-
-      // 1. Sinkronkan sesi akun jika ada parameter email
-      if (email) {
-        const cleanEmail = decodeURIComponent(email).trim().toLowerCase();
-        try {
-          const allUsers = getUsers();
-          const targetUser = allUsers.find(u => (u.email || '').toLowerCase() === cleanEmail);
-          if (targetUser) {
-            setCurrentUser(targetUser);
-            localStorage.setItem('befit_current_user', JSON.stringify(targetUser));
-            if (typeof updateHeaderUserDisplay === 'function') updateHeaderUserDisplay();
-            if (typeof updateTrialButton === 'function') updateTrialButton();
-          } else {
-            sessionStorage.setItem('befit_prefill_email', cleanEmail);
-          }
-        } catch (e) {}
-      }
-
-      // 2. Buka kunci voucher retensi 25%
-      setRetentionUnlocked(true);
-      localStorage.setItem('befit_retention_unlocked', 'true');
-      sessionStorage.setItem('befit_retention_unlocked', 'true');
-      localStorage.setItem('befit_active_voucher', cleanVoucher);
-      setActivePromoCode(cleanVoucher);
-
-      // Pastikan bukan mode admin
-      try {
-        sessionStorage.removeItem('befit_admin_logged_in');
-        localStorage.removeItem('befit_admin_page');
-        localStorage.removeItem('current_page');
-      } catch (e) {}
-
-      // 3. PAKSA PERPINDAHAN TAB LANGSUNG KE MENU MEMBERSHIP / PRICING
-      const triggerOpenPricing = () => {
-        if (typeof closeFullTrainerScreen === 'function') closeFullTrainerScreen();
-        if (typeof closeFullTrainerDetailScreen === 'function') closeFullTrainerDetailScreen();
-
-        if (typeof switchTab === 'function') {
-          switchTab('pricing');
-        } else if (typeof setActiveTab === 'function') {
-          setActiveTab('pricing');
-        } else if (typeof navigateToTab === 'function') {
-          navigateToTab('pricing');
-        } else if (typeof openPricingSheet === 'function') {
-          openPricingSheet('pkg-3m');
-        }
-      };
-
-      // 4. Update indikator Bottom Navigation Bar ke menu Membership/Cek Harga
-      if (typeof setActiveNav === 'function') {
-        setActiveNav('pricing');
-      }
-
-      // Eksekusi transisi dengan aman
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-          setTimeout(triggerOpenPricing, 60);
-        });
-      } else {
-        setTimeout(triggerOpenPricing, 60);
-      }
-
-      // 5. Tampilkan notifikasi Toast instan
-      if (typeof showToast === 'function') {
-        showToast('🎉 Undangan Khusus: Diskon Perpanjangan 25% Berhasil Aktif!', 4500);
-      }
-
-      // 6. Bersihkan query parameter dari URL setelah dieksekusi agar URL rapi
-      setTimeout(() => {
-        if (window.history && window.history.replaceState) {
-          window.history.replaceState({}, document.title, window.location.pathname);
-        }
-      }, 500);
+    const user = getCurrentUser();
+    if (user && user.role !== 'admin') {
+      checkAndInjectRetentionVoucher(user);
+      renderHomeRetentionBanner();
+    }
+    // Clean up any stray query parameters from the address bar
+    if (window.location.search && window.history && window.history.replaceState) {
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
   } catch (err) {
-    console.error('Error handling deep link routing:', err);
+    console.error('Error initializing retention system:', err);
   }
 }
 
-window.handleDeepLinkRouting = handleDeepLinkRouting;
-window.checkDeepLinkParams = handleDeepLinkRouting;
+window.renderHomeRetentionBanner = renderHomeRetentionBanner;
+window.checkAndInjectRetentionVoucher = checkAndInjectRetentionVoucher;
+window.initRetentionSystem = initRetentionSystem;
+window.handleDeepLinkRouting = initRetentionSystem;
+window.checkDeepLinkParams = initRetentionSystem;
 
 // Execute immediately in case DOM is already ready
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
-  handleDeepLinkRouting();
+  initRetentionSystem();
 }

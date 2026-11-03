@@ -62,7 +62,7 @@
         totalPaid: 900000,
         paymentMethod: 'QRIS INSTANT',
         dateJoined: '06 Agu 2026',
-        expiryDate: '2026-11-06', // 3 Hari Lagi (Segera Berakhir)
+        expiryDate: '2026-11-08', // 5 Hari Lagi (Segera Berakhir 1-10 Hari)
         branch: 'Setiabudi',
         status: 'Active',
         isFrozen: false
@@ -78,7 +78,7 @@
         totalPaid: 350000,
         paymentMethod: 'BCA VA',
         dateJoined: '04 Okt 2026',
-        expiryDate: '2026-11-06', // 3 Hari Lagi (Segera Berakhir)
+        expiryDate: '2026-11-08', // 5 Hari Lagi (Segera Berakhir 1-10 Hari)
         branch: 'Dago',
         status: 'Active',
         isFrozen: false
@@ -350,9 +350,7 @@
     function createRetentionPromoWaUrl(m) {
       const daysLeft = Math.max(1, getDaysRemaining(m.expiryDate));
       const waNumber = formatWhatsAppNumber(m.phone);
-      const emailParam = encodeURIComponent(m.email || '');
-      const magicLink = `${window.location.origin}/?action=renew&voucher=RENEWLOYAL25&email=${emailParam}`;
-      const message = `Halo Kak ${m.name || 'Member'}! 👋\n\nKami dari tim Be Fit Gym ingin mengapresiasi latihan Kakak selama ini! 💪\n\nMasa aktif membership Kakak tersisa ${daysLeft} hari lagi. Khusus untuk Kakak, kami berikan tautan rahasia DISKON 25% untuk perpanjangan paket membership.\n\n🎟️ Kode Voucher: RENEWLOYAL25 (Diskon 25%)\n\nKlik tautan resmi di bawah ini untuk langsung memilih paket dengan harga yang sudah dipotong 25%:\n👉 ${magicLink}\n\nYuk perpanjang sekarang sebelum masa aktif habis ya, Kak! 😊`;
+      const message = `Halo Kak ${m.name || 'Member'}! 👋\n\nKami dari admin Be Fit Gym ingin menginformasikan bahwa masa aktif paket membership Kakak akan berakhir dalam ${daysLeft} hari lagi.\n\nSebagai apresiasi atas konsistensi latihan Kakak, kami telah menyuntikkan VOUCHER DISKON PERPANJANGAN 25% (Kode: RENEWLOYAL25) langsung ke dalam akun aplikasi Be Fit Kakak! 🎁💪\n\nCara menggunakannya sangat mudah:\n1. Buka aplikasi Be Fit dan login ke akun Kakak.\n2. Klik banner peringatan masa aktif atau masuk ke menu Paket Membership / Perpanjang Membership.\n3. Potongan harga 25% sudah otomatis terpasang saat Kakak melakukan pembayaran.\n\nYuk perpanjang sebelum masa aktif berakhir agar latihan Kakak tetap lancar ya, Kak! 😊`;
 
       return `https://wa.me/${waNumber}?text=${encodeURIComponent(message)}`;
     }
@@ -433,7 +431,7 @@
                 name: existing.name || m.name || 'Member Be Fit',
                 email: existing.email || m.email || '-',
                 phone: existing.phone || m.phone || '08123456789',
-                expiryDate: existing.expiryDate || m.expiryDate || '2026-11-06',
+                expiryDate: existing.expiryDate || m.expiryDate || '2026-11-08',
                 status: m.status || existing.status || 'Active',
                 isFrozen: m.isFrozen !== undefined ? m.isFrozen : (existing.isFrozen || false),
                 totalPaid: m.totalPaid || existing.totalPaid || 765000,
@@ -765,12 +763,12 @@
       // Metric calculations
       const expiringMembers = members.filter(m => {
         const d = getDaysRemaining(m.expiryDate);
-        return d > 0 && d <= 7 && !m.isFrozen;
+        return d >= 1 && d <= 10 && !m.isFrozen;
       });
 
       const activeMembers = members.filter(m => {
         const d = getDaysRemaining(m.expiryDate);
-        return d > 0 && !m.isFrozen;
+        return d > 10 && !m.isFrozen;
       });
 
       const atRiskMembers = members.filter(m => {
@@ -784,10 +782,10 @@
         return sum + Number(rem || 0);
       }, 0);
 
-      // Members needing urgent follow-up today (remaining days 1 to 3)
+      // Members needing urgent follow-up (remaining days 1 to 10)
       const followUpTodayMembers = members.filter(m => {
         const d = getDaysRemaining(m.expiryDate);
-        return d >= 1 && d <= 3 && !m.isFrozen;
+        return d >= 1 && d <= 10 && !m.isFrozen;
       });
 
       return `
@@ -798,7 +796,7 @@
               <span class="text-2xl">⚠️</span>
               <div>
                 <h4 class="text-sm font-black text-amber-900 leading-tight">Perhatian CRM Retensi: Ada ${expiringMembers.length} Member Segera Kedaluwarsa!</h4>
-                <p class="text-xs text-amber-700 mt-0.5">Terdapat <strong>${expiringMembers.length} member</strong> yang masa aktifnya akan habis dalam 7 hari ke depan. Segera lakukan follow-up via WhatsApp untuk mencegah churn.</p>
+                <p class="text-xs text-amber-700 mt-0.5">Terdapat <strong>${expiringMembers.length} member</strong> yang masa aktifnya akan habis dalam 1–10 hari ke depan. Segera kirimkan notifikasi voucher diskon perpanjangan 25% via WhatsApp.</p>
               </div>
             </div>
             <button type="button" onclick="filterMembersByStatus('expiring')"
@@ -829,12 +827,12 @@
             </span>
           </div>
 
-          <!-- Card 3: Akan Kedaluwarsa (<= 7 Hari) -->
+          <!-- Card 3: Akan Kedaluwarsa (<= 10 Hari) -->
           <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Akan Kedaluwarsa</span>
             <h3 class="text-lg font-black font-mono text-amber-600 leading-tight">${expiringMembers.length} Member</h3>
             <span class="inline-block mt-2 text-[9px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md">
-              Habis $\le$ 7 Hari
+              Habis $\le$ 10 Hari
             </span>
           </div>
 
@@ -867,15 +865,15 @@
 
         </div>
 
-        <!-- 3. Widget Aksi Cepat: Member Perlu Follow-Up Hari Ini (Masa Aktif Habis 1-3 Hari) -->
+        <!-- 3. Widget Aksi Cepat: Member Perlu Follow-Up (Masa Aktif Habis 1-10 Hari) -->
         <div class="mb-6 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <div class="flex items-center gap-2">
                 <span class="text-base">⚡</span>
-                <h4 class="text-sm font-black text-slate-900">Aksi Cepat: Member Perlu Follow-Up Hari Ini (Masa Aktif Habis 1–3 Hari)</h4>
+                <h4 class="text-sm font-black text-slate-900">Aksi Cepat: Member Perlu Follow-Up (Masa Aktif Habis 1–10 Hari)</h4>
               </div>
-              <p class="text-xs text-slate-400 mt-0.5">Kirimkan pesan pengingat WhatsApp dengan sekali klik agar member langsung memperpanjang keanggotaan.</p>
+              <p class="text-xs text-slate-400 mt-0.5">Kirimkan notifikasi WhatsApp bahwa voucher diskon perpanjangan 25% telah otomatis disuntikkan ke akun mereka.</p>
             </div>
             <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 self-start sm:self-auto">
               ${followUpTodayMembers.length} Member Perlu Kontak
@@ -885,7 +883,7 @@
           <div class="p-5">
             ${followUpTodayMembers.length === 0 ? `
               <div class="text-center py-6 text-slate-400 text-xs font-medium">
-                🎉 Hebat! Tidak ada member yang masa aktifnya habis dalam rentang 1–3 hari ke depan saat ini.
+                🎉 Hebat! Tidak ada member yang masa aktifnya habis dalam rentang 1–10 hari ke depan saat ini.
               </div>
             ` : `
               <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -899,7 +897,7 @@
                         <div class="flex items-center justify-between gap-2 mb-2">
                           <span class="font-black text-slate-900 text-sm">${m.name}</span>
                           <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-amber-100 text-amber-800 border border-amber-300">
-                            Sisa ${daysLeft} Hari
+                            Segera Berakhir (${daysLeft} Hari)
                           </span>
                         </div>
                         <p class="text-xs text-slate-600 font-medium mb-1">${m.packageDuration || m.packageType}</p>
@@ -910,8 +908,8 @@
                         <span class="text-xs font-mono font-bold text-slate-600">${m.phone}</span>
                         <a href="${waUrl}" target="_blank" rel="noopener noreferrer"
                           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black shadow-sm transition-all"
-                          title="Kirim Promo 25% (WA) dengan Deep-Link Perpanjangan">
-                          <span>💬 Kirim Promo 25% (WA)</span>
+                          title="Kirim Notifikasi Promo 25% (WA)">
+                          <span>💬 Kirim Notif Promo (WA)</span>
                         </a>
                       </div>
                     </div>
@@ -1044,12 +1042,12 @@
       // Counts for filter pills
       const expiringCount = members.filter(m => {
         const d = getDaysRemaining(m.expiryDate);
-        return d > 0 && d <= 7 && !m.isFrozen;
+        return d >= 1 && d <= 10 && !m.isFrozen;
       }).length;
 
       const activeCount = members.filter(m => {
         const d = getDaysRemaining(m.expiryDate);
-        return d > 7 && !m.isFrozen;
+        return d > 10 && !m.isFrozen;
       }).length;
 
       const frozenCount = members.filter(m => m.isFrozen).length;
@@ -1063,8 +1061,8 @@
       const filtered = members.filter(m => {
         // Status filter
         const days = getDaysRemaining(m.expiryDate);
-        if (memberFilterStatus === 'expiring' && !(days > 0 && days <= 7 && !m.isFrozen)) return false;
-        if (memberFilterStatus === 'active' && !(days > 7 && !m.isFrozen)) return false;
+        if (memberFilterStatus === 'expiring' && !(days >= 1 && days <= 10 && !m.isFrozen)) return false;
+        if (memberFilterStatus === 'active' && !(days > 10 && !m.isFrozen)) return false;
         if (memberFilterStatus === 'frozen' && !m.isFrozen) return false;
         if (memberFilterStatus === 'expired' && !((days <= 0 || m.status === 'Expired') && !m.isFrozen)) return false;
 
@@ -1105,7 +1103,7 @@
               
               <button type="button" onclick="setMemberStatusFilter('expiring')"
                 class="px-3 py-1.5 rounded-lg border transition-all ${memberFilterStatus === 'expiring' ? 'bg-amber-500 text-white border-amber-500' : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'}">
-                ⚠️ Segera Berakhir ≤7 Hari (${expiringCount})
+                ⚠️ Segera Berakhir 1–10 Hari (${expiringCount})
               </button>
 
               <button type="button" onclick="setMemberStatusFilter('active')"
@@ -1147,7 +1145,7 @@
                   </tr>
                 ` : filtered.map(m => {
                   const days = getDaysRemaining(m.expiryDate);
-                  const isExpiring = days > 0 && days <= 7 && !m.isFrozen;
+                  const isExpiring = days >= 1 && days <= 10 && !m.isFrozen;
                   const isExpired = (days <= 0 || m.status === 'Expired') && !m.isFrozen;
                   const isFrozen = !!m.isFrozen;
 
@@ -1162,8 +1160,8 @@
                     daysBadgeHtml = `<span class="px-2 py-0.5 rounded font-mono font-bold bg-rose-50 text-rose-800 border border-rose-200">✕ Expired (${Math.abs(days)} hari lalu)</span>`;
                     statusBadgeHtml = `<span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-rose-100 text-rose-800 border border-rose-300">EXPIRED</span>`;
                   } else if (isExpiring) {
-                    daysBadgeHtml = `<span class="px-2 py-0.5 rounded font-mono font-bold bg-amber-50 text-amber-800 border border-amber-300">⚠️ Sisa ${days} Hari (${formatDateIndo(m.expiryDate)})</span>`;
-                    statusBadgeHtml = `<span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-amber-100 text-amber-800 border border-amber-300">SEGERA BERAKHIR</span>`;
+                    daysBadgeHtml = `<span class="px-2 py-0.5 rounded font-mono font-bold bg-amber-50 text-amber-800 border border-amber-300">⚠️ Segera Berakhir (${days} Hari)</span>`;
+                    statusBadgeHtml = `<span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-amber-100 text-amber-800 border border-amber-300">Segera Berakhir (${days} Hari)</span>`;
                   } else {
                     daysBadgeHtml = `<span class="px-2 py-0.5 rounded font-mono font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">✓ Sisa ${days} Hari (${formatDateIndo(m.expiryDate)})</span>`;
                     statusBadgeHtml = `<span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">AKTIF</span>`;
@@ -1215,8 +1213,8 @@
                           <!-- WhatsApp Button -->
                           <a href="${waUrl}" target="_blank" rel="noopener noreferrer"
                             class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[11px] transition-all inline-flex items-center gap-1 shadow-sm whitespace-nowrap"
-                            title="Kirim Promo 25% (WA) dengan Deep-Link Perpanjangan">
-                            <span>💬 Kirim Promo 25% (WA)</span>
+                            title="Kirim Notifikasi Promo 25% (WA)">
+                            <span>💬 Kirim Notif Promo (WA)</span>
                           </a>
 
                           <!-- Cuti / Freeze Button -->
