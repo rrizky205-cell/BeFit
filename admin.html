@@ -8,7 +8,7 @@
   <link rel="icon" type="image/jpeg" href="logo-square.jpg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -29,6 +29,14 @@
     }
   </script>
   <link rel="stylesheet" href="admin.css">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
+    }
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+  </style>
 </head>
 <body class="bg-[#F8FAFC] text-slate-900 antialiased min-h-screen">
 
@@ -45,266 +53,643 @@
     const ADMIN_AUTH_KEY = 'befit_admin_auth';
     const USERS_STORAGE_KEY = 'befit_users';
     const TRANSACTIONS_KEY = 'befit_mobile_transactions';
-    const CLASS_BOOKINGS_KEY = 'befit_class_bookings';
     const PT_BOOKINGS_KEY = 'befit_pt_bookings';
-    const TRIAL_CLAIMS_KEY = 'befit_trial_claims';
+    const DATA_VERSION_KEY = 'befit_data_version';
+    const CURRENT_DATA_VERSION = 'v6';
 
-    // Fallback seed members with realistic CRM expiry dates & status
+    // 24 Realistis Seed Members spread across 4 Branches (Setiabudi, Dago, Pasirkaliki, Buah Batu)
+    // 6 Akun Demo Hampir Habis Masa Aktif (1-10 Hari, Password: '123456')
     const SEED_MEMBERS = [
+      // ===== CABANG SETIABUDI (~8 Member, Total Membership: Rp 7.850.000) =====
       {
-        id: 'BF-USER-101',
+        id: 'BF-1001',
         name: 'Rizky Test User',
         email: 'rizky.member@gmail.com',
         phone: '082116156884',
-        packageDuration: 'Paket 3 Bulan (Pro Transformation)',
+        password: '123456',
+        branch: 'Setiabudi',
         packageType: 'Pro Transformation',
+        packageDuration: 'Paket 3 Bulan (Pro Transformation)',
         voucherUsed: 'MEMBERBARU15',
         totalPaid: 900000,
         paymentMethod: 'QRIS INSTANT',
         dateJoined: '06 Agu 2026',
-        expiryDate: '2026-11-08', // 5 Hari Lagi (Segera Berakhir 1-10 Hari)
-        branch: 'Setiabudi',
+        expiryDate: '2026-11-07', // 3 Hari Lagi
         status: 'Active',
-        isFrozen: false
+        isFrozen: false,
+        role: 'member'
       },
       {
-        id: 'BF-USER-102',
+        id: 'BF-1002',
+        name: 'Andi Pratama',
+        email: 'andi.pratama@gmail.com',
+        phone: '081223344556',
+        password: '123456',
+        branch: 'Setiabudi',
+        packageType: 'Pro Transformation',
+        packageDuration: 'Paket 3 Bulan (Pro Transformation)',
+        voucherUsed: 'MEMBERBARU15',
+        totalPaid: 900000,
+        paymentMethod: 'BCA VA',
+        dateJoined: '06 Agu 2026',
+        expiryDate: '2026-11-06', // 2 Hari Lagi
+        status: 'Active',
+        isFrozen: false,
+        role: 'member'
+      },
+      {
+        id: 'BF-1003',
+        name: 'Fajar Nugraha',
+        email: 'fajar.nugraha@gmail.com',
+        phone: '081234567891',
+        password: '123456',
+        branch: 'Setiabudi',
+        packageType: 'Ultimate Yearly',
+        packageDuration: 'Paket 12 Bulan (Ultimate Yearly)',
+        voucherUsed: 'GAJIAN100K',
+        totalPaid: 2400000,
+        paymentMethod: 'MANDIRI VA',
+        dateJoined: '02 Nov 2026',
+        expiryDate: '2027-11-02',
+        status: 'Active',
+        isFrozen: false,
+        role: 'member'
+      },
+      {
+        id: 'BF-1004',
+        name: 'Hendra Wijaya',
+        email: 'hendra.wijaya@gmail.com',
+        phone: '081234567892',
+        password: '123456',
+        branch: 'Setiabudi',
+        packageType: 'Elite Athlete',
+        packageDuration: 'Paket 6 Bulan (Elite Athlete)',
+        voucherUsed: 'HEMAT50K',
+        totalPaid: 1500000,
+        paymentMethod: 'BNI VA',
+        dateJoined: '15 Okt 2026',
+        expiryDate: '2027-04-15',
+        status: 'Active',
+        isFrozen: false,
+        role: 'member'
+      },
+      {
+        id: 'BF-1005',
+        name: 'Maya Safitri',
+        email: 'maya.safitri@gmail.com',
+        phone: '081234567893',
+        password: '123456',
+        branch: 'Setiabudi',
+        packageType: 'Pro Transformation',
+        packageDuration: 'Paket 3 Bulan (Pro Transformation)',
+        voucherUsed: 'MEMBERBARU15',
+        totalPaid: 900000,
+        paymentMethod: 'QRIS INSTANT',
+        dateJoined: '20 Okt 2026',
+        expiryDate: '2027-01-20',
+        status: 'Active',
+        isFrozen: false,
+        role: 'member'
+      },
+      {
+        id: 'BF-1006',
+        name: 'Rian Pratama',
+        email: 'rian.pratama@gmail.com',
+        phone: '081234567894',
+        password: '123456',
+        branch: 'Setiabudi',
+        packageType: 'Basic Starter',
+        packageDuration: 'Paket 1 Bulan (Basic Starter)',
+        voucherUsed: 'HEMAT50K',
+        totalPaid: 350000,
+        paymentMethod: 'BCA VA',
+        dateJoined: '28 Okt 2026',
+        expiryDate: '2026-11-28',
+        status: 'Active',
+        isFrozen: false,
+        role: 'member'
+      },
+      {
+        id: 'BF-1007',
+        name: 'Gita Permata',
+        email: 'gita.permata@gmail.com',
+        phone: '081234567895',
+        password: '123456',
+        branch: 'Setiabudi',
+        packageType: 'Basic Starter',
+        packageDuration: 'Paket 1 Bulan (Basic Starter)',
+        voucherUsed: 'HEMAT50K',
+        totalPaid: 350000,
+        paymentMethod: 'QRIS INSTANT',
+        dateJoined: '30 Okt 2026',
+        expiryDate: '2026-11-30',
+        status: 'Active',
+        isFrozen: false,
+        role: 'member'
+      },
+      {
+        id: 'BF-1008',
+        name: 'Dimas Arya',
+        email: 'dimas.arya@gmail.com',
+        phone: '081234567896',
+        password: '123456',
+        branch: 'Setiabudi',
+        packageType: 'Basic Starter Plus',
+        packageDuration: 'Paket 1 Bulan (Basic Starter Plus)',
+        voucherUsed: '-',
+        totalPaid: 550000,
+        paymentMethod: 'BCA VA',
+        dateJoined: '04 Nov 2026',
+        expiryDate: '2026-12-04',
+        status: 'Active',
+        isFrozen: false,
+        role: 'member'
+      },
+
+      // ===== CABANG DAGO (~7 Member, Total Membership: Rp 6.400.000) =====
+      {
+        id: 'BF-1009',
         name: 'Mimah',
         email: 'mimah.member@gmail.com',
         phone: '089513102470',
-        packageDuration: 'Paket 1 Bulan (Basic Starter)',
+        password: '123456',
+        branch: 'Dago',
         packageType: 'Basic Starter',
+        packageDuration: 'Paket 1 Bulan (Basic Starter)',
         voucherUsed: 'HEMAT50K',
         totalPaid: 350000,
         paymentMethod: 'BCA VA',
         dateJoined: '04 Okt 2026',
-        expiryDate: '2026-11-08', // 5 Hari Lagi (Segera Berakhir 1-10 Hari)
-        branch: 'Dago',
+        expiryDate: '2026-11-09', // 5 Hari Lagi
         status: 'Active',
-        isFrozen: false
+        isFrozen: false,
+        role: 'member'
       },
       {
-        id: 'BF-1001',
-        name: 'Dimas Arya Pratama',
-        email: 'dimas.arya@gmail.com',
-        phone: '081234567890',
-        packageDuration: 'Paket 3 Bulan (Pro Transformation)',
+        id: 'BF-1010',
+        name: 'Diana Putri',
+        email: 'diana.putri@gmail.com',
+        phone: '081778899001',
+        password: '123456',
+        branch: 'Dago',
         packageType: 'Pro Transformation',
+        packageDuration: 'Paket 3 Bulan (Pro Transformation)',
         voucherUsed: 'MEMBERBARU15',
-        totalPaid: 765000,
+        totalPaid: 900000,
         paymentMethod: 'QRIS INSTANT',
-        dateJoined: '06 Agu 2026',
-        expiryDate: '2026-11-07', // 4 days remaining (expiring <= 7 days)
-        branch: 'Setiabudi',
+        dateJoined: '13 Agu 2026',
+        expiryDate: '2026-11-13', // 9 Hari Lagi
         status: 'Active',
-        isFrozen: false
+        isFrozen: false,
+        role: 'member'
       },
       {
-        id: 'BF-1002',
-        name: 'Jessica Clarissa',
-        email: 'jessica.c@gmail.com',
-        phone: '081987654321',
-        packageDuration: 'Paket 6 Bulan (Elite Athlete)',
-        packageType: 'Elite Athlete',
-        voucherUsed: 'GAJIAN100K',
-        totalPaid: 1550000,
-        paymentMethod: 'BCA VA',
-        dateJoined: '04 Mei 2026',
-        expiryDate: '2026-11-04', // 2 days remaining (immediate follow-up 1-3 days)
+        id: 'BF-1011',
+        name: 'Kevin Sanjaya',
+        email: 'kevin.sanjaya@gmail.com',
+        phone: '081778899002',
+        password: '123456',
         branch: 'Dago',
+        packageType: 'Ultimate Yearly',
+        packageDuration: 'Paket 12 Bulan (Ultimate Yearly)',
+        voucherUsed: 'GAJIAN100K',
+        totalPaid: 2400000,
+        paymentMethod: 'MANDIRI VA',
+        dateJoined: '18 Okt 2026',
+        expiryDate: '2027-10-18',
         status: 'Active',
-        isFrozen: false
+        isFrozen: false,
+        role: 'member'
       },
       {
-        id: 'BF-1003',
+        id: 'BF-1012',
+        name: 'Nadya Utami',
+        email: 'nadya.utami@gmail.com',
+        phone: '081778899003',
+        password: '123456',
+        branch: 'Dago',
+        packageType: 'Elite Athlete',
+        packageDuration: 'Paket 6 Bulan (Elite Athlete)',
+        voucherUsed: 'HEMAT50K',
+        totalPaid: 1500000,
+        paymentMethod: 'BCA VA',
+        dateJoined: '24 Sep 2026',
+        expiryDate: '2027-03-24',
+        status: 'Active',
+        isFrozen: false,
+        role: 'member'
+      },
+      {
+        id: 'BF-1013',
+        name: 'Rio Febrian',
+        email: 'rio.febrian@gmail.com',
+        phone: '081778899004',
+        password: '123456',
+        branch: 'Dago',
+        packageType: 'Pro Transformation',
+        packageDuration: 'Paket 3 Bulan (Pro Transformation)',
+        voucherUsed: 'MEMBERBARU15',
+        totalPaid: 900000,
+        paymentMethod: 'QRIS INSTANT',
+        dateJoined: '10 Okt 2026',
+        expiryDate: '2027-01-10',
+        status: 'Active',
+        isFrozen: false,
+        role: 'member'
+      },
+      {
+        id: 'BF-1014',
+        name: 'Lisa Black',
+        email: 'lisa.black@gmail.com',
+        phone: '081778899005',
+        password: '123456',
+        branch: 'Dago',
+        packageType: 'Basic Starter',
+        packageDuration: 'Paket 1 Bulan (Basic Starter)',
+        voucherUsed: 'HEMAT50K',
+        totalPaid: 350000,
+        paymentMethod: 'BNI VA',
+        dateJoined: '25 Okt 2026',
+        expiryDate: '2026-11-25',
+        status: 'Active',
+        isFrozen: false,
+        role: 'member'
+      },
+      {
+        id: 'BF-1015',
+        name: 'Denny Kurnia',
+        email: 'denny.kurnia@gmail.com',
+        phone: '081778899006',
+        password: '123456',
+        branch: 'Dago',
+        packageType: 'Basic Starter',
+        packageDuration: 'Paket 1 Bulan (Trial Member)',
+        voucherUsed: 'FREETRIAL7D',
+        totalPaid: 0,
+        paymentMethod: 'TRIAL',
+        dateJoined: '02 Nov 2026',
+        expiryDate: '2026-11-20',
+        status: 'Active',
+        isFrozen: false,
+        role: 'member'
+      },
+
+      // ===== CABANG PASIRKALIKI (~5 Member, Total Membership: Rp 4.950.000) =====
+      {
+        id: 'BF-1016',
         name: 'Budi Santoso',
         email: 'budi.santoso@gmail.com',
-        phone: '081345678912',
-        packageDuration: 'Paket 1 Bulan (Basic Starter)',
-        packageType: 'Basic Starter',
-        voucherUsed: 'HEMAT50K',
-        totalPaid: 300000,
-        paymentMethod: 'MANDIRI VA',
-        dateJoined: '01 Okt 2026',
-        expiryDate: '2026-10-31', // Expired 2 days ago
+        phone: '081556677889',
+        password: '123456',
         branch: 'Pasirkaliki',
-        status: 'Expired',
-        isFrozen: false
+        packageType: 'Elite Athlete',
+        packageDuration: 'Paket 6 Bulan (Elite Athlete)',
+        voucherUsed: 'HEMAT50K',
+        totalPaid: 1500000,
+        paymentMethod: 'MANDIRI VA',
+        dateJoined: '08 Mei 2026',
+        expiryDate: '2026-11-08', // 4 Hari Lagi
+        status: 'Active',
+        isFrozen: false,
+        role: 'member'
       },
       {
-        id: 'BF-1004',
-        name: 'Siti Rahmawati',
-        email: 'siti.rahma@gmail.com',
-        phone: '085612349876',
-        packageDuration: 'Paket 12 Bulan (Ultimate Yearly)',
-        packageType: 'Ultimate Yearly',
+        id: 'BF-1017',
+        name: 'Reza Rahadian',
+        email: 'reza.rahadian@gmail.com',
+        phone: '081556677890',
+        password: '123456',
+        branch: 'Pasirkaliki',
+        packageType: 'Elite Athlete',
+        packageDuration: 'Paket 6 Bulan (Elite Athlete)',
         voucherUsed: 'GAJIAN100K',
-        totalPaid: 2850000,
-        paymentMethod: 'BNI VA',
-        dateJoined: '02 Nov 2026',
-        expiryDate: '2027-11-02', // 365 days remaining
-        branch: 'Setiabudi',
+        totalPaid: 1500000,
+        paymentMethod: 'BCA VA',
+        dateJoined: '10 Okt 2026',
+        expiryDate: '2027-04-10',
         status: 'Active',
-        isFrozen: false
+        isFrozen: false,
+        role: 'member'
       },
       {
-        id: 'BF-1005',
-        name: 'Rizky Ramadhan',
-        email: 'rizky.rmd@gmail.com',
-        phone: '087812993344',
-        packageDuration: 'Paket 3 Bulan (Pro Transformation)',
+        id: 'BF-1018',
+        name: 'Tiara Andini',
+        email: 'tiara.andini@gmail.com',
+        phone: '081556677891',
+        password: '123456',
+        branch: 'Pasirkaliki',
         packageType: 'Pro Transformation',
+        packageDuration: 'Paket 3 Bulan (Pro Transformation)',
         voucherUsed: 'MEMBERBARU15',
-        totalPaid: 765000,
+        totalPaid: 900000,
         paymentMethod: 'QRIS INSTANT',
-        dateJoined: '02 Nov 2026',
-        expiryDate: '2027-02-02', // 92 days remaining
-        branch: 'Dago',
+        dateJoined: '18 Okt 2026',
+        expiryDate: '2027-01-18',
         status: 'Active',
-        isFrozen: false
+        isFrozen: false,
+        role: 'member'
+      },
+      {
+        id: 'BF-1019',
+        name: 'Farhan Maulana',
+        email: 'farhan.m@gmail.com',
+        phone: '081556677892',
+        password: '123456',
+        branch: 'Pasirkaliki',
+        packageType: 'Pro Transformation',
+        packageDuration: 'Paket 3 Bulan (Pro Transformation Promo)',
+        voucherUsed: 'HEMAT200K',
+        totalPaid: 700000,
+        paymentMethod: 'BNI VA',
+        dateJoined: '22 Okt 2026',
+        expiryDate: '2027-01-22',
+        status: 'Active',
+        isFrozen: false,
+        role: 'member'
+      },
+      {
+        id: 'BF-1020',
+        name: 'Cindy Claudia',
+        email: 'cindy.c@gmail.com',
+        phone: '081556677893',
+        password: '123456',
+        branch: 'Pasirkaliki',
+        packageType: 'Basic Starter',
+        packageDuration: 'Paket 1 Bulan (Basic Starter)',
+        voucherUsed: 'HEMAT50K',
+        totalPaid: 350000,
+        paymentMethod: 'QRIS INSTANT',
+        dateJoined: '29 Okt 2026',
+        expiryDate: '2026-11-29',
+        status: 'Active',
+        isFrozen: false,
+        role: 'member'
+      },
+
+      // ===== CABANG BUAH BATU (~4 Member, Total Membership: Rp 3.150.000, 0 PT) =====
+      {
+        id: 'BF-1021',
+        name: 'Siti Aisyah',
+        email: 'siti.aisyah@gmail.com',
+        phone: '081334455667',
+        password: '123456',
+        branch: 'Buah Batu',
+        packageType: 'Basic Starter',
+        packageDuration: 'Paket 1 Bulan (Basic Starter)',
+        voucherUsed: 'HEMAT50K',
+        totalPaid: 350000,
+        paymentMethod: 'BCA VA',
+        dateJoined: '11 Okt 2026',
+        expiryDate: '2026-11-11', // 7 Hari Lagi
+        status: 'Active',
+        isFrozen: false,
+        role: 'member'
+      },
+      {
+        id: 'BF-1022',
+        name: 'Agus Salim',
+        email: 'agus.salim@gmail.com',
+        phone: '081334455668',
+        password: '123456',
+        branch: 'Buah Batu',
+        packageType: 'Elite Athlete',
+        packageDuration: 'Paket 6 Bulan (Elite Athlete)',
+        voucherUsed: 'GAJIAN100K',
+        totalPaid: 1500000,
+        paymentMethod: 'QRIS INSTANT',
+        dateJoined: '05 Okt 2026',
+        expiryDate: '2027-04-05',
+        status: 'Active',
+        isFrozen: false,
+        role: 'member'
+      },
+      {
+        id: 'BF-1023',
+        name: 'Dewi Lestari',
+        email: 'dewi.lestari@gmail.com',
+        phone: '081334455669',
+        password: '123456',
+        branch: 'Buah Batu',
+        packageType: 'Pro Transformation',
+        packageDuration: 'Paket 3 Bulan (Pro Transformation)',
+        voucherUsed: '-',
+        totalPaid: 950000,
+        paymentMethod: 'MANDIRI VA',
+        dateJoined: '14 Okt 2026',
+        expiryDate: '2027-01-14',
+        status: 'Active',
+        isFrozen: false,
+        role: 'member'
+      },
+      {
+        id: 'BF-1024',
+        name: 'Eko Prasetyo',
+        email: 'eko.prasetyo@gmail.com',
+        phone: '081334455670',
+        password: '123456',
+        branch: 'Buah Batu',
+        packageType: 'Basic Starter',
+        packageDuration: 'Paket 1 Bulan (Basic Starter)',
+        voucherUsed: 'HEMAT50K',
+        totalPaid: 350000,
+        paymentMethod: 'BNI VA',
+        dateJoined: '01 Nov 2026',
+        expiryDate: '2026-12-01',
+        status: 'Active',
+        isFrozen: false,
+        role: 'member'
       }
     ];
 
-    // Fallback seed PT bookings with remaining sessions quota
+    // 9 Realistic PT Bookings per Branch (Setiabudi Rp 4.550k, Dago Rp 3.550k, Pasirkaliki Rp 2.150k, Buah Batu Rp 0)
     const SEED_PT_BOOKINGS = [
+      // Setiabudi (4 Bookings, Rp 4.550.000)
       {
-        id: 'PT-ORD-201',
-        userName: 'Dimas Arya Pratama',
-        userPhone: '081234567890',
+        id: 'PT-SB-01',
+        userName: 'Fajar Nugraha',
+        userPhone: '081234567891',
         trainerName: 'Aby Pratama',
         branch: 'Be Fit Setiabudi Bandung',
-        package: '4 Sesi Starter Coaching',
-        sessions: 4,
-        remainingSessions: 3,
-        discount: 112500,
+        package: '8 Sesi Pro Transformation',
+        sessions: 8,
+        remainingSessions: 6,
+        discount: 250000,
         voucherCode: 'PTPROMO20',
-        totalPaid: 637500,
+        totalPaid: 1750000,
         date: '29 Okt 2026',
         status: 'Aktif Berjalan'
       },
       {
-        id: 'PT-ORD-202',
-        userName: 'Jessica Clarissa',
-        userPhone: '081987654321',
-        trainerName: 'Sarah Wijaya',
-        branch: 'Be Fit Dago Bandung',
-        package: '8 Sesi Best Value Coaching',
-        sessions: 8,
-        remainingSessions: 6,
-        discount: 280000,
+        id: 'PT-SB-02',
+        userName: 'Hendra Wijaya',
+        userPhone: '081234567892',
+        trainerName: 'Randy Firmansyah',
+        branch: 'Be Fit Setiabudi Bandung',
+        package: '4 Sesi Starter Coaching',
+        sessions: 4,
+        remainingSessions: 3,
+        discount: 100000,
         voucherCode: 'PTPROMO20',
-        totalPaid: 1120000,
+        totalPaid: 950000,
         date: '30 Okt 2026',
         status: 'Aktif Berjalan'
       },
       {
-        id: 'PT-ORD-203',
-        userName: 'Siti Rahmawati',
-        userPhone: '085612349876',
-        trainerName: 'Nadia Kusuma',
+        id: 'PT-SB-03',
+        userName: 'Maya Safitri',
+        userPhone: '081234567893',
+        trainerName: 'Sarah Wijaya',
         branch: 'Be Fit Setiabudi Bandung',
-        package: '12 Sesi Pro Athlete Coaching',
-        sessions: 12,
-        remainingSessions: 12,
-        discount: 292500,
-        voucherCode: 'MEMBERBARU15',
-        totalPaid: 1657500,
-        date: '02 Nov 2026',
+        package: '4 Sesi Starter Coaching',
+        sessions: 4,
+        remainingSessions: 4,
+        discount: 100000,
+        voucherCode: 'PTPROMO20',
+        totalPaid: 950000,
+        date: '01 Nov 2026',
         status: 'Aktif Berjalan'
       },
       {
-        id: 'PT-ORD-204',
-        userName: 'Rizky Ramadhan',
-        userPhone: '087812993344',
-        trainerName: 'Adi Nugroho',
+        id: 'PT-SB-04',
+        userName: 'Rian Pratama',
+        userPhone: '081234567894',
+        trainerName: 'Amanda Putri',
+        branch: 'Be Fit Setiabudi Bandung',
+        package: '4 Sesi Starter Coaching',
+        sessions: 4,
+        remainingSessions: 2,
+        discount: 150000,
+        voucherCode: 'PTPROMO20',
+        totalPaid: 900000,
+        date: '02 Nov 2026',
+        status: 'Aktif Berjalan'
+      },
+
+      // Dago (3 Bookings, Rp 3.550.000)
+      {
+        id: 'PT-DG-01',
+        userName: 'Kevin Sanjaya',
+        userPhone: '081778899002',
+        trainerName: 'Kevin Sanjaya',
+        branch: 'Be Fit Dago Bandung',
+        package: '8 Sesi Pro Athlete',
+        sessions: 8,
+        remainingSessions: 7,
+        discount: 250000,
+        voucherCode: 'PTPROMO20',
+        totalPaid: 1750000,
+        date: '28 Okt 2026',
+        status: 'Aktif Berjalan'
+      },
+      {
+        id: 'PT-DG-02',
+        userName: 'Nadya Utami',
+        userPhone: '081778899003',
+        trainerName: 'Rika Amelia',
         branch: 'Be Fit Dago Bandung',
         package: '4 Sesi Starter Coaching',
         sessions: 4,
-        remainingSessions: 1,
+        remainingSessions: 3,
+        discount: 100000,
+        voucherCode: 'PTPROMO20',
+        totalPaid: 950000,
+        date: '31 Okt 2026',
+        status: 'Aktif Berjalan'
+      },
+      {
+        id: 'PT-DG-03',
+        userName: 'Rio Febrian',
+        userPhone: '081778899004',
+        trainerName: 'Alex Tan',
+        branch: 'Be Fit Dago Bandung',
+        package: '4 Sesi Starter Coaching',
+        sessions: 4,
+        remainingSessions: 2,
         discount: 150000,
         voucherCode: 'PTPROMO20',
-        totalPaid: 600000,
+        totalPaid: 850000,
         date: '02 Nov 2026',
+        status: 'Aktif Berjalan'
+      },
+
+      // Pasirkaliki (2 Bookings, Rp 2.150.000)
+      {
+        id: 'PT-PK-01',
+        userName: 'Reza Rahadian',
+        userPhone: '081556677890',
+        trainerName: 'Farhan Maulana',
+        branch: 'Be Fit Pasirkaliki Bandung',
+        package: '4 Sesi Elite Athlete',
+        sessions: 4,
+        remainingSessions: 3,
+        discount: 150000,
+        voucherCode: 'PTPROMO20',
+        totalPaid: 1200000,
+        date: '30 Okt 2026',
+        status: 'Aktif Berjalan'
+      },
+      {
+        id: 'PT-PK-02',
+        userName: 'Tiara Andini',
+        userPhone: '081556677891',
+        trainerName: 'Jessica Clarissa',
+        branch: 'Be Fit Pasirkaliki Bandung',
+        package: '4 Sesi Starter Coaching',
+        sessions: 4,
+        remainingSessions: 4,
+        discount: 100000,
+        voucherCode: 'PTPROMO20',
+        totalPaid: 950000,
+        date: '01 Nov 2026',
         status: 'Aktif Berjalan'
       }
     ];
 
-    // Fallback seed Class bookings with Attendance status
-    const SEED_CLASS_BOOKINGS = [
+    // Branch Metadata configuration
+    const BRANCH_CONFIGS = [
       {
-        id: 'CLS-BK-301',
-        userName: 'Dimas Arya Pratama',
-        userPhone: '081234567890',
-        className: 'Les Mills Bodypump',
-        instructor: 'Coach Hari',
-        branch: 'Be Fit Setiabudi Bandung',
-        dateKey: '2026-11-02',
-        time: '18:00 – 18:50',
-        status: 'Menunggu'
+        id: 'setiabudi',
+        name: 'Be Fit Setiabudi Bandung',
+        shortName: 'Setiabudi',
+        crowd: 'Low (25%)',
+        crowdStatus: 'Sangat Ramai / Flagship',
+        color: '#0D9488',
+        bgBar: 'bg-teal-600',
+        trainersCount: 5,
+        trainersList: 'Coach Aby Pratama, Sarah, Randy, Amanda, Bobby'
       },
       {
-        id: 'CLS-BK-302',
-        userName: 'Jessica Clarissa',
-        userPhone: '081987654321',
-        className: 'Reformer Pilates',
-        instructor: 'Coach Maya',
-        branch: 'Be Fit Dago Bandung',
-        dateKey: '2026-11-02',
-        time: '16:30 – 17:20',
-        status: 'Hadir ✓'
+        id: 'dago',
+        name: 'Be Fit Dago Bandung',
+        shortName: 'Dago',
+        crowd: 'Medium (60%)',
+        crowdStatus: 'Tinggi & Dinamis',
+        color: '#0284C7',
+        bgBar: 'bg-sky-600',
+        trainersCount: 5,
+        trainersList: 'Coach Kevin, Rika, Alex, Nadia, Doni'
       },
       {
-        id: 'CLS-BK-303',
-        userName: 'Budi Santoso',
-        userPhone: '081345678912',
-        className: 'Pound Fit Workout',
-        instructor: 'Coach Citra',
-        branch: 'Be Fit Pasirkaliki Bandung',
-        dateKey: '2026-11-03',
-        time: '19:15 – 20:05',
-        status: 'Menunggu'
+        id: 'pasirkaliki',
+        name: 'Be Fit Pasirkaliki Bandung',
+        shortName: 'Pasirkaliki',
+        crowd: 'Low (30%)',
+        crowdStatus: 'Stabil & Produktif',
+        color: '#6366F1',
+        bgBar: 'bg-indigo-600',
+        trainersCount: 4,
+        trainersList: 'Coach Farhan, Jessica, David, Maria'
       },
       {
-        id: 'CLS-BK-304',
-        userName: 'Siti Rahmawati',
-        userPhone: '085612349876',
-        className: 'Vinyasa Flow Yoga',
-        instructor: 'Coach Maya',
-        branch: 'Be Fit Setiabudi Bandung',
-        dateKey: '2026-11-03',
-        time: '08:30 – 09:20',
-        status: 'Menunggu'
-      }
-    ];
-
-    // Fallback seed Free Trial Claims if empty
-    const SEED_TRIAL_CLAIMS = [
-      {
-        id: 'TRL-901',
-        userName: 'Andi Firmansyah',
-        email: 'andi.firmansyah@gmail.com',
-        phone: '081299887766',
-        branch: 'Be Fit Setiabudi Bandung',
-        dateClaimed: '01 Nov 2026',
-        status: 'Aktif (7 Hari)'
-      },
-      {
-        id: 'TRL-902',
-        userName: 'Devi Anggraini',
-        email: 'devi.ang@gmail.com',
-        phone: '085711223344',
-        branch: 'Be Fit Dago Bandung',
-        dateClaimed: '02 Nov 2026',
-        status: 'Aktif (7 Hari)'
-      },
-      {
-        id: 'TRL-903',
-        userName: 'Fajar Nugraha',
-        email: 'fajar.nug@gmail.com',
-        phone: '087755667788',
-        branch: 'Be Fit Pasirkaliki Bandung',
-        dateClaimed: '02 Nov 2026',
-        status: 'Aktif (7 Hari)'
+        id: 'buahbatu',
+        name: 'Be Fit Buah Batu Bandung',
+        shortName: 'Buah Batu',
+        crowd: 'High (88%)',
+        crowdStatus: 'Bertumbuh / Tanpa PT',
+        color: '#F59E0B',
+        bgBar: 'bg-amber-600',
+        trainersCount: 0,
+        trainersList: '0 Trainer (Studio & Kelas Mandiri)'
       }
     ];
 
@@ -359,100 +744,48 @@
       const toast = document.getElementById('admin-toast');
       if (!toast) return;
       toast.textContent = msg;
-      toast.classList.remove('opacity-0', 'translate-y-[-20px]');
-      toast.classList.add('opacity-100', 'translate-y-0');
+      toast.style.opacity = '1';
+      toast.style.transform = 'translateY(0)';
       setTimeout(() => {
-        toast.classList.remove('opacity-100', 'translate-y-0');
-        toast.classList.add('opacity-0', 'translate-y-[-20px]');
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(-20px)';
       }, duration);
     }
 
-    function isAdminLoggedIn() {
-      return localStorage.getItem(ADMIN_AUTH_KEY) === 'true';
-    }
-
-    function handleAdminLogout() {
-      localStorage.removeItem(ADMIN_AUTH_KEY);
-      showToast('Berhasil logout admin.');
-      renderAdminView();
-    }
-
-    function handleAdminLogin(event) {
-      event.preventDefault();
-      const email = document.getElementById('login-admin-email').value.trim();
-      const pass = document.getElementById('login-admin-pass').value.trim();
-
-      if (email === 'rrizky205@gmail.com' && pass === 'wudinjir1911') {
-        localStorage.setItem(ADMIN_AUTH_KEY, 'true');
-        showToast('Login berhasil! Selamat datang di CRM Be Fit.', 2500);
-        renderAdminView();
-      } else {
-        const errorBox = document.getElementById('login-error-msg');
-        if (errorBox) {
-          errorBox.textContent = 'Email atau password admin tidak valid!';
-          errorBox.classList.remove('hidden');
-        }
-        showToast('Email atau password admin tidak valid!', 3000);
-      }
-    }
-
-    function toggleLoginPasswordVisibility() {
-      const passInput = document.getElementById('login-admin-pass');
-      const eyeIcon = document.getElementById('login-eye-icon');
-      if (passInput) {
-        if (passInput.type === 'password') {
-          passInput.type = 'text';
-          if (eyeIcon) eyeIcon.textContent = '🙈';
-        } else {
-          passInput.type = 'password';
-          if (eyeIcon) eyeIcon.textContent = '👁️';
-        }
-      }
-    }
-
-    // ==================== DATA RETRIEVAL & PERSISTENCE ====================
+    // ==================== STORAGE GETTERS & SETTERS (V6 AUTO-MERGE) ====================
     function getStoredMembers() {
       try {
+        const ver = localStorage.getItem(DATA_VERSION_KEY);
         const raw = localStorage.getItem(USERS_STORAGE_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            const map = new Map();
-            // Seed members first
-            SEED_MEMBERS.forEach(s => map.set((s.email || s.id).toLowerCase(), { ...s }));
-            // Merge stored members
-            parsed.forEach(m => {
+        let members = raw ? JSON.parse(raw) : [];
+
+        if (ver !== CURRENT_DATA_VERSION || !Array.isArray(members) || members.length < 24) {
+          const map = new Map();
+          SEED_MEMBERS.forEach(s => map.set((s.email || s.id).toLowerCase(), { ...s }));
+          if (Array.isArray(members)) {
+            members.forEach(m => {
               const key = (m.email || m.id || '').toLowerCase();
-              const existing = map.get(key) || {};
-              map.set(key, {
-                ...existing,
-                ...m,
-                id: existing.id || m.id || 'BF-' + Math.floor(1000 + Math.random() * 9000),
-                name: existing.name || m.name || 'Member Be Fit',
-                email: existing.email || m.email || '-',
-                phone: existing.phone || m.phone || '08123456789',
-                expiryDate: existing.expiryDate || m.expiryDate || '2026-11-08',
-                status: m.status || existing.status || 'Active',
-                isFrozen: m.isFrozen !== undefined ? m.isFrozen : (existing.isFrozen || false),
-                totalPaid: m.totalPaid || existing.totalPaid || 765000,
-                branch: existing.branch || m.branch || 'Setiabudi',
-                packageType: existing.packageType || m.packageType || 'Pro Transformation',
-                packageDuration: existing.packageDuration || m.packageDuration || 'Paket 3 Bulan'
-              });
+              const def = map.get(key);
+              if (def) {
+                map.set(key, { ...def, ...m, expiryDate: def.expiryDate, branch: def.branch, packageDuration: def.packageDuration, packageType: def.packageType, totalPaid: def.totalPaid });
+              } else if (m.role !== 'admin') {
+                map.set(key, m);
+              }
             });
-            const result = Array.from(map.values());
-            saveMembers(result);
-            return result;
           }
+          members = Array.from(map.values()).filter(m => m.role !== 'admin');
+          saveMembers(members);
+          localStorage.setItem(DATA_VERSION_KEY, CURRENT_DATA_VERSION);
         }
-      } catch (e) {}
-      saveMembers(SEED_MEMBERS);
-      return SEED_MEMBERS;
+        return members.filter(m => m.role !== 'admin');
+      } catch (e) {
+        return SEED_MEMBERS.filter(m => m.role !== 'admin');
+      }
     }
 
-    function saveMembers(list) {
+    function saveMembers(members) {
       try {
-        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(list));
+        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(members));
       } catch (e) {}
     }
 
@@ -472,7 +805,7 @@
         const raw = localStorage.getItem(PT_BOOKINGS_KEY);
         if (raw) {
           const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed) && parsed.length > 0) {
+          if (Array.isArray(parsed) && parsed.length >= 9) {
             return parsed.map(b => ({
               ...b,
               remainingSessions: b.remainingSessions !== undefined ? b.remainingSessions : (b.sessions || 4),
@@ -485,48 +818,44 @@
       return SEED_PT_BOOKINGS;
     }
 
-    function savePtBookings(list) {
+    function savePtBookings(bookings) {
       try {
-        localStorage.setItem(PT_BOOKINGS_KEY, JSON.stringify(list));
+        localStorage.setItem(PT_BOOKINGS_KEY, JSON.stringify(bookings));
       } catch (e) {}
     }
 
-    function getStoredClassBookings() {
-      try {
-        const raw = localStorage.getItem(CLASS_BOOKINGS_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-        }
-      } catch (e) {}
-      saveClassBookings(SEED_CLASS_BOOKINGS);
-      return SEED_CLASS_BOOKINGS;
+    // ==================== AUTH CHECK ====================
+    function isAdminLoggedIn() {
+      return sessionStorage.getItem(ADMIN_AUTH_KEY) === 'true';
     }
 
-    function saveClassBookings(list) {
-      try {
-        localStorage.setItem(CLASS_BOOKINGS_KEY, JSON.stringify(list));
-      } catch (e) {}
+    function handleAdminLogin(e) {
+      e.preventDefault();
+      const email = (document.getElementById('admin-email').value || '').trim();
+      const pass = (document.getElementById('admin-password').value || '').trim();
+
+      if (email === 'rrizky205@gmail.com' && pass === 'wudinjir1911') {
+        sessionStorage.setItem(ADMIN_AUTH_KEY, 'true');
+        showToast('Login Admin CRM Berhasil!');
+        renderAdminView();
+      } else {
+        showToast('Email atau Password salah! Periksa kembali kredensial Anda.');
+      }
     }
 
-    function getStoredTrialClaims() {
-      try {
-        const raw = localStorage.getItem(TRIAL_CLAIMS_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-        }
-      } catch (e) {}
-      return SEED_TRIAL_CLAIMS;
-    }
-
-    // ==================== CRM ACTIONS & EVENT HANDLERS ====================
-    window.filterMembersByStatus = (status) => {
-      memberFilterStatus = status;
-      currentTab = 'members';
+    function handleAdminLogout() {
+      sessionStorage.removeItem(ADMIN_AUTH_KEY);
       renderAdminView();
-    };
+    }
 
+    function toggleAdminPasswordVisibility() {
+      const input = document.getElementById('admin-password');
+      if (input) {
+        input.type = input.type === 'password' ? 'text' : 'password';
+      }
+    }
+
+    // Freeze member
     window.toggleMemberFreeze = (memberId) => {
       const members = getStoredMembers();
       const idx = members.findIndex(m => m.id === memberId || m.email === memberId);
@@ -577,136 +906,90 @@
       }
     };
 
-    window.markClassAttendance = (classId, newStatus) => {
-      const list = getStoredClassBookings();
-      const idx = list.findIndex(c => c.id === classId);
-      if (idx !== -1) {
-        list[idx].status = newStatus;
-        saveClassBookings(list);
-        showToast(`Presensi kelas untuk ${list[idx].userName} dicatat: ${newStatus}`);
-        renderAdminView();
-      }
-    };
+    // Calculate Branch Analytics from Live App Data
+    function computeBranchAnalytics(members, ptBookings) {
+      return BRANCH_CONFIGS.map(b => {
+        const bMembers = members.filter(m => (m.branch || '').toLowerCase().includes(b.shortName.toLowerCase()));
+        const membershipRev = bMembers.reduce((sum, m) => sum + Number(m.totalPaid || 0), 0);
+        
+        const bPt = ptBookings.filter(pt => (pt.branch || '').toLowerCase().includes(b.shortName.toLowerCase()));
+        const ptRev = bPt.reduce((sum, pt) => sum + Number(pt.totalPaid || 0), 0);
+        const ptActiveSessions = bPt.reduce((sum, pt) => {
+          const rem = pt.remainingSessions !== undefined ? pt.remainingSessions : pt.sessions;
+          return sum + Number(rem || 0);
+        }, 0);
 
-    // ==================== MAIN RENDER VIEWS ====================
+        return {
+          ...b,
+          memberCount: bMembers.length,
+          membershipRev,
+          ptRev,
+          totalRev: membershipRev + ptRev,
+          ptActiveSessions
+        };
+      });
+    }
+
+    // ==================== VIEW RENDERER ====================
     function renderAdminView() {
       const root = document.getElementById('admin-root');
       if (!root) return;
 
       if (!isAdminLoggedIn()) {
-        root.innerHTML = renderLoginCard();
-      } else {
-        root.innerHTML = renderAdminDashboard();
+        root.innerHTML = renderLoginView();
+        return;
       }
-    }
 
-    // 1. Clean White Login Screen (NO AUTOFILL / NO CREDENTIAL LEAKS)
-    function renderLoginCard() {
-      return `
-        <div class="min-h-screen flex flex-col justify-center items-center px-4 py-12">
-          <div class="w-full max-w-md bg-white rounded-2xl border border-slate-200 shadow-xl p-8">
-            <!-- Brand Logo Header -->
-            <div class="text-center mb-6">
-              <div class="w-16 h-16 rounded-2xl bg-[#090D16] border border-amber-500/40 p-1 mx-auto mb-3 shadow-md flex items-center justify-center">
-                <img src="logo-square.jpg" alt="Be Fit Logo" class="w-full h-full object-cover rounded-xl">
-              </div>
-              <h2 class="text-xl font-black text-slate-900 tracking-tight">Portal Admin Be Fit CRM</h2>
-              <p class="text-xs text-slate-500 mt-1">Masuk dengan kredensial admin resmi untuk mengelola member dan retensi gym.</p>
-            </div>
-
-            <div id="login-error-msg" class="hidden p-3 bg-red-50 text-red-600 rounded-xl border border-red-200 text-xs font-bold mb-4"></div>
-
-            <form onsubmit="handleAdminLogin(event)" class="space-y-4">
-              <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Email Admin</label>
-                <input type="email" id="login-admin-email" value="" placeholder="Masukkan email admin" required autocomplete="off"
-                  class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-teal-550 focus:border-transparent outline-none">
-              </div>
-
-              <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Password Admin</label>
-                <div class="relative">
-                  <input type="password" id="login-admin-pass" value="" placeholder="Masukkan password admin" required autocomplete="off"
-                    class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm pr-12 focus:ring-2 focus:ring-teal-550 focus:border-transparent outline-none">
-                  <button type="button" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 font-bold text-sm"
-                    onclick="toggleLoginPasswordVisibility()">
-                    <span id="login-eye-icon">👁️</span>
-                  </button>
-                </div>
-              </div>
-
-              <button type="submit"
-                class="w-full py-3.5 rounded-xl bg-teal-550 text-white text-sm font-black shadow-lg shadow-teal-550/30 hover:bg-teal-650 active:scale-[0.98] transition-all">
-                Masuk ke Panel CRM &rarr;
-              </button>
-            </form>
-
-            <div class="mt-6 pt-5 border-t border-slate-100 text-center">
-              <a href="index.html" class="inline-flex items-center gap-1.5 text-xs font-bold text-teal-600 hover:text-teal-700 transition-colors">
-                &larr; Kembali ke Aplikasi Mobile Be Fit
-              </a>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
-    // 2. Clean White Dashboard
-    function renderAdminDashboard() {
       const members = getStoredMembers();
       const transactions = getStoredTransactions();
       const ptBookings = getStoredPtBookings();
-      const classBookings = getStoredClassBookings();
-      const trialClaims = getStoredTrialClaims();
+      const branchAnalytics = computeBranchAnalytics(members, ptBookings);
 
-      // Aggregate revenue clean net
-      let totalRevenue = 48500000; // Seed base
-      transactions.forEach(t => {
-        if (t.amount) totalRevenue += Number(t.amount);
-      });
+      // Total Membership Revenue
+      const totalMembershipRev = branchAnalytics.reduce((sum, b) => sum + b.membershipRev, 0);
+      // Total PT Revenue
+      const totalPtRev = branchAnalytics.reduce((sum, b) => sum + b.ptRev, 0);
+      // Aggregate Revenue
+      const totalRevenue = totalMembershipRev + totalPtRev;
 
-      return `
+      root.innerHTML = `
         <!-- Top Clean White Navigation Header -->
         <header class="bg-white border-b border-slate-200/80 sticky top-0 z-40 shadow-sm">
           <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             
             <!-- Left: Brand Logo & Title -->
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-[#090D16] border border-amber-500/40 p-0.5 shadow-sm flex items-center justify-center shrink-0">
+              <div class="w-10 h-10 rounded-xl bg-[#090D16] border border-amber-500/40 p-1 flex items-center justify-center shadow-sm">
                 <img src="logo-square.jpg" alt="Be Fit Logo" class="w-full h-full object-cover rounded-lg">
               </div>
               <div>
                 <div class="flex items-center gap-2">
-                  <span class="text-sm font-black tracking-wider text-gold-gradient uppercase font-sans">BE FIT</span>
-                  <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-teal-50 text-teal-700 border border-teal-200">
-                    CRM RETENTION DASHBOARD
+                  <h1 class="text-base font-extrabold tracking-tight text-slate-900 leading-none">Be Fit — Gym CRM</h1>
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-teal-50 text-teal-700 border border-teal-200">
+                    Retention Center
                   </span>
                 </div>
-                <span class="text-[11px] text-slate-400 font-medium">Customer Retention & Operations System</span>
+                <p class="text-xs text-slate-400 mt-0.5">Commercial Gym Operating System & Retention Dashboard</p>
               </div>
             </div>
 
-            <!-- Right: Admin Profile & Actions -->
-            <div class="flex items-center gap-3">
-              <div class="hidden sm:flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
-                <div class="w-6 h-6 rounded-full bg-teal-550 text-white font-black flex items-center justify-center text-[10px]">
-                  R
-                </div>
-                <div>
-                  <span class="font-bold text-slate-800 block leading-tight">Rizky Muhammad Riady</span>
-                  <span class="text-[10px] text-slate-400">rrizky205@gmail.com</span>
+            <!-- Right: Admin Status & Logout -->
+            <div class="flex items-center gap-4">
+              <div class="hidden sm:flex items-center gap-2 text-right">
+                <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                <div class="leading-tight">
+                  <span class="text-xs font-bold text-slate-900 block">Admin Portal Live</span>
+                  <span class="text-[10px] text-slate-400 font-mono">rrizky205@gmail.com</span>
                 </div>
               </div>
 
-              <!-- Back to User App Button -->
-              <a href="index.html" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all" title="Kembali ke Beranda User Mobile">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                <span>Aplikasi User</span>
+              <a href="index.html" class="px-3 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-700 transition-colors inline-flex items-center gap-1.5 cursor-pointer">
+                <span>📱 Buka App User</span>
               </a>
 
-              <!-- Logout Button -->
-              <button type="button" onclick="handleAdminLogout()" class="px-3.5 py-2 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 text-xs font-bold border border-red-200 transition-all">
-                Logout
+              <button type="button" onclick="handleAdminLogout()"
+                class="px-3 py-1.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 text-xs font-bold transition-colors cursor-pointer">
+                Keluar
               </button>
             </div>
 
@@ -716,42 +999,34 @@
         <!-- Main Admin Container -->
         <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-20">
 
-          <!-- 4 Navigation Tabs -->
+          <!-- 3 Focus Navigation Tabs -->
           <div class="flex items-center gap-2 overflow-x-auto pb-2 border-b border-slate-200 mb-6">
-            <button type="button" class="admin-tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all ${currentTab === 'overview' ? 'active' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}"
+            <button type="button" class="admin-tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${currentTab === 'overview' ? 'active' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}"
               onclick="switchAdminTab('overview')">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
-              <span>1. Ringkasan Bisnis & Retention Center</span>
+              <span>1. Ringkasan Bisnis & Analitik Cabang</span>
             </button>
 
-            <button type="button" class="admin-tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all ${currentTab === 'members' ? 'active' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}"
+            <button type="button" class="admin-tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${currentTab === 'members' ? 'active' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}"
               onclick="switchAdminTab('members')">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-              <span>2. Direktori Member & Retensi</span>
-              <span class="px-2 py-0.5 rounded-full text-[10px] font-mono ${currentTab === 'members' ? 'bg-white/20 text-white' : 'bg-teal-50 text-teal-700'}">${members.length}</span>
+              <span>2. Data Member & Retensi CRM</span>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-mono tabular-nums ${currentTab === 'members' ? 'bg-white/20 text-white' : 'bg-teal-50 text-teal-700'}">${members.length}</span>
             </button>
 
-            <button type="button" class="admin-tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all ${currentTab === 'trainers' ? 'active' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}"
+            <button type="button" class="admin-tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${currentTab === 'trainers' ? 'active' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}"
               onclick="switchAdminTab('trainers')">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-              <span>3. Sesi Personal Trainer</span>
-              <span class="px-2 py-0.5 rounded-full text-[10px] font-mono ${currentTab === 'trainers' ? 'bg-white/20 text-white' : 'bg-amber-50 text-amber-800'}">${ptBookings.length}</span>
-            </button>
-
-            <button type="button" class="admin-tab-btn flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all ${currentTab === 'classes' ? 'active' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}"
-              onclick="switchAdminTab('classes')">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-              <span>4. Presensi & Booking Kelas</span>
-              <span class="px-2 py-0.5 rounded-full text-[10px] font-mono ${currentTab === 'classes' ? 'bg-white/20 text-white' : 'bg-blue-50 text-blue-700'}">${classBookings.length}</span>
+              <span>3. Data Pemesanan & Performa Personal Trainer</span>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-mono tabular-nums ${currentTab === 'trainers' ? 'bg-white/20 text-white' : 'bg-amber-50 text-amber-800'}">${ptBookings.length}</span>
             </button>
           </div>
 
           <!-- Dynamic Tab Content Render -->
           <div id="tab-content">
-            ${currentTab === 'overview' ? renderTabOverview(totalRevenue, members, ptBookings, classBookings, trialClaims, transactions) : ''}
+            ${currentTab === 'overview' ? renderTabOverview(totalRevenue, members, ptBookings, transactions, branchAnalytics) : ''}
             ${currentTab === 'members' ? renderTabMembers(members) : ''}
             ${currentTab === 'trainers' ? renderTabTrainers(ptBookings) : ''}
-            ${currentTab === 'classes' ? renderTabClasses(classBookings, trialClaims) : ''}
           </div>
 
         </main>
@@ -759,7 +1034,7 @@
     }
 
     // ==================== TAB 1: OVERVIEW & RETENTION CENTER ====================
-    function renderTabOverview(revenue, members, ptBookings, classBookings, trialClaims, transactions) {
+    function renderTabOverview(totalRevenue, members, ptBookings, transactions, branchAnalytics) {
       // Metric calculations
       const expiringMembers = members.filter(m => {
         const d = getDaysRemaining(m.expiryDate);
@@ -783,10 +1058,11 @@
       }, 0);
 
       // Members needing urgent follow-up (remaining days 1 to 10)
-      const followUpTodayMembers = members.filter(m => {
-        const d = getDaysRemaining(m.expiryDate);
-        return d >= 1 && d <= 10 && !m.isFrozen;
-      });
+      const followUpTodayMembers = expiringMembers;
+
+      // Membership revenue total and max for chart scale
+      const totalMembershipRev = branchAnalytics.reduce((sum, b) => sum + b.membershipRev, 0);
+      const maxMembershipRev = Math.max(...branchAnalytics.map(b => b.membershipRev), 1);
 
       return `
         <!-- 1. Retention Alert Banner (Amber) -->
@@ -795,12 +1071,12 @@
             <div class="flex items-center gap-3">
               <span class="text-2xl">⚠️</span>
               <div>
-                <h4 class="text-sm font-black text-amber-900 leading-tight">Perhatian CRM Retensi: Ada ${expiringMembers.length} Member Segera Kedaluwarsa!</h4>
+                <h4 class="text-sm font-semibold tracking-tight text-amber-900 leading-tight">Perhatian CRM Retensi: Ada ${expiringMembers.length} Member Segera Kedaluwarsa!</h4>
                 <p class="text-xs text-amber-700 mt-0.5">Terdapat <strong>${expiringMembers.length} member</strong> yang masa aktifnya akan habis dalam 1–10 hari ke depan. Segera kirimkan notifikasi voucher diskon perpanjangan 25% via WhatsApp.</p>
               </div>
             </div>
-            <button type="button" onclick="filterMembersByStatus('expiring')"
-              class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-black shrink-0 transition-all shadow-md shadow-amber-500/20">
+            <button type="button" onclick="setMemberStatusFilter('expiring'); switchAdminTab('members');"
+              class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold shrink-0 transition-all shadow-md shadow-amber-500/20 cursor-pointer">
               Lihat Member Ini &rarr;
             </button>
           </div>
@@ -812,7 +1088,7 @@
           <!-- Card 1: Total Revenue -->
           <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Total Pendapatan</span>
-            <h3 class="text-lg font-black font-mono text-teal-600 leading-tight">${formatRupiah(revenue)}</h3>
+            <h3 class="text-lg font-bold font-mono tabular-nums text-teal-600 leading-tight">${formatRupiah(totalRevenue)}</h3>
             <span class="inline-block mt-2 text-[9px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
               ✓ Bersih Setelah Diskon
             </span>
@@ -821,25 +1097,25 @@
           <!-- Card 2: Active Members -->
           <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Member Aktif</span>
-            <h3 class="text-lg font-black font-mono text-emerald-600 leading-tight">${activeMembers.length} Member</h3>
+            <h3 class="text-lg font-bold font-mono tabular-nums text-emerald-600 leading-tight">${activeMembers.length} Member</h3>
             <span class="inline-block mt-2 text-[9px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
-              Membership Valid
+              Masa Aktif &gt; 10 Hari
             </span>
           </div>
 
-          <!-- Card 3: Akan Kedaluwarsa (<= 10 Hari) -->
+          <!-- Card 3: Akan Kedaluwarsa (1-10 Hari) -->
           <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Akan Kedaluwarsa</span>
-            <h3 class="text-lg font-black font-mono text-amber-600 leading-tight">${expiringMembers.length} Member</h3>
+            <h3 class="text-lg font-bold font-mono tabular-nums text-amber-600 leading-tight">${expiringMembers.length} Member</h3>
             <span class="inline-block mt-2 text-[9px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md">
-              Habis $\le$ 10 Hari
+              Masa aktif tersisa 1–10 hari
             </span>
           </div>
 
           <!-- Card 4: Member Pasif (At Risk Churn) -->
           <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">At-Risk / Expired</span>
-            <h3 class="text-lg font-black font-mono text-rose-600 leading-tight">${atRiskMembers.length} Member</h3>
+            <h3 class="text-lg font-bold font-mono tabular-nums text-rose-600 leading-tight">${atRiskMembers.length} Member</h3>
             <span class="inline-block mt-2 text-[9px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md">
               Perlu Winback
             </span>
@@ -848,18 +1124,18 @@
           <!-- Card 5: Total Sesi PT Berjalan -->
           <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Sisa Sesi PT</span>
-            <h3 class="text-lg font-black font-mono text-teal-600 leading-tight">${totalRemainingPtSessions} Sesi</h3>
+            <h3 class="text-lg font-bold font-mono tabular-nums text-teal-600 leading-tight">${totalRemainingPtSessions} Sesi</h3>
             <span class="inline-block mt-2 text-[9px] font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md">
               Kuota Belum Selesai
             </span>
           </div>
 
-          <!-- Card 6: Rasio Utilisasi Kelas -->
+          <!-- Card 6: Utilisasi Gym -->
           <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Utilisasi Kelas</span>
-            <h3 class="text-lg font-black font-mono text-blue-600 leading-tight">76% Terisi</h3>
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Utilisasi Gym</span>
+            <h3 class="text-lg font-bold font-mono tabular-nums text-blue-600 leading-tight">82% Optimal</h3>
             <span class="inline-block mt-2 text-[9px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md">
-              ${classBookings.length} Slot Terpesan
+              4 Cabang Aktif
             </span>
           </div>
 
@@ -871,11 +1147,11 @@
             <div>
               <div class="flex items-center gap-2">
                 <span class="text-base">⚡</span>
-                <h4 class="text-sm font-black text-slate-900">Aksi Cepat: Member Perlu Follow-Up (Masa Aktif Habis 1–10 Hari)</h4>
+                <h4 class="text-sm font-semibold tracking-tight text-slate-900">Aksi Cepat: Member Perlu Follow-Up (Masa Aktif Habis 1–10 Hari)</h4>
               </div>
               <p class="text-xs text-slate-400 mt-0.5">Kirimkan notifikasi WhatsApp bahwa voucher diskon perpanjangan 25% telah otomatis disuntikkan ke akun mereka.</p>
             </div>
-            <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 self-start sm:self-auto">
+            <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 self-start sm:self-auto tabular-nums">
               ${followUpTodayMembers.length} Member Perlu Kontak
             </span>
           </div>
@@ -895,7 +1171,7 @@
                     <div class="p-4 rounded-xl border border-amber-200 bg-amber-50/40 hover:bg-amber-50 transition-all flex flex-col justify-between">
                       <div>
                         <div class="flex items-center justify-between gap-2 mb-2">
-                          <span class="font-black text-slate-900 text-sm">${m.name}</span>
+                          <span class="font-bold text-slate-900 text-sm">${m.name}</span>
                           <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-amber-100 text-amber-800 border border-amber-300">
                             Segera Berakhir (${daysLeft} Hari)
                           </span>
@@ -907,7 +1183,7 @@
                       <div class="mt-4 pt-3 border-t border-amber-200/60 flex items-center justify-between">
                         <span class="text-xs font-mono font-bold text-slate-600">${m.phone}</span>
                         <a href="${waUrl}" target="_blank" rel="noopener noreferrer"
-                          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black shadow-sm transition-all"
+                          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
                           title="Kirim Notifikasi Promo 25% (WA)">
                           <span>💬 Kirim Notif Promo (WA)</span>
                         </a>
@@ -920,59 +1196,115 @@
           </div>
         </div>
 
-        <!-- 4. Gym Branches Live Monitoring -->
-        <div class="mb-6">
-          <h4 class="text-xs font-black uppercase tracking-wider text-slate-500 mb-3">Monitoring Cabang Be Fit & Status Keramaian (Crowd Meter)</h4>
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            
-            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-              <div>
-                <h5 class="text-sm font-bold text-slate-900">Be Fit Setiabudi</h5>
-                <p class="text-[11px] text-slate-400 mt-0.5">5 Trainer • 8 Kelas/Hari</p>
+        <!-- 4. GRAFIK PENDAPATAN MEMBERSHIP PER CABANG (BULAN INI) -->
+        <div class="mb-6 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden p-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-2 mb-6">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-xl">📊</span>
+                <h4 class="text-base font-semibold tracking-tight text-slate-900">Grafik Pendapatan Membership per Cabang (Bulan Ini)</h4>
               </div>
-              <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-green-50 text-green-700 border border-green-200">
-                Low (25%)
+              <p class="text-xs text-slate-500 mt-0.5">Khusus pendapatan dari penjualan & perpanjangan paket Membership, tidak termasuk PT</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="px-3 py-1 rounded-full text-xs font-bold bg-teal-50 text-teal-700 border border-teal-200 tabular-nums font-mono">
+                Total Membership: ${formatRupiah(totalMembershipRev)}
               </span>
             </div>
+          </div>
 
-            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-              <div>
-                <h5 class="text-sm font-bold text-slate-900">Be Fit Dago</h5>
-                <p class="text-[11px] text-slate-400 mt-0.5">5 Trainer • 8 Kelas/Hari</p>
-              </div>
-              <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                Medium (60%)
-              </span>
-            </div>
-
-            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-              <div>
-                <h5 class="text-sm font-bold text-slate-900">Be Fit Buah Batu</h5>
-                <p class="text-[11px] text-slate-400 mt-0.5">0 Trainer • 8 Kelas/Hari</p>
-              </div>
-              <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-red-50 text-red-700 border border-red-200">
-                High (88%)
-              </span>
-            </div>
-
-            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-              <div>
-                <h5 class="text-sm font-bold text-slate-900">Be Fit Pasirkaliki</h5>
-                <p class="text-[11px] text-slate-400 mt-0.5">4 Trainer • 8 Kelas/Hari</p>
-              </div>
-              <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-green-50 text-green-700 border border-green-200">
-                Low (30%)
-              </span>
-            </div>
-
+          <!-- Bar Chart Items -->
+          <div class="space-y-5">
+            ${branchAnalytics.map(b => {
+              const pct = totalMembershipRev > 0 ? ((b.membershipRev / totalMembershipRev) * 100).toFixed(1) : 0;
+              const barWidth = Math.max(10, (b.membershipRev / maxMembershipRev) * 100);
+              return `
+                <div>
+                  <div class="flex items-center justify-between text-xs mb-1.5">
+                    <span class="font-semibold text-slate-900 flex items-center gap-2">
+                      <span class="w-3 h-3 rounded-full" style="background-color: ${b.color};"></span>
+                      ${b.name}
+                      <span class="text-[11px] font-normal text-slate-400">(${b.memberCount} Member)</span>
+                    </span>
+                    <div class="flex items-center gap-3">
+                      <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 tabular-nums">${pct}% Kontribusi</span>
+                      <span class="font-bold font-mono tabular-nums text-slate-900 text-sm">${formatRupiah(b.membershipRev)}</span>
+                    </div>
+                  </div>
+                  <div class="w-full bg-slate-100 rounded-full h-3.5 overflow-hidden p-0.5 border border-slate-200/70">
+                    <div class="${b.bgBar} h-full rounded-full transition-all duration-700 shadow-sm" style="width: ${barWidth}%;"></div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
           </div>
         </div>
 
-        <!-- 5. Recent Real-Time Transactions Feed -->
+        <!-- 5. KARTU RINCIAN OPERASIONAL & PENDAPATAN TIAP CABANG -->
+        <div class="mb-6">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h4 class="text-sm font-semibold tracking-tight text-slate-900">Rincian Operasional & Pendapatan Tiap Cabang</h4>
+              <p class="text-xs text-slate-500">Perbandingan menyeluruh pendapatan Membership, pendapatan PT, dan utilisasi trainer di 4 cabang.</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            ${branchAnalytics.map(b => `
+              <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+                <div>
+                  <div class="flex items-start justify-between gap-2 mb-3 pb-2 border-b border-slate-100">
+                    <div>
+                      <h5 class="text-sm font-bold text-slate-900 leading-snug">${b.name}</h5>
+                      <span class="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600">
+                        ${b.crowdStatus}
+                      </span>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${b.crowd.includes('Low') ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : (b.crowd.includes('Medium') ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-rose-50 text-rose-700 border border-rose-200')} shrink-0">
+                      ${b.crowd}
+                    </span>
+                  </div>
+
+                  <div class="space-y-2 text-xs">
+                    <div class="flex justify-between items-center py-1 border-b border-slate-50">
+                      <span class="text-slate-500">Member Terdaftar:</span>
+                      <span class="font-bold text-slate-900 tabular-nums font-mono">${b.memberCount} Member Aktif</span>
+                    </div>
+
+                    <div class="flex justify-between items-center py-1 border-b border-slate-50">
+                      <span class="text-slate-500">Pendapatan Membership:</span>
+                      <span class="font-bold text-teal-600 tabular-nums font-mono">${formatRupiah(b.membershipRev)}</span>
+                    </div>
+
+                    <div class="flex justify-between items-center py-1 border-b border-slate-50">
+                      <span class="text-slate-500">Pendapatan PT:</span>
+                      <span class="font-bold ${b.ptRev > 0 ? 'text-sky-600' : 'text-slate-400'} tabular-nums font-mono">${formatRupiah(b.ptRev)}</span>
+                    </div>
+
+                    <div class="pt-2">
+                      <div class="flex justify-between items-center text-[11px] mb-1">
+                        <span class="text-slate-500">Personal Trainer:</span>
+                        <span class="font-bold text-slate-800">${b.trainersCount > 0 ? `${b.trainersCount} Trainer (${b.ptActiveSessions} Sesi)` : '0 Trainer (Tanpa PT)'}</span>
+                      </div>
+                      <p class="text-[10px] text-slate-400 leading-tight">${b.trainersList}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center text-xs">
+                  <span class="text-slate-500 font-medium">Total Omzet:</span>
+                  <span class="font-bold text-slate-900 text-sm font-mono tabular-nums">${formatRupiah(b.totalRev)}</span>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- 6. Recent Real-Time Transactions Feed -->
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
             <div>
-              <h4 class="text-sm font-black text-slate-900">Transaksi & Aktivitas Pelanggan (Live Feed)</h4>
+              <h4 class="text-sm font-semibold tracking-tight text-slate-900">Transaksi & Aktivitas Pelanggan (Live Feed)</h4>
               <p class="text-xs text-slate-400 mt-0.5">Setiap transaksi checkout dari aplikasi pelanggan langsung tercatat otomatis di sini.</p>
             </div>
             <span class="px-3 py-1 rounded-full text-xs font-bold bg-teal-50 text-teal-700 border border-teal-200">
@@ -993,29 +1325,29 @@
                   <th class="px-6 py-3.5">Status</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-slate-100">
+              <tbody class="divide-y divide-slate-100 text-slate-700 leading-relaxed">
                 ${transactions.length === 0 ? `
                   <tr>
-                    <td class="px-6 py-3.5 font-mono font-bold text-slate-800">INV-BF-892101</td>
+                    <td class="px-6 py-3.5 font-mono font-bold text-slate-800 tabular-nums">INV-BF-892101</td>
                     <td class="px-6 py-3.5 font-bold text-slate-900">Paket 3 Bulan (Pro Transformation)</td>
                     <td class="px-6 py-3.5"><span class="px-2 py-0.5 rounded font-mono font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">MEMBERBARU15 (-15%)</span></td>
-                    <td class="px-6 py-3.5 font-mono font-black text-teal-600">Rp 765.000</td>
+                    <td class="px-6 py-3.5 font-mono font-bold text-teal-600 tabular-nums">Rp 765.000</td>
                     <td class="px-6 py-3.5 font-bold text-slate-700">QRIS INSTANT</td>
                     <td class="px-6 py-3.5 font-mono text-slate-500">Hari ini</td>
                     <td class="px-6 py-3.5"><span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">LUNAS</span></td>
                   </tr>
                   <tr>
-                    <td class="px-6 py-3.5 font-mono font-bold text-slate-800">INV-BF-892102</td>
+                    <td class="px-6 py-3.5 font-mono font-bold text-slate-800 tabular-nums">INV-BF-892102</td>
                     <td class="px-6 py-3.5 font-bold text-slate-900">4 Sesi bersama Coach Aby Pratama</td>
                     <td class="px-6 py-3.5"><span class="px-2 py-0.5 rounded font-mono font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">PTPROMO20 (-20%)</span></td>
-                    <td class="px-6 py-3.5 font-mono font-black text-teal-600">Rp 600.000</td>
+                    <td class="px-6 py-3.5 font-mono font-bold text-teal-600 tabular-nums">Rp 600.000</td>
                     <td class="px-6 py-3.5 font-bold text-slate-700">BCA VA</td>
                     <td class="px-6 py-3.5 font-mono text-slate-500">Hari ini</td>
                     <td class="px-6 py-3.5"><span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">LUNAS</span></td>
                   </tr>
                 ` : transactions.map(t => `
                   <tr>
-                    <td class="px-6 py-3.5 font-mono font-bold text-slate-800">${t.id}</td>
+                    <td class="px-6 py-3.5 font-mono font-bold text-slate-800 tabular-nums">${t.id}</td>
                     <td class="px-6 py-3.5 font-bold text-slate-900">${t.title || t.type}</td>
                     <td class="px-6 py-3.5">
                       ${t.voucherCode && t.voucherCode !== '-' ? `
@@ -1024,7 +1356,7 @@
                         </span>
                       ` : '<span class="text-slate-400 font-mono">-</span>'}
                     </td>
-                    <td class="px-6 py-3.5 font-mono font-black text-teal-600">${formatRupiah(t.amount)}</td>
+                    <td class="px-6 py-3.5 font-mono font-bold text-teal-600 tabular-nums">${formatRupiah(t.amount)}</td>
                     <td class="px-6 py-3.5 font-bold text-slate-700 font-mono uppercase">${t.method || 'QRIS'}</td>
                     <td class="px-6 py-3.5 font-mono text-slate-500">${t.date || 'Hari ini'}</td>
                     <td class="px-6 py-3.5"><span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">${t.status || 'LUNAS'}</span></td>
@@ -1083,7 +1415,7 @@
           <div class="p-5 border-b border-slate-100 flex flex-col gap-4">
             <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
-                <h3 class="text-base font-black text-slate-900">Direktori Member & Manajemen Retensi (CRM)</h3>
+                <h3 class="text-base font-semibold tracking-tight text-slate-900">Direktori Member & Manajemen Retensi (CRM)</h3>
                 <p class="text-xs text-slate-400 mt-0.5">Kelola masa aktif member, status cuti, follow-up WhatsApp langsung, dan perpanjangan manual.</p>
               </div>
               
@@ -1097,27 +1429,27 @@
             <!-- Filter Pills -->
             <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-bold">
               <button type="button" onclick="setMemberStatusFilter('all')"
-                class="px-3 py-1.5 rounded-lg border transition-all ${memberFilterStatus === 'all' ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'}">
+                class="px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${memberFilterStatus === 'all' ? 'bg-slate-900 text-white border-slate-900' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'}">
                 Semua (${members.length})
               </button>
               
               <button type="button" onclick="setMemberStatusFilter('expiring')"
-                class="px-3 py-1.5 rounded-lg border transition-all ${memberFilterStatus === 'expiring' ? 'bg-amber-500 text-white border-amber-500' : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'}">
+                class="px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${memberFilterStatus === 'expiring' ? 'bg-amber-500 text-white border-amber-500' : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'}">
                 ⚠️ Segera Berakhir 1–10 Hari (${expiringCount})
               </button>
 
               <button type="button" onclick="setMemberStatusFilter('active')"
-                class="px-3 py-1.5 rounded-lg border transition-all ${memberFilterStatus === 'active' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'}">
+                class="px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${memberFilterStatus === 'active' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100'}">
                 ✓ Aktif (${activeCount})
               </button>
 
               <button type="button" onclick="setMemberStatusFilter('frozen')"
-                class="px-3 py-1.5 rounded-lg border transition-all ${memberFilterStatus === 'frozen' ? 'bg-blue-600 text-white border-blue-600' : 'bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100'}">
+                class="px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${memberFilterStatus === 'frozen' ? 'bg-blue-600 text-white border-blue-600' : 'bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100'}">
                 ❄️ Cuti / Frozen (${frozenCount})
               </button>
 
               <button type="button" onclick="setMemberStatusFilter('expired')"
-                class="px-3 py-1.5 rounded-lg border transition-all ${memberFilterStatus === 'expired' ? 'bg-rose-600 text-white border-rose-600' : 'bg-rose-50 text-rose-800 border-rose-200 hover:bg-rose-100'}">
+                class="px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${memberFilterStatus === 'expired' ? 'bg-rose-600 text-white border-rose-600' : 'bg-rose-50 text-rose-800 border-rose-200 hover:bg-rose-100'}">
                 ✕ Expired (${expiredCount})
               </button>
             </div>
@@ -1136,7 +1468,7 @@
                   <th class="px-6 py-3.5 text-center">Aksi Cepat CRM</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-slate-100">
+              <tbody class="divide-y divide-slate-100 text-slate-700 leading-relaxed">
                 ${filtered.length === 0 ? `
                   <tr>
                     <td colspan="6" class="px-6 py-8 text-center text-slate-400 font-medium">
@@ -1149,13 +1481,12 @@
                   const isExpired = (days <= 0 || m.status === 'Expired') && !m.isFrozen;
                   const isFrozen = !!m.isFrozen;
 
-                  // Days Remaining Badge
                   let daysBadgeHtml = '';
                   let statusBadgeHtml = '';
 
                   if (isFrozen) {
-                    daysBadgeHtml = `<span class="px-2 py-0.5 rounded font-mono font-bold bg-blue-50 text-blue-800 border border-blue-200">❄️ Dibekukan (${formatDateIndo(m.expiryDate)})</span>`;
-                    statusBadgeHtml = `<span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-blue-100 text-blue-800 border border-blue-300">CUTI / FROZEN</span>`;
+                    daysBadgeHtml = `<span class="px-2 py-0.5 rounded font-mono font-bold bg-blue-50 text-blue-800 border border-blue-200">❄️ Dibekukan (Cuti)</span>`;
+                    statusBadgeHtml = `<span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-blue-100 text-blue-800 border border-blue-300">FROZEN</span>`;
                   } else if (isExpired) {
                     daysBadgeHtml = `<span class="px-2 py-0.5 rounded font-mono font-bold bg-rose-50 text-rose-800 border border-rose-200">✕ Expired (${Math.abs(days)} hari lalu)</span>`;
                     statusBadgeHtml = `<span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-rose-100 text-rose-800 border border-rose-300">EXPIRED</span>`;
@@ -1167,69 +1498,72 @@
                     statusBadgeHtml = `<span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">AKTIF</span>`;
                   }
 
-                  // WhatsApp CRM Direct Link
                   const waUrl = createRetentionPromoWaUrl(m);
 
                   return `
-                    <tr>
-                      <!-- 1. Nama & Kontak -->
+                    <tr class="hover:bg-slate-50 transition-colors">
+                      <!-- Nama & Kontak -->
                       <td class="px-6 py-4">
                         <div class="flex items-center gap-2.5">
-                          <div class="w-8 h-8 rounded-full bg-teal-50 border border-teal-200 flex items-center justify-center font-black text-teal-600 text-xs shrink-0">
-                            ${(m.name || 'M')[0]}
+                          <div class="w-8 h-8 rounded-full bg-slate-100 text-slate-700 font-black text-xs flex items-center justify-center shrink-0">
+                            ${(m.name || 'M').substring(0, 2).toUpperCase()}
                           </div>
                           <div>
-                            <span class="font-bold text-slate-900 block leading-tight">${m.name || 'Pelanggan Be Fit'}</span>
-                            <span class="text-[10px] text-slate-400 font-mono">${m.id || 'BF-USER'}</span>
-                            <span class="text-[11px] text-slate-500 block mt-0.5">${m.email || '-'} • ${m.phone || '-'}</span>
+                            <span class="font-bold text-slate-900 block leading-tight">${m.name}</span>
+                            <span class="text-[11px] text-slate-400 font-mono">${m.phone} • ${m.email || '-'}</span>
                           </div>
                         </div>
                       </td>
 
-                      <!-- 2. Paket & Cabang -->
+                      <!-- Paket & Cabang -->
                       <td class="px-6 py-4">
-                        <span class="font-bold text-slate-900 block">${m.packageDuration || m.packageType || 'Paket 1 Bulan'}</span>
-                        <span class="text-[10px] text-teal-600 font-semibold">Cabang: ${m.branch || 'Setiabudi'}</span>
+                        <span class="font-bold text-slate-800 block">${m.packageDuration || m.packageType || 'Membership'}</span>
+                        <span class="text-[11px] text-teal-600 font-semibold">Cabang: ${m.branch || 'Setiabudi'}</span>
                       </td>
 
-                      <!-- 3. Tanggal Berakhir & Sisa Hari -->
+                      <!-- Tanggal Berakhir & Sisa Hari -->
                       <td class="px-6 py-4">
-                        ${daysBadgeHtml}
+                        <div class="space-y-1">
+                          <span class="text-xs font-mono text-slate-700 block">s/d <strong>${formatDateIndo(m.expiryDate)}</strong></span>
+                          ${daysBadgeHtml}
+                        </div>
                       </td>
 
-                      <!-- 4. Status Akun -->
+                      <!-- Status Akun -->
                       <td class="px-6 py-4">
                         ${statusBadgeHtml}
                       </td>
 
-                      <!-- 5. LTV (Total Belanja) -->
-                      <td class="px-6 py-4 font-mono font-black text-teal-600">
-                        ${formatRupiah(m.totalPaid || 765000)}
+                      <!-- LTV (Total Belanja) -->
+                      <td class="px-6 py-4 font-mono font-bold tabular-nums text-slate-900">
+                        ${formatRupiah(m.totalPaid || 0)}
                       </td>
 
-                      <!-- 6. Aksi Cepat CRM -->
-                      <td class="px-6 py-4">
-                        <div class="flex items-center justify-center gap-1.5 flex-wrap">
+                      <!-- Aksi Cepat CRM -->
+                      <td class="px-6 py-4 text-center">
+                        <div class="inline-flex items-center gap-1.5 flex-wrap justify-center">
+                          
                           <!-- WhatsApp Button -->
                           <a href="${waUrl}" target="_blank" rel="noopener noreferrer"
-                            class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[11px] transition-all inline-flex items-center gap-1 shadow-sm whitespace-nowrap"
+                            class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] transition-all inline-flex items-center gap-1 shadow-sm whitespace-nowrap cursor-pointer"
                             title="Kirim Notifikasi Promo 25% (WA)">
                             <span>💬 Kirim Notif Promo (WA)</span>
                           </a>
 
                           <!-- Cuti / Freeze Button -->
                           <button type="button" onclick="toggleMemberFreeze('${m.id}')"
-                            class="px-2.5 py-1.5 rounded-lg border font-bold text-[11px] transition-all ${isFrozen ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'}"
-                            title="${isFrozen ? 'Batalkan Cuti & Aktifkan Member' : 'Bekukan Membership (Cuti)'}">
-                            ${isFrozen ? '❄️ Unfreeze' : 'Ajukan Cuti'}
+                            class="px-2.5 py-1.5 rounded-lg border text-[11px] font-bold transition-all whitespace-nowrap cursor-pointer ${m.isFrozen ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'}"
+                            title="${m.isFrozen ? 'Aktifkan Kembali' : 'Bekukan Status (Cuti)'}">
+                            ${m.isFrozen ? 'Buka Cuti' : 'Bekukan'}
                           </button>
 
-                          <!-- Extend +30 Days Button -->
+                          <!-- Manual +30 Days Extend -->
                           <button type="button" onclick="extendMemberManual('${m.id}')"
-                            class="px-2.5 py-1.5 rounded-lg bg-teal-50 text-teal-700 hover:bg-teal-600 hover:text-white border border-teal-300 font-black text-[11px] transition-all"
+                            class="px-2 py-1.5 rounded-lg bg-teal-50 text-teal-700 hover:bg-teal-100 border border-teal-200 text-[11px] font-bold transition-all whitespace-nowrap cursor-pointer"
                             title="Perpanjang Masa Aktif +30 Hari">
                             +30 Hari
                           </button>
+
                         </div>
                       </td>
                     </tr>
@@ -1238,7 +1572,6 @@
               </tbody>
             </table>
           </div>
-
         </div>
       `;
     }
@@ -1249,11 +1582,11 @@
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h3 class="text-base font-black text-slate-900">Manajemen Personal Trainer & Kuota Sesi (Private Coaching)</h3>
-              <p class="text-xs text-slate-400 mt-0.5">Pantau sisa sesi coaching member, kurangi kuota setelah sesi selesai, dan tawarkan paket baru via WhatsApp.</p>
+              <h3 class="text-base font-semibold tracking-tight text-slate-900">Manajemen Kuota & Pesanan Personal Trainer</h3>
+              <p class="text-xs text-slate-400 mt-0.5">Pantau sisa kuota sesi privat member, rekam presensi latihan, dan follow-up perpanjangan paket PT.</p>
             </div>
-            <span class="px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 self-start sm:self-auto">
-              ${ptBookings.length} Pesanan Berjalan
+            <span class="px-3 py-1 rounded-full text-xs font-bold bg-teal-50 text-teal-700 border border-teal-200 tabular-nums font-mono">
+              ${ptBookings.length} Pesanan PT Aktif
             </span>
           </div>
 
@@ -1261,76 +1594,46 @@
             <table class="w-full text-left admin-table text-xs">
               <thead class="bg-slate-50 text-slate-500 uppercase tracking-wider font-bold border-b border-slate-200 text-[10px]">
                 <tr>
-                  <th class="px-6 py-3.5">ID Order</th>
-                  <th class="px-6 py-3.5">Nama Member & Kontak</th>
-                  <th class="px-6 py-3.5">Trainer & Cabang</th>
-                  <th class="px-6 py-3.5">Paket Sesi</th>
-                  <th class="px-6 py-3.5">Progress Sisa Sesi / Kuota</th>
-                  <th class="px-6 py-3.5">Total Bayar & Diskon</th>
-                  <th class="px-6 py-3.5">Status Sesi</th>
-                  <th class="px-6 py-3.5 text-center">Aksi Operasional</th>
+                  <th class="px-6 py-3.5">ID Pesanan</th>
+                  <th class="px-6 py-3.5">Nama Member</th>
+                  <th class="px-6 py-3.5">Personal Trainer</th>
+                  <th class="px-6 py-3.5">Cabang</th>
+                  <th class="px-6 py-3.5">Paket & Sisa Kuota</th>
+                  <th class="px-6 py-3.5">Total Bayar</th>
+                  <th class="px-6 py-3.5">Status</th>
+                  <th class="px-6 py-3.5 text-center">Presensi Latihan (Kurangi Kuota)</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-slate-100">
+              <tbody class="divide-y divide-slate-100 text-slate-700 leading-relaxed">
                 ${ptBookings.map(b => {
-                  const total = b.sessions || 4;
-                  const remaining = b.remainingSessions !== undefined ? b.remainingSessions : total;
-                  const pct = Math.round((remaining / total) * 100);
-                  const isDone = remaining <= 0;
-
-                  // WhatsApp renewal message
-                  const waNumber = formatWhatsAppNumber(b.userPhone);
-                  const waText = encodeURIComponent(`Halo Kak ${b.userName}, kuota sesi Personal Trainer Kakak bersama Coach ${b.trainerName} sudah selesai. Yuk perpanjang sesi coaching Kakak hari ini dengan promo spesial dari Be Fit Gym!`);
-                  const waUrl = `https://wa.me/${waNumber}?text=${waText}`;
+                  const remaining = b.remainingSessions !== undefined ? b.remainingSessions : b.sessions;
+                  const isDone = remaining === 0;
 
                   return `
-                    <tr>
-                      <!-- ID Order -->
-                      <td class="px-6 py-4 font-mono font-bold text-slate-800">${b.id}</td>
-
-                      <!-- Nama Member & Kontak -->
+                    <tr class="hover:bg-slate-50 transition-colors">
+                      <td class="px-6 py-4 font-mono font-bold text-slate-800 tabular-nums">${b.id}</td>
                       <td class="px-6 py-4">
                         <span class="font-bold text-slate-900 block leading-tight">${b.userName}</span>
-                        <span class="text-[10px] text-slate-400 font-mono">${b.userPhone}</span>
+                        <span class="text-[10px] text-slate-400 font-mono">${b.userPhone || '-'}</span>
                       </td>
-
-                      <!-- Trainer & Cabang -->
                       <td class="px-6 py-4">
-                        <div class="flex items-center gap-1.5">
-                          <span class="text-sm">🏋️‍♂️</span>
-                          <span class="font-bold text-teal-600">${b.trainerName}</span>
-                        </div>
-                        <span class="text-[10px] text-slate-400 block">${b.branch}</span>
+                        <span class="font-bold text-teal-600 block">Coach ${b.trainerName}</span>
                       </td>
-
-                      <!-- Paket Sesi -->
+                      <td class="px-6 py-4 text-slate-700 font-medium">
+                        ${b.branch}
+                      </td>
                       <td class="px-6 py-4">
-                        <span class="font-bold text-slate-900 block">${b.package || `${total} Sesi Coaching`}</span>
-                        <span class="text-[10px] text-slate-400">${total}x Pertemuan Privat</span>
-                      </td>
-
-                      <!-- Progress Sisa Sesi -->
-                      <td class="px-6 py-4 min-w-[160px]">
-                        <div class="flex items-center justify-between text-[11px] font-bold mb-1">
-                          <span class="${isDone ? 'text-slate-400' : 'text-slate-800'}">Sisa ${remaining} dari ${total} Sesi</span>
-                          <span class="font-mono text-teal-600">${pct}%</span>
-                        </div>
-                        <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                          <div class="h-full rounded-full transition-all ${isDone ? 'bg-slate-300' : 'bg-teal-500'}" style="width: ${pct}%"></div>
+                        <span class="font-bold text-slate-800 block">${b.package}</span>
+                        <div class="flex items-center gap-1.5 mt-1">
+                          <div class="w-20 bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200">
+                            <div class="bg-teal-550 h-full rounded-full" style="width: ${Math.round((remaining / (b.sessions || 1)) * 100)}%;"></div>
+                          </div>
+                          <span class="text-[11px] font-mono font-bold text-slate-700 tabular-nums">${remaining}/${b.sessions} Sesi</span>
                         </div>
                       </td>
-
-                      <!-- Total Bayar & Diskon -->
-                      <td class="px-6 py-4">
-                        <span class="font-mono font-black text-teal-600 block">${formatRupiah(b.totalPaid)}</span>
-                        ${b.voucherCode ? `
-                          <span class="text-[10px] font-mono font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                            ${b.voucherCode}
-                          </span>
-                        ` : '<span class="text-slate-400 text-[10px]">-</span>'}
+                      <td class="px-6 py-4 font-mono font-bold tabular-nums text-slate-900">
+                        ${formatRupiah(b.totalPaid)}
                       </td>
-
-                      <!-- Status Sesi -->
                       <td class="px-6 py-4">
                         ${isDone ? `
                           <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-slate-100 text-slate-600 border border-slate-300">
@@ -1342,19 +1645,18 @@
                           </span>
                         `}
                       </td>
-
-                      <!-- Aksi Operasional -->
                       <td class="px-6 py-4 text-center">
-                        ${!isDone ? `
-                          <button type="button" onclick="checkInPtSession('${b.id}')"
-                            class="px-3 py-1.5 rounded-lg bg-teal-550 hover:bg-teal-650 text-white font-black text-xs shadow-sm transition-all inline-flex items-center gap-1">
-                            <span>✓ Check-in (-1)</span>
-                          </button>
-                        ` : `
-                          <a href="${waUrl}" target="_blank" rel="noopener noreferrer"
-                            class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-sm transition-all inline-flex items-center gap-1">
-                            <span>💬 Tawarkan Perpanjang (WA)</span>
+                        ${isDone ? `
+                          <a href="https://wa.me/${formatWhatsAppNumber(b.userPhone)}?text=${encodeURIComponent('Halo Kak ' + b.userName + '! Kuota sesi latihan PT bersama Coach ' + b.trainerName + ' sudah selesai. Ingin perpanjang paket coaching lagi?')}"
+                            target="_blank" rel="noopener noreferrer"
+                            class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold text-[11px] transition-all inline-flex items-center gap-1 shadow-sm cursor-pointer">
+                            <span>💬 Follow-Up Kuota (WA)</span>
                           </a>
+                        ` : `
+                          <button type="button" onclick="checkInPtSession('${b.id}')"
+                            class="px-3 py-1.5 rounded-lg bg-teal-550 hover:bg-teal-650 active:scale-95 text-white font-bold text-[11px] transition-all shadow-sm cursor-pointer inline-flex items-center gap-1">
+                            <span>Check-In Sesi (-1)</span>
+                          </button>
                         `}
                       </td>
                     </tr>
@@ -1367,170 +1669,58 @@
       `;
     }
 
-    // ==================== TAB 4: CLASS BOOKINGS & ATTENDANCE ====================
-    function renderTabClasses(classBookings, trialClaims) {
-      const hadirCount = classBookings.filter(c => c.status === 'Hadir ✓').length;
-      const menungguCount = classBookings.filter(c => c.status === 'Menunggu' || c.status === 'Terkonfirmasi').length;
-      const noShowCount = classBookings.filter(c => c.status === 'Tidak Hadir').length;
-
+    // ==================== LOGIN VIEW (CLEAN WHITE, NO LEAKS, INPUT EMPTY) ====================
+    function renderLoginView() {
       return `
-        <div class="space-y-6">
-          
-          <!-- Section 1: Interactive Class Attendance -->
-          <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="min-h-screen flex items-center justify-center p-4 bg-[#F8FAFC]">
+          <div class="w-full max-w-md bg-white rounded-3xl border border-slate-200/80 shadow-xl shadow-slate-200/50 p-8">
+            
+            <!-- Clean Header -->
+            <div class="text-center mb-6">
+              <div class="w-14 h-14 rounded-2xl bg-[#090D16] border border-amber-500/40 p-1.5 mx-auto mb-3 shadow-md flex items-center justify-center">
+                <img src="logo-square.jpg" alt="Be Fit Logo" class="w-full h-full object-cover rounded-xl">
+              </div>
+              <h2 class="text-xl font-bold tracking-tight text-slate-900">Be Fit — Admin Portal</h2>
+              <p class="text-xs text-slate-400 mt-1">Masuk dengan kredensial administrator resmi Anda</p>
+            </div>
+
+            <!-- Login Form (Clean, Value WAJIB Kosong) -->
+            <form onsubmit="handleAdminLogin(event)" class="space-y-4">
               <div>
-                <h3 class="text-base font-black text-slate-900">Booking Kelas & Presensi Kehadiran (Class Attendance)</h3>
-                <p class="text-xs text-slate-400 mt-0.5">Kelola reservasi studio workout, verifikasi presensi kehadiran member secara langsung [Hadir / No-Show].</p>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Email Administrator</label>
+                <input type="email" id="admin-email" value="" required placeholder="nama@admin.com"
+                  autocomplete="off"
+                  class="w-full px-4 py-3 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-teal-550 focus:border-transparent outline-none transition-all">
               </div>
 
-              <!-- Mini Stats -->
-              <div class="flex items-center gap-2 self-start sm:self-auto text-xs font-bold">
-                <span class="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200">
-                  ✓ Hadir: ${hadirCount}
-                </span>
-                <span class="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200">
-                  ⏳ Menunggu: ${menungguCount}
-                </span>
-                <span class="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-800 border border-rose-200">
-                  ✕ No-Show: ${noShowCount}
-                </span>
-              </div>
-            </div>
-
-            <div class="overflow-x-auto">
-              <table class="w-full text-left admin-table text-xs">
-                <thead class="bg-slate-50 text-slate-500 uppercase tracking-wider font-bold border-b border-slate-200 text-[10px]">
-                  <tr>
-                    <th class="px-6 py-3.5">Tanggal & Jam</th>
-                    <th class="px-6 py-3.5">Cabang Gym</th>
-                    <th class="px-6 py-3.5">Kelas & Instruktur</th>
-                    <th class="px-6 py-3.5">Peserta & Kontak</th>
-                    <th class="px-6 py-3.5">Status Presensi</th>
-                    <th class="px-6 py-3.5 text-center">Verifikasi Presensi</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                  ${classBookings.map(c => {
-                    const isHadir = c.status === 'Hadir ✓';
-                    const isNoShow = c.status === 'Tidak Hadir';
-                    const isWaiting = !isHadir && !isNoShow;
-
-                    return `
-                      <tr>
-                        <!-- Tanggal & Jam -->
-                        <td class="px-6 py-4">
-                          <span class="font-mono font-bold text-slate-900 block">${formatDateIndo(c.dateKey || '2026-11-02')}</span>
-                          <span class="text-[11px] text-teal-600 font-mono font-semibold">${c.time}</span>
-                        </td>
-
-                        <!-- Cabang Gym -->
-                        <td class="px-6 py-4 font-medium text-slate-700">
-                          ${c.branch}
-                        </td>
-
-                        <!-- Kelas & Instruktur -->
-                        <td class="px-6 py-4">
-                          <span class="font-black text-slate-900 block">${c.className}</span>
-                          <span class="text-[11px] text-slate-500">Coach: <strong class="text-teal-600">${c.instructor}</strong></span>
-                        </td>
-
-                        <!-- Peserta & Kontak -->
-                        <td class="px-6 py-4">
-                          <span class="font-bold text-slate-900 block leading-tight">${c.userName}</span>
-                          <span class="text-[10px] text-slate-400 font-mono">${c.userPhone || '-'}</span>
-                        </td>
-
-                        <!-- Status Presensi Badge -->
-                        <td class="px-6 py-4">
-                          ${isHadir ? `
-                            <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">
-                              ✓ HADIR
-                            </span>
-                          ` : isNoShow ? `
-                            <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-rose-100 text-rose-800 border border-rose-300">
-                              ✕ TIDAK HADIR
-                            </span>
-                          ` : `
-                            <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-amber-100 text-amber-800 border border-amber-300">
-                              ⏳ MENUNGGU
-                            </span>
-                          `}
-                        </td>
-
-                        <!-- Verifikasi Buttons -->
-                        <td class="px-6 py-4 text-center">
-                          <div class="inline-flex items-center gap-1.5">
-                            <button type="button" onclick="markClassAttendance('${c.id}', 'Hadir ✓')"
-                              class="px-2.5 py-1.5 rounded-lg font-black text-xs transition-all ${isHadir ? 'bg-emerald-600 text-white' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white border border-emerald-300'}"
-                              title="Tandai Hadir">
-                              [Hadir ✓]
-                            </button>
-
-                            <button type="button" onclick="markClassAttendance('${c.id}', 'Tidak Hadir')"
-                              class="px-2.5 py-1.5 rounded-lg font-black text-xs transition-all ${isNoShow ? 'bg-rose-600 text-white' : 'bg-rose-50 text-rose-700 hover:bg-rose-600 hover:text-white border border-rose-300'}"
-                              title="Tandai Tidak Hadir (No-Show)">
-                              [No-Show ✕]
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    `;
-                  }).join('')}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- Section 2: Free Trial 7 Hari Claims -->
-          <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div class="p-5 border-b border-slate-100 flex items-center justify-between">
               <div>
-                <h3 class="text-base font-black text-slate-900">Data Klaim Free Trial 7 Hari Member Baru</h3>
-                <p class="text-xs text-slate-400 mt-0.5">Daftar calon member yang mengklaim uji coba gratis 7 hari dari Beranda.</p>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Kata Sandi (Password)</label>
+                <div class="relative">
+                  <input type="password" id="admin-password" value="" required placeholder="••••••••"
+                    autocomplete="off"
+                    class="w-full px-4 py-3 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-teal-550 focus:border-transparent outline-none transition-all pr-10">
+                  <button type="button" onclick="toggleAdminPasswordVisibility()"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+                    title="Tampilkan / Sembunyikan Password">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                  </button>
+                </div>
               </div>
-              <span class="px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                ${trialClaims.length} Klaim Aktif
-              </span>
-            </div>
 
-            <div class="overflow-x-auto">
-              <table class="w-full text-left admin-table text-xs">
-                <thead class="bg-slate-50 text-slate-500 uppercase tracking-wider font-bold border-b border-slate-200 text-[10px]">
-                  <tr>
-                    <th class="px-6 py-3.5">ID Trial</th>
-                    <th class="px-6 py-3.5">Nama Pengguna</th>
-                    <th class="px-6 py-3.5">Kontak (Email & WA)</th>
-                    <th class="px-6 py-3.5">Cabang Pilihan</th>
-                    <th class="px-6 py-3.5">Tanggal Klaim</th>
-                    <th class="px-6 py-3.5">Masa Berlaku</th>
-                    <th class="px-6 py-3.5">Status</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                  ${trialClaims.map(t => `
-                    <tr>
-                      <td class="px-6 py-4 font-mono font-bold text-slate-800">${t.id}</td>
-                      <td class="px-6 py-4 font-bold text-slate-900">${t.userName}</td>
-                      <td class="px-6 py-4">
-                        <span class="text-slate-800 block">${t.email || '-'}</span>
-                        <span class="text-[10px] text-slate-400 font-mono">${t.phone || '-'}</span>
-                      </td>
-                      <td class="px-6 py-4 font-medium text-slate-700">${t.branch}</td>
-                      <td class="px-6 py-4 font-mono text-slate-500 text-[11px]">${t.dateClaimed || '02 Nov 2026'}</td>
-                      <td class="px-6 py-4 font-mono font-bold text-teal-600">7 Hari Sejak Klaim</td>
-                      <td class="px-6 py-4">
-                        <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">
-                          ${t.status || 'Aktif (7 Hari)'}
-                        </span>
-                      </td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            </div>
+              <button type="submit"
+                class="w-full py-3.5 rounded-xl bg-teal-550 hover:bg-teal-650 active:scale-[0.98] text-white text-xs font-bold shadow-lg shadow-teal-550/20 transition-all flex items-center justify-center gap-2 cursor-pointer mt-2">
+                <span>Masuk ke Panel CRM</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+              </button>
+
+              <div class="text-center pt-3 border-t border-slate-100">
+                <a href="index.html" class="text-xs font-semibold text-slate-500 hover:text-teal-600 transition-colors">
+                  &larr; Kembali ke Aplikasi User
+                </a>
+              </div>
+            </form>
+
           </div>
-
         </div>
       `;
     }

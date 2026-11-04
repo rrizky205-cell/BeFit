@@ -1206,68 +1206,482 @@ function claimVoucher(code) {
 
 // ==================== 6. SEED USERS & AUTH STATE ====================
 
+const DATA_VERSION_KEY = 'befit_data_version';
+const CURRENT_DATA_VERSION = 'v6';
+
 const DEFAULT_USERS = [
+  // ===== CABANG SETIABUDI (~8 Member, Total Membership: Rp 7.850.000) =====
   {
     id: 'BF-1001',
-    name: 'Dimas Arya Pratama',
-    email: 'member@befit.id',
-    phone: '08123456789',
-    password: '123456',
-    packageType: 'Pro Transformation',
-    packageDuration: 'Paket 3 Bulan (Pro Transformation)',
-    expiryDate: new Date(Date.now() + 45 * 86400000).toISOString().split('T')[0],
-    status: 'Active',
-    ptSessions: 4,
-    ptTrainer: 'Aby',
-    isTrialClaimed: true,
-    role: 'member'
-  },
-  {
-    id: 'BF-1002',
     name: 'Rizky Test User',
-    phone: '082116156884',
     email: 'rizky.member@gmail.com',
+    phone: '082116156884',
     password: '123456',
     branch: 'Setiabudi',
     packageType: 'Pro Transformation',
     packageDuration: 'Paket 3 Bulan (Pro Transformation)',
-    expiryDate: '2026-11-08',
-    status: 'Active',
-    ptSessions: 0,
+    voucherUsed: 'MEMBERBARU15',
     totalPaid: 900000,
-    joinDate: '2026-08-08',
+    paymentMethod: 'QRIS INSTANT',
+    dateJoined: '06 Agu 2026',
+    expiryDate: '2026-11-07', // 3 Hari Lagi
+    status: 'Active',
+    isFrozen: false,
+    role: 'member'
+  },
+  {
+    id: 'BF-1002',
+    name: 'Andi Pratama',
+    email: 'andi.pratama@gmail.com',
+    phone: '081223344556',
+    password: '123456',
+    branch: 'Setiabudi',
+    packageType: 'Pro Transformation',
+    packageDuration: 'Paket 3 Bulan (Pro Transformation)',
+    voucherUsed: 'MEMBERBARU15',
+    totalPaid: 900000,
+    paymentMethod: 'BCA VA',
+    dateJoined: '06 Agu 2026',
+    expiryDate: '2026-11-06', // 2 Hari Lagi
+    status: 'Active',
+    isFrozen: false,
     role: 'member'
   },
   {
     id: 'BF-1003',
+    name: 'Fajar Nugraha',
+    email: 'fajar.nugraha@gmail.com',
+    phone: '081234567891',
+    password: '123456',
+    branch: 'Setiabudi',
+    packageType: 'Ultimate Yearly',
+    packageDuration: 'Paket 12 Bulan (Ultimate Yearly)',
+    voucherUsed: 'GAJIAN100K',
+    totalPaid: 2400000,
+    paymentMethod: 'MANDIRI VA',
+    dateJoined: '02 Nov 2026',
+    expiryDate: '2027-11-02',
+    status: 'Active',
+    isFrozen: false,
+    role: 'member'
+  },
+  {
+    id: 'BF-1004',
+    name: 'Hendra Wijaya',
+    email: 'hendra.wijaya@gmail.com',
+    phone: '081234567892',
+    password: '123456',
+    branch: 'Setiabudi',
+    packageType: 'Elite Athlete',
+    packageDuration: 'Paket 6 Bulan (Elite Athlete)',
+    voucherUsed: 'HEMAT50K',
+    totalPaid: 1500000,
+    paymentMethod: 'BNI VA',
+    dateJoined: '15 Okt 2026',
+    expiryDate: '2027-04-15',
+    status: 'Active',
+    isFrozen: false,
+    role: 'member'
+  },
+  {
+    id: 'BF-1005',
+    name: 'Maya Safitri',
+    email: 'maya.safitri@gmail.com',
+    phone: '081234567893',
+    password: '123456',
+    branch: 'Setiabudi',
+    packageType: 'Pro Transformation',
+    packageDuration: 'Paket 3 Bulan (Pro Transformation)',
+    voucherUsed: 'MEMBERBARU15',
+    totalPaid: 900000,
+    paymentMethod: 'QRIS INSTANT',
+    dateJoined: '20 Okt 2026',
+    expiryDate: '2027-01-20',
+    status: 'Active',
+    isFrozen: false,
+    role: 'member'
+  },
+  {
+    id: 'BF-1006',
+    name: 'Rian Pratama',
+    email: 'rian.pratama@gmail.com',
+    phone: '081234567894',
+    password: '123456',
+    branch: 'Setiabudi',
+    packageType: 'Basic Starter',
+    packageDuration: 'Paket 1 Bulan (Basic Starter)',
+    voucherUsed: 'HEMAT50K',
+    totalPaid: 350000,
+    paymentMethod: 'BCA VA',
+    dateJoined: '28 Okt 2026',
+    expiryDate: '2026-11-28',
+    status: 'Active',
+    isFrozen: false,
+    role: 'member'
+  },
+  {
+    id: 'BF-1007',
+    name: 'Gita Permata',
+    email: 'gita.permata@gmail.com',
+    phone: '081234567895',
+    password: '123456',
+    branch: 'Setiabudi',
+    packageType: 'Basic Starter',
+    packageDuration: 'Paket 1 Bulan (Basic Starter)',
+    voucherUsed: 'HEMAT50K',
+    totalPaid: 350000,
+    paymentMethod: 'QRIS INSTANT',
+    dateJoined: '30 Okt 2026',
+    expiryDate: '2026-11-30',
+    status: 'Active',
+    isFrozen: false,
+    role: 'member'
+  },
+  {
+    id: 'BF-1008',
+    name: 'Dimas Arya',
+    email: 'dimas.arya@gmail.com',
+    phone: '081234567896',
+    password: '123456',
+    branch: 'Setiabudi',
+    packageType: 'Basic Starter Plus',
+    packageDuration: 'Paket 1 Bulan (Basic Starter Plus)',
+    voucherUsed: '-',
+    totalPaid: 550000,
+    paymentMethod: 'BCA VA',
+    dateJoined: '04 Nov 2026',
+    expiryDate: '2026-12-04',
+    status: 'Active',
+    isFrozen: false,
+    role: 'member'
+  },
+
+  // ===== CABANG DAGO (~7 Member, Total Membership: Rp 6.400.000) =====
+  {
+    id: 'BF-1009',
     name: 'Mimah',
-    phone: '089513102470',
     email: 'mimah.member@gmail.com',
+    phone: '089513102470',
     password: '123456',
     branch: 'Dago',
     packageType: 'Basic Starter',
     packageDuration: 'Paket 1 Bulan (Basic Starter)',
-    expiryDate: '2026-11-08',
-    status: 'Active',
-    ptSessions: 0,
+    voucherUsed: 'HEMAT50K',
     totalPaid: 350000,
-    joinDate: '2026-10-07',
+    paymentMethod: 'BCA VA',
+    dateJoined: '04 Okt 2026',
+    expiryDate: '2026-11-09', // 5 Hari Lagi
+    status: 'Active',
+    isFrozen: false,
     role: 'member'
   },
   {
+    id: 'BF-1010',
+    name: 'Diana Putri',
+    email: 'diana.putri@gmail.com',
+    phone: '081778899001',
+    password: '123456',
+    branch: 'Dago',
+    packageType: 'Pro Transformation',
+    packageDuration: 'Paket 3 Bulan (Pro Transformation)',
+    voucherUsed: 'MEMBERBARU15',
+    totalPaid: 900000,
+    paymentMethod: 'QRIS INSTANT',
+    dateJoined: '13 Agu 2026',
+    expiryDate: '2026-11-13', // 9 Hari Lagi
+    status: 'Active',
+    isFrozen: false,
+    role: 'member'
+  },
+  {
+    id: 'BF-1011',
+    name: 'Kevin Sanjaya',
+    email: 'kevin.sanjaya@gmail.com',
+    phone: '081778899002',
+    password: '123456',
+    branch: 'Dago',
+    packageType: 'Ultimate Yearly',
+    packageDuration: 'Paket 12 Bulan (Ultimate Yearly)',
+    voucherUsed: 'GAJIAN100K',
+    totalPaid: 2400000,
+    paymentMethod: 'MANDIRI VA',
+    dateJoined: '18 Okt 2026',
+    expiryDate: '2027-10-18',
+    status: 'Active',
+    isFrozen: false,
+    role: 'member'
+  },
+  {
+    id: 'BF-1012',
+    name: 'Nadya Utami',
+    email: 'nadya.utami@gmail.com',
+    phone: '081778899003',
+    password: '123456',
+    branch: 'Dago',
+    packageType: 'Elite Athlete',
+    packageDuration: 'Paket 6 Bulan (Elite Athlete)',
+    voucherUsed: 'HEMAT50K',
+    totalPaid: 1500000,
+    paymentMethod: 'BCA VA',
+    dateJoined: '24 Sep 2026',
+    expiryDate: '2027-03-24',
+    status: 'Active',
+    isFrozen: false,
+    role: 'member'
+  },
+  {
+    id: 'BF-1013',
+    name: 'Rio Febrian',
+    email: 'rio.febrian@gmail.com',
+    phone: '081778899004',
+    password: '123456',
+    branch: 'Dago',
+    packageType: 'Pro Transformation',
+    packageDuration: 'Paket 3 Bulan (Pro Transformation)',
+    voucherUsed: 'MEMBERBARU15',
+    totalPaid: 900000,
+    paymentMethod: 'QRIS INSTANT',
+    dateJoined: '10 Okt 2026',
+    expiryDate: '2027-01-10',
+    status: 'Active',
+    isFrozen: false,
+    role: 'member'
+  },
+  {
+    id: 'BF-1014',
+    name: 'Lisa Black',
+    email: 'lisa.black@gmail.com',
+    phone: '081778899005',
+    password: '123456',
+    branch: 'Dago',
+    packageType: 'Basic Starter',
+    packageDuration: 'Paket 1 Bulan (Basic Starter)',
+    voucherUsed: 'HEMAT50K',
+    totalPaid: 350000,
+    paymentMethod: 'BNI VA',
+    dateJoined: '25 Okt 2026',
+    expiryDate: '2026-11-25',
+    status: 'Active',
+    isFrozen: false,
+    role: 'member'
+  },
+  {
+    id: 'BF-1015',
+    name: 'Denny Kurnia',
+    email: 'denny.kurnia@gmail.com',
+    phone: '081778899006',
+    password: '123456',
+    branch: 'Dago',
+    packageType: 'Basic Starter',
+    packageDuration: 'Paket 1 Bulan (Trial Member)',
+    voucherUsed: 'FREETRIAL7D',
+    totalPaid: 0,
+    paymentMethod: 'TRIAL',
+    dateJoined: '02 Nov 2026',
+    expiryDate: '2026-11-20',
+    status: 'Active',
+    isFrozen: false,
+    role: 'member'
+  },
+
+  // ===== CABANG PASIRKALIKI (~5 Member, Total Membership: Rp 4.950.000) =====
+  {
+    id: 'BF-1016',
+    name: 'Budi Santoso',
+    email: 'budi.santoso@gmail.com',
+    phone: '081556677889',
+    password: '123456',
+    branch: 'Pasirkaliki',
+    packageType: 'Elite Athlete',
+    packageDuration: 'Paket 6 Bulan (Elite Athlete)',
+    voucherUsed: 'HEMAT50K',
+    totalPaid: 1500000,
+    paymentMethod: 'MANDIRI VA',
+    dateJoined: '08 Mei 2026',
+    expiryDate: '2026-11-08', // 4 Hari Lagi
+    status: 'Active',
+    isFrozen: false,
+    role: 'member'
+  },
+  {
+    id: 'BF-1017',
+    name: 'Reza Rahadian',
+    email: 'reza.rahadian@gmail.com',
+    phone: '081556677890',
+    password: '123456',
+    branch: 'Pasirkaliki',
+    packageType: 'Elite Athlete',
+    packageDuration: 'Paket 6 Bulan (Elite Athlete)',
+    voucherUsed: 'GAJIAN100K',
+    totalPaid: 1500000,
+    paymentMethod: 'BCA VA',
+    dateJoined: '10 Okt 2026',
+    expiryDate: '2027-04-10',
+    status: 'Active',
+    isFrozen: false,
+    role: 'member'
+  },
+  {
+    id: 'BF-1018',
+    name: 'Tiara Andini',
+    email: 'tiara.andini@gmail.com',
+    phone: '081556677891',
+    password: '123456',
+    branch: 'Pasirkaliki',
+    packageType: 'Pro Transformation',
+    packageDuration: 'Paket 3 Bulan (Pro Transformation)',
+    voucherUsed: 'MEMBERBARU15',
+    totalPaid: 900000,
+    paymentMethod: 'QRIS INSTANT',
+    dateJoined: '18 Okt 2026',
+    expiryDate: '2027-01-18',
+    status: 'Active',
+    isFrozen: false,
+    role: 'member'
+  },
+  {
+    id: 'BF-1019',
+    name: 'Farhan Maulana',
+    email: 'farhan.m@gmail.com',
+    phone: '081556677892',
+    password: '123456',
+    branch: 'Pasirkaliki',
+    packageType: 'Pro Transformation',
+    packageDuration: 'Paket 3 Bulan (Pro Transformation Promo)',
+    voucherUsed: 'HEMAT200K',
+    totalPaid: 700000,
+    paymentMethod: 'BNI VA',
+    dateJoined: '22 Okt 2026',
+    expiryDate: '2027-01-22',
+    status: 'Active',
+    isFrozen: false,
+    role: 'member'
+  },
+  {
+    id: 'BF-1020',
+    name: 'Cindy Claudia',
+    email: 'cindy.c@gmail.com',
+    phone: '081556677893',
+    password: '123456',
+    branch: 'Pasirkaliki',
+    packageType: 'Basic Starter',
+    packageDuration: 'Paket 1 Bulan (Basic Starter)',
+    voucherUsed: 'HEMAT50K',
+    totalPaid: 350000,
+    paymentMethod: 'QRIS INSTANT',
+    dateJoined: '29 Okt 2026',
+    expiryDate: '2026-11-29',
+    status: 'Active',
+    isFrozen: false,
+    role: 'member'
+  },
+
+  // ===== CABANG BUAH BATU (~4 Member, Total Membership: Rp 3.150.000, 0 PT) =====
+  {
+    id: 'BF-1021',
+    name: 'Siti Aisyah',
+    email: 'siti.aisyah@gmail.com',
+    phone: '081334455667',
+    password: '123456',
+    branch: 'Buah Batu',
+    packageType: 'Basic Starter',
+    packageDuration: 'Paket 1 Bulan (Basic Starter)',
+    voucherUsed: 'HEMAT50K',
+    totalPaid: 350000,
+    paymentMethod: 'BCA VA',
+    dateJoined: '11 Okt 2026',
+    expiryDate: '2026-11-11', // 7 Hari Lagi
+    status: 'Active',
+    isFrozen: false,
+    role: 'member'
+  },
+  {
+    id: 'BF-1022',
+    name: 'Agus Salim',
+    email: 'agus.salim@gmail.com',
+    phone: '081334455668',
+    password: '123456',
+    branch: 'Buah Batu',
+    packageType: 'Elite Athlete',
+    packageDuration: 'Paket 6 Bulan (Elite Athlete)',
+    voucherUsed: 'GAJIAN100K',
+    totalPaid: 1500000,
+    paymentMethod: 'QRIS INSTANT',
+    dateJoined: '05 Okt 2026',
+    expiryDate: '2027-04-05',
+    status: 'Active',
+    isFrozen: false,
+    role: 'member'
+  },
+  {
+    id: 'BF-1023',
+    name: 'Dewi Lestari',
+    email: 'dewi.lestari@gmail.com',
+    phone: '081334455669',
+    password: '123456',
+    branch: 'Buah Batu',
+    packageType: 'Pro Transformation',
+    packageDuration: 'Paket 3 Bulan (Pro Transformation)',
+    voucherUsed: '-',
+    totalPaid: 950000,
+    paymentMethod: 'MANDIRI VA',
+    dateJoined: '14 Okt 2026',
+    expiryDate: '2027-01-14',
+    status: 'Active',
+    isFrozen: false,
+    role: 'member'
+  },
+  {
+    id: 'BF-1024',
+    name: 'Eko Prasetyo',
+    email: 'eko.prasetyo@gmail.com',
+    phone: '081334455670',
+    password: '123456',
+    branch: 'Buah Batu',
+    packageType: 'Basic Starter',
+    packageDuration: 'Paket 1 Bulan (Basic Starter)',
+    voucherUsed: 'HEMAT50K',
+    totalPaid: 350000,
+    paymentMethod: 'BNI VA',
+    dateJoined: '01 Nov 2026',
+    expiryDate: '2026-12-01',
+    status: 'Active',
+    isFrozen: false,
+    role: 'member'
+  },
+
+  // ===== ADMINISTRATOR ACCOUNTS =====
+  {
     id: 'ADM-01',
     name: 'Administrator Be Fit',
+    email: 'rrizky205@gmail.com',
+    phone: '082116156884',
+    password: 'wudinjir1911',
+    packageType: 'Ultimate Yearly',
+    packageDuration: 'Paket 12 Bulan (Ultimate Yearly)',
+    expiryDate: '2027-11-04',
+    status: 'Active',
+    ptSessions: 12,
+    ptTrainer: 'Aby Pratama',
+    isTrialClaimed: true,
+    role: 'admin',
+    branch: 'Setiabudi'
+  },
+  {
+    id: 'ADM-02',
+    name: 'Administrator Be Fit (Demo)',
     email: 'admin@befit.id',
     phone: '08111222333',
     password: 'admin123',
     packageType: 'Ultimate Yearly',
     packageDuration: 'Paket 12 Bulan (Ultimate Yearly)',
-    expiryDate: new Date(Date.now() + 365 * 86400000).toISOString().split('T')[0],
+    expiryDate: '2027-11-04',
     status: 'Active',
     ptSessions: 12,
-    ptTrainer: 'Egi Angga',
+    ptTrainer: 'Aby Pratama',
     isTrialClaimed: true,
-    role: 'admin'
+    role: 'admin',
+    branch: 'Setiabudi'
   }
 ];
 
@@ -1289,70 +1703,67 @@ function sanitize(str) {
   return el.innerHTML;
 }
 
-// User Storage
+// User Storage with v6 Auto-Merge / Migration
 function getUsers() {
   try {
+    const ver = localStorage.getItem(DATA_VERSION_KEY);
     const raw = localStorage.getItem(USERS_STORAGE_KEY);
-    if (raw) {
-      let parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        let updated = false;
-        const seedRetention = [
-          {
-            id: 'BF-1002',
-            name: 'Rizky Test User',
-            phone: '082116156884',
-            email: 'rizky.member@gmail.com',
-            password: '123456',
-            branch: 'Setiabudi',
-            packageType: 'Pro Transformation',
-            packageDuration: 'Paket 3 Bulan (Pro Transformation)',
-            expiryDate: '2026-11-08',
-            status: 'Active',
-            ptSessions: 0,
-            totalPaid: 900000,
-            joinDate: '2026-08-08',
-            role: 'member'
-          },
-          {
-            id: 'BF-1003',
-            name: 'Mimah',
-            phone: '089513102470',
-            email: 'mimah.member@gmail.com',
-            password: '123456',
-            branch: 'Dago',
-            packageType: 'Basic Starter',
-            packageDuration: 'Paket 1 Bulan (Basic Starter)',
-            expiryDate: '2026-11-08',
-            status: 'Active',
-            ptSessions: 0,
-            totalPaid: 350000,
-            joinDate: '2026-10-07',
-            role: 'member'
-          }
-        ];
-        seedRetention.forEach(sr => {
-          const idx = parsed.findIndex(u => (u.email || '').toLowerCase() === sr.email.toLowerCase() || u.phone === sr.phone);
-          if (idx === -1) {
-            parsed.push(sr);
-            updated = true;
-          } else {
-            if (parsed[idx].expiryDate !== '2026-11-08' && !parsed[idx].voucherUsed) {
-              parsed[idx].expiryDate = '2026-11-08';
-              parsed[idx].phone = sr.phone;
-              updated = true;
-            }
+    let users = raw ? JSON.parse(raw) : [];
+
+    if (ver !== CURRENT_DATA_VERSION || !Array.isArray(users) || users.length < 24) {
+      const map = new Map();
+      DEFAULT_USERS.forEach(u => map.set((u.email || u.id).toLowerCase(), { ...u }));
+      if (Array.isArray(users)) {
+        users.forEach(u => {
+          const key = (u.email || u.id || '').toLowerCase();
+          const def = map.get(key);
+          if (def) {
+            map.set(key, { ...def, ...u, expiryDate: def.expiryDate, password: def.password, branch: def.branch, packageDuration: def.packageDuration, packageType: def.packageType, totalPaid: def.totalPaid });
+          } else if (u.role !== 'admin') {
+            map.set(key, u);
           }
         });
-        if (updated) {
-          localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(parsed));
-        }
-        return parsed;
       }
+      users = Array.from(map.values());
+      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+      localStorage.setItem(DATA_VERSION_KEY, CURRENT_DATA_VERSION);
+
+      // If active user is in demo accounts, update its expiry in session
+      try {
+        const curRaw = localStorage.getItem(CURRENT_USER_KEY);
+        if (curRaw) {
+          const cur = JSON.parse(curRaw);
+          const matched = users.find(u => (u.email || '').toLowerCase() === (cur.email || '').toLowerCase());
+          if (matched) {
+            localStorage.setItem(CURRENT_USER_KEY, JSON.stringify({ ...cur, ...matched }));
+          }
+        }
+      } catch (e) {}
+
+      // Seed PT Bookings if empty
+      try {
+        const ptRaw = localStorage.getItem('befit_pt_bookings');
+        const ptList = ptRaw ? JSON.parse(ptRaw) : [];
+        if (!Array.isArray(ptList) || ptList.length < 9) {
+          const seedPt = [
+            { id: 'PT-SB-01', userName: 'Fajar Nugraha', userPhone: '081234567891', trainerName: 'Aby Pratama', branch: 'Be Fit Setiabudi Bandung', package: '8 Sesi Pro Transformation', sessions: 8, remainingSessions: 6, discount: 250000, voucherCode: 'PTPROMO20', totalPaid: 1750000, date: '29 Okt 2026', status: 'Aktif Berjalan' },
+            { id: 'PT-SB-02', userName: 'Hendra Wijaya', userPhone: '081234567892', trainerName: 'Randy Firmansyah', branch: 'Be Fit Setiabudi Bandung', package: '4 Sesi Starter Coaching', sessions: 4, remainingSessions: 3, discount: 100000, voucherCode: 'PTPROMO20', totalPaid: 950000, date: '30 Okt 2026', status: 'Aktif Berjalan' },
+            { id: 'PT-SB-03', userName: 'Maya Safitri', userPhone: '081234567893', trainerName: 'Sarah Wijaya', branch: 'Be Fit Setiabudi Bandung', package: '4 Sesi Starter Coaching', sessions: 4, remainingSessions: 4, discount: 100000, voucherCode: 'PTPROMO20', totalPaid: 950000, date: '01 Nov 2026', status: 'Aktif Berjalan' },
+            { id: 'PT-SB-04', userName: 'Rian Pratama', userPhone: '081234567894', trainerName: 'Amanda Putri', branch: 'Be Fit Setiabudi Bandung', package: '4 Sesi Starter Coaching', sessions: 4, remainingSessions: 2, discount: 150000, voucherCode: 'PTPROMO20', totalPaid: 900000, date: '02 Nov 2026', status: 'Aktif Berjalan' },
+            { id: 'PT-DG-01', userName: 'Kevin Sanjaya', userPhone: '081778899002', trainerName: 'Kevin Sanjaya', branch: 'Be Fit Dago Bandung', package: '8 Sesi Pro Athlete', sessions: 8, remainingSessions: 7, discount: 250000, voucherCode: 'PTPROMO20', totalPaid: 1750000, date: '28 Okt 2026', status: 'Aktif Berjalan' },
+            { id: 'PT-DG-02', userName: 'Nadya Utami', userPhone: '081778899003', trainerName: 'Rika Amelia', branch: 'Be Fit Dago Bandung', package: '4 Sesi Starter Coaching', sessions: 4, remainingSessions: 3, discount: 100000, voucherCode: 'PTPROMO20', totalPaid: 950000, date: '31 Okt 2026', status: 'Aktif Berjalan' },
+            { id: 'PT-DG-03', userName: 'Rio Febrian', userPhone: '081778899004', trainerName: 'Alex Tan', branch: 'Be Fit Dago Bandung', package: '4 Sesi Starter Coaching', sessions: 4, remainingSessions: 2, discount: 150000, voucherCode: 'PTPROMO20', totalPaid: 850000, date: '02 Nov 2026', status: 'Aktif Berjalan' },
+            { id: 'PT-PK-01', userName: 'Reza Rahadian', userPhone: '081556677890', trainerName: 'Farhan Maulana', branch: 'Be Fit Pasirkaliki Bandung', package: '4 Sesi Elite Athlete', sessions: 4, remainingSessions: 3, discount: 150000, voucherCode: 'PTPROMO20', totalPaid: 1200000, date: '30 Okt 2026', status: 'Aktif Berjalan' },
+            { id: 'PT-PK-02', userName: 'Tiara Andini', userPhone: '081556677891', trainerName: 'Jessica Clarissa', branch: 'Be Fit Pasirkaliki Bandung', package: '4 Sesi Starter Coaching', sessions: 4, remainingSessions: 4, discount: 100000, voucherCode: 'PTPROMO20', totalPaid: 950000, date: '01 Nov 2026', status: 'Aktif Berjalan' }
+          ];
+          localStorage.setItem('befit_pt_bookings', JSON.stringify(seedPt));
+        }
+      } catch (e) {}
     }
-  } catch (e) {}
-  localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(DEFAULT_USERS));
-  return DEFAULT_USERS;
+    return users;
+  } catch (e) {
+    return DEFAULT_USERS;
+  }
 }
 
 function saveUsers(users) {
@@ -3922,9 +4333,9 @@ function openUnifiedCheckout(params) {
         </div>
       </div>
 
-      <!-- Pay Button with Real-Time Total -->
-      <button type="button" id="btn-submit-payment" class="w-full py-3.5 rounded-xl bg-teal-550 text-white text-sm font-black shadow-lg shadow-teal-550/30 hover:bg-teal-650 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-        onclick="executePaymentProcess()">
+      <!-- Pay Button with Real-Time Total (100% Synchronous Instant 0ms) -->
+      <button type="button" id="btn-submit-payment" class="w-full py-3.5 rounded-xl bg-teal-550 text-white text-sm font-black shadow-lg shadow-teal-550/30 hover:bg-teal-650 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
+        onclick="executePaymentProcess(event)">
         <span>Bayar Sekarang — ${formatRupiah(total)}</span>
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
       </button>
@@ -3941,8 +4352,9 @@ function openUnifiedCheckout(params) {
     updateCheckoutUI();
   };
 
-  window.executePaymentProcess = () => {
-    // 0ms Instant Synchronous Execution - Zero Artificial Loading Delays
+  window.executePaymentProcess = (e) => {
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    // 100% Synchronous & Instant 0ms Execution - Zero Artificial Loading Delays
     completePaymentSuccess(params, calculateBilling());
   };
 
@@ -4118,6 +4530,10 @@ function completePaymentSuccess(params, billing) {
   `;
 
   openBottomSheet(receiptHtml);
+  const sheetContent = document.getElementById('sheet-content');
+  if (sheetContent) {
+    sheetContent.scrollTop = 0;
+  }
   updateHeaderUserDisplay();
   renderHomeTrainers();
 }
