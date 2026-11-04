@@ -798,14 +798,14 @@
                 map.set(key, {
                   ...def,
                   ...m,
-                  expiryDate: def.expiryDate,
-                  branch: def.branch,
-                  packageDuration: def.packageDuration,
-                  packageType: def.packageType,
-                  totalPaid: def.totalPaid,
-                  isPaidMember: def.isPaidMember,
-                  status: def.status,
-                  membershipStatus: def.membershipStatus
+                  expiryDate: (m.totalPaid && m.expiryDate) ? m.expiryDate : def.expiryDate,
+                  branch: m.branch || def.branch,
+                  packageDuration: (m.totalPaid && m.packageDuration) ? m.packageDuration : def.packageDuration,
+                  packageType: (m.totalPaid && m.packageType) ? m.packageType : def.packageType,
+                  totalPaid: Math.max(Number(m.totalPaid) || 0, Number(def.totalPaid) || 0),
+                  isPaidMember: m.isPaidMember !== undefined ? m.isPaidMember : def.isPaidMember,
+                  status: (m.status && m.totalPaid) ? m.status : def.status,
+                  membershipStatus: (m.membershipStatus && m.totalPaid) ? m.membershipStatus : def.membershipStatus
                 });
               } else if (m.role !== 'admin') {
                 if (m.packageDuration && (m.packageDuration.includes('Trial') || m.packageDuration.includes('Free')) && !m.totalPaid) {
@@ -1846,6 +1846,46 @@
     // Initial render on load
     document.addEventListener('DOMContentLoaded', () => {
       renderAdminView();
+    });
+
+    // Real-time synchronization with localStorage (cross-tab sync)
+    let lastAdminDataSignature = '';
+    function getAdminDataSignature() {
+      const tx = localStorage.getItem(TRANSACTIONS_KEY) || '';
+      const mem = localStorage.getItem(USERS_STORAGE_KEY) || '';
+      const pt = localStorage.getItem(PT_BOOKINGS_KEY) || '';
+      return `${tx.length}_${mem.length}_${pt.length}`;
+    }
+
+    function syncAdminDataRealtime() {
+      if (!isAdminLoggedIn()) return;
+      const sig = getAdminDataSignature();
+      if (lastAdminDataSignature && sig !== lastAdminDataSignature) {
+        lastAdminDataSignature = sig;
+        const searchInput = document.getElementById('member-search-input');
+        if (!searchInput || document.activeElement !== searchInput) {
+          renderAdminView();
+        }
+      } else if (!lastAdminDataSignature) {
+        lastAdminDataSignature = sig;
+      }
+    }
+
+    window.addEventListener('storage', (e) => {
+      if (!e.key || e.key === USERS_STORAGE_KEY || e.key === TRANSACTIONS_KEY || e.key === PT_BOOKINGS_KEY) {
+        if (isAdminLoggedIn()) {
+          lastAdminDataSignature = getAdminDataSignature();
+          renderAdminView();
+        }
+      }
+    });
+
+    setInterval(syncAdminDataRealtime, 2000);
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && isAdminLoggedIn()) {
+        renderAdminView();
+      }
     });
   </script>
 

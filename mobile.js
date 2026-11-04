@@ -1733,6 +1733,19 @@ function sanitize(str) {
   return el.innerHTML;
 }
 
+function formatDateIndo(dateStr) {
+  if (!dateStr) return '-';
+  try {
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+      return `${parts[2]} ${months[d.getMonth()]} ${parts[0]}`;
+    }
+  } catch (e) {}
+  return dateStr;
+}
+
 // User Storage with v7 Auto-Merge / Migration
 function getUsers() {
   try {
@@ -1751,16 +1764,16 @@ function getUsers() {
             map.set(key, {
               ...def,
               ...u,
-              expiryDate: def.expiryDate,
+              expiryDate: (u.totalPaid && u.expiryDate) ? u.expiryDate : def.expiryDate,
               password: def.password,
-              branch: def.branch,
-              packageDuration: def.packageDuration,
-              packageType: def.packageType,
-              totalPaid: def.totalPaid,
-              isPaidMember: def.isPaidMember,
-              status: def.status,
-              membershipStatus: def.membershipStatus,
-              daysRemaining: def.daysRemaining,
+              branch: u.branch || def.branch,
+              packageDuration: (u.totalPaid && u.packageDuration) ? u.packageDuration : def.packageDuration,
+              packageType: (u.totalPaid && u.packageType) ? u.packageType : def.packageType,
+              totalPaid: Math.max(Number(u.totalPaid) || 0, Number(def.totalPaid) || 0),
+              isPaidMember: u.isPaidMember !== undefined ? u.isPaidMember : def.isPaidMember,
+              status: (u.status && u.totalPaid) ? u.status : def.status,
+              membershipStatus: (u.membershipStatus && u.totalPaid) ? u.membershipStatus : def.membershipStatus,
+              daysRemaining: (u.daysRemaining !== undefined && u.totalPaid) ? u.daysRemaining : def.daysRemaining,
               injectedVouchers: def.injectedVouchers || []
             });
           } else if (u.role !== 'admin') {
@@ -1851,11 +1864,14 @@ function setCurrentUser(user) {
   try {
     if (user) {
       localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
-      // Also update in users list
+      // Also update in users list (match by id or email)
       const users = getUsers();
-      const idx = users.findIndex(u => u.id === user.id);
+      const idx = users.findIndex(u => (u.id && user.id && u.id === user.id) || ((u.email || '').toLowerCase() === (user.email || '').toLowerCase()));
       if (idx !== -1) {
         users[idx] = { ...users[idx], ...user };
+        saveUsers(users);
+      } else {
+        users.push(user);
         saveUsers(users);
       }
     } else {
@@ -2900,6 +2916,8 @@ function openClassDetail(classId) {
   const selD = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
   const dateFormatted = `${parts[2]} ${['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'][selD.getMonth()]} ${parts[0]}`;
 
+  const isPaid = isUserPaidMember(currentUser);
+
   let actionBtnHtml = '';
   if (isRegistered) {
     actionBtnHtml = `
@@ -2913,6 +2931,19 @@ function openClassDetail(classId) {
       <button type="button" disabled class="w-full py-3.5 rounded-xl bg-slate-200 text-slate-500 text-sm font-bold flex items-center justify-center gap-2 cursor-not-allowed">
         <span>Kuota Kelas Penuh untuk Tanggal Ini</span>
       </button>
+    `;
+  } else if (currentUser && !isPaid) {
+    actionBtnHtml = `
+      <div class="space-y-2">
+        <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 flex items-center gap-2">
+          <span class="text-base">🔒</span>
+          <span class="font-medium">Kelas gym ini khusus untuk member aktif Be Fit. Silakan beli paket membership terlebih dahulu untuk mendaftar kelas.</span>
+        </div>
+        <button type="button" class="w-full py-3.5 rounded-xl bg-teal-550 text-white text-sm font-black shadow-md hover:bg-teal-650 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
+          onclick="openMembershipRequiredModal('${sanitize(cls.name)}')">
+          <span>🚀 Pilih Paket Membership &rarr;</span>
+        </button>
+      </div>
     `;
   } else {
     actionBtnHtml = `
@@ -2969,8 +3000,65 @@ function openClassDetail(classId) {
   `);
 }
 
+function openMembershipRequiredModal(className = '') {
+  const html = `
+    <div class="text-center py-2 mb-3">
+      <div class="w-16 h-16 rounded-2xl bg-amber-100 border-2 border-amber-300 text-amber-600 flex items-center justify-center mx-auto mb-3 shadow-sm">
+        <span class="text-3xl">🔒</span>
+      </div>
+      <span class="inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300 mb-1">
+        Akses Khusus Member
+      </span>
+      <h3 class="text-lg font-black text-slate-900 mt-1">Berlangganan Membership Dahulu</h3>
+      <p class="text-xs text-slate-500 mt-1.5 max-w-xs mx-auto leading-relaxed">
+        Pendaftaran kelas gym ${className ? `<strong>"${sanitize(className)}"</strong> ` : ''}hanya dapat diakses oleh member aktif Be Fit. Silakan pilih paket membership untuk menikmati seluruh akses kelas tanpa batas!
+      </p>
+    </div>
+
+    <div class="p-4 bg-teal-50/80 rounded-2xl border border-teal-200/80 my-3 text-xs space-y-2">
+      <div class="flex items-center gap-2 text-teal-900 font-bold">
+        <span>✨ Keuntungan Member Be Fit:</span>
+      </div>
+      <ul class="space-y-1.5 text-slate-600 text-[11px] pl-1">
+        <li class="flex items-center gap-1.5">
+          <span class="text-teal-600 font-bold">✓</span> Akses unlimited seluruh kelas harian di semua cabang
+        </li>
+        <li class="flex items-center gap-1.5">
+          <span class="text-teal-600 font-bold">✓</span> Fasilitas locker, shower, sauna & free WiFi
+        </li>
+        <li class="flex items-center gap-1.5">
+          <span class="text-teal-600 font-bold">✓</span> Diskon 15% untuk member baru dengan kode <strong>MEMBERBARU15</strong>
+        </li>
+      </ul>
+    </div>
+
+    <div class="space-y-2.5">
+      <button type="button" class="w-full py-3.5 rounded-xl bg-teal-550 hover:bg-teal-650 active:scale-[0.98] text-white text-xs font-black shadow-md shadow-teal-550/20 transition-all cursor-pointer flex items-center justify-center gap-2"
+        onclick="closeBottomSheet(); openPricingSheet();">
+        <span>🚀 Pilih Paket Membership Sekarang</span>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+      </button>
+
+      <button type="button" class="w-full py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 text-xs font-bold transition-all cursor-pointer"
+        onclick="closeBottomSheet()">
+        Nanti Saja
+      </button>
+    </div>
+  `;
+  openBottomSheet(html);
+}
+
 function handleBookClass(classId) {
   requireAuth(() => {
+    const currentUser = getCurrentUser();
+    if (!currentUser) return;
+
+    if (!isUserPaidMember(currentUser)) {
+      showToast('⚠️ Pendaftaran kelas khusus untuk member aktif. Silakan berlangganan paket membership terlebih dahulu!');
+      openMembershipRequiredModal();
+      return;
+    }
+
     if (!selectedClassDateKey || selectedClassDateKey < getTodayDateKey()) {
       selectedClassDateKey = getTodayDateKey();
     }
@@ -2982,9 +3070,6 @@ function handleBookClass(classId) {
     const classes = getClassesForBranch(currentBranch.id, selectedClassDateKey);
     const cls = classes.find(c => c.id === classId);
     if (!cls) return;
-
-    const currentUser = getCurrentUser();
-    if (!currentUser) return;
 
     const slotInfo = getRealisticClassSlotInfo(cls, selectedClassDateKey, currentUser.id);
     if (slotInfo.isRegistered) {
@@ -4464,13 +4549,24 @@ function completePaymentSuccess(params, billing) {
   const voucherCodeUsed = billing.appliedVoucher ? billing.appliedVoucher.code : '-';
 
   // 1. Sync User State
-  if (type === 'membership') {
-    const addDays = pkg.durationDays || 30;
-    const baseDate = (currentUser.expiryDate && new Date(currentUser.expiryDate) > now)
-      ? new Date(currentUser.expiryDate)
-      : now;
-    const newExpiry = new Date(baseDate.getTime() + addDays * 86400000).toISOString().split('T')[0];
+  const isRenewal = Boolean(currentUser.isPaidMember && currentUser.expiryDate);
 
+  if (type === 'membership') {
+    let baseDate = new Date();
+    if (currentUser.expiryDate) {
+      const expParts = currentUser.expiryDate.split('-');
+      if (expParts.length === 3) {
+        const expObj = new Date(parseInt(expParts[0]), parseInt(expParts[1]) - 1, parseInt(expParts[2]), 23, 59, 59);
+        if (expObj > new Date()) {
+          baseDate = expObj;
+        }
+      }
+    }
+    const addDays = pkg.durationDays || 30;
+    const newExpiryDateObj = new Date(baseDate.getTime() + addDays * 86400000);
+    const newExpiry = `${newExpiryDateObj.getFullYear()}-${String(newExpiryDateObj.getMonth() + 1).padStart(2, '0')}-${String(newExpiryDateObj.getDate()).padStart(2, '0')}`;
+
+    currentUser.packageId = pkg.id;
     currentUser.packageType = pkg.shortName;
     currentUser.packageDuration = pkg.name;
     currentUser.membershipPackage = pkg.name;
@@ -4482,14 +4578,16 @@ function completePaymentSuccess(params, billing) {
     currentUser.voucherUsed = voucherCodeUsed;
     currentUser.totalPaid = (Number(currentUser.totalPaid) || 0) + billing.total;
     currentUser.paymentMethod = activePaymentMethod.toUpperCase();
-    currentUser.branch = getSelectedBranch().name.split(' ')[2] || 'Setiabudi';
+    currentUser.branch = currentUser.branch || (getSelectedBranch().name.includes('Dago') ? 'Dago' : getSelectedBranch().name.includes('Buah Batu') ? 'Buah Batu' : 'Setiabudi');
     currentUser.dateJoined = currentUser.dateJoined || dateStr;
     setCurrentUser(currentUser);
 
-    syncWithCRMState(currentUser, 'Pembelian Paket Membership', `${pkg.name} (${formatRupiah(billing.total)})`);
+    syncWithCRMState(currentUser, isRenewal ? 'Perpanjangan Paket Membership' : 'Pembelian Paket Membership', `${pkg.name} (${formatRupiah(billing.total)})`);
   } else if (type === 'pt') {
     currentUser.ptSessions = (currentUser.ptSessions || 0) + (pkg.sessions || 1);
-    currentUser.ptTrainer = trainer.name;
+    currentUser.ptTrainer = trainer.fullName || trainer.name;
+    currentUser.totalPaid = (Number(currentUser.totalPaid) || 0) + billing.total;
+    currentUser.branch = currentUser.branch || (getSelectedBranch().name.includes('Dago') ? 'Dago' : getSelectedBranch().name.includes('Buah Batu') ? 'Buah Batu' : 'Setiabudi');
 
     // Save trainer ID in bookedTrainers
     currentUser.bookedTrainers = currentUser.bookedTrainers || [];
@@ -4502,7 +4600,7 @@ function completePaymentSuccess(params, billing) {
     const trainers = getTrainers();
     const tIdx = trainers.findIndex(t => t.id === trainer.id);
     if (tIdx !== -1) {
-      trainers[tIdx].clients += 1;
+      trainers[tIdx].clients = (trainers[tIdx].clients || 0) + 1;
       saveTrainers(trainers);
     }
 
@@ -4515,7 +4613,7 @@ function completePaymentSuccess(params, billing) {
         userName: currentUser.name,
         userPhone: currentUser.phone,
         trainerName: trainer.fullName || trainer.name,
-        branch: getSelectedBranch().name,
+        branch: currentUser.branch || (getSelectedBranch().name.includes('Dago') ? 'Dago' : getSelectedBranch().name.includes('Buah Batu') ? 'Buah Batu' : 'Setiabudi'),
         package: pkg.label,
         sessions: pkg.sessions,
         remainingSessions: pkg.sessions,
@@ -4529,20 +4627,26 @@ function completePaymentSuccess(params, billing) {
     } catch (e) {}
 
     syncWithCRMState(currentUser, 'Pembelian Sesi Personal Trainer', `${pkg.sessions} Sesi bersama Coach ${trainer.name} (${formatRupiah(billing.total)})`);
-    showToast(`Paket PT bersama Coach ${trainer.name} berhasil dibeli!`, 4500);
     renderHomeTrainers();
     if (typeof renderFullTrainerScreen === 'function') renderFullTrainerScreen();
     if (typeof renderTrainerDetailTabContent === 'function') renderTrainerDetailTabContent();
   }
 
-  // Record Transaction
+  // Record Transaction in befit_mobile_transactions
+  const txTitle = type === 'membership' 
+    ? (isRenewal ? `Perpanjangan Membership (${pkg.name})` : `Membership - ${pkg.name}`)
+    : `Personal Trainer - ${pkg.label} (${trainer.name})`;
+
   try {
     const rawTx = localStorage.getItem(TRANSACTIONS_KEY);
     const txList = rawTx ? JSON.parse(rawTx) : [];
     txList.unshift({
       id: invoiceNo,
       type: type === 'membership' ? 'Membership' : 'Personal Trainer',
-      title: type === 'membership' ? pkg.name : `${pkg.label} bersama ${trainer.name}`,
+      title: txTitle,
+      userName: currentUser.name,
+      userPhone: currentUser.phone,
+      branch: currentUser.branch || getSelectedBranch().name,
       baseAmount: billing.base,
       voucherCode: voucherCodeUsed,
       discount: billing.disc,
@@ -4554,14 +4658,94 @@ function completePaymentSuccess(params, billing) {
     localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(txList));
   } catch (e) {}
 
-  // Auto-close Bottom Sheet with smooth slide-down & show success toast
-  closeBottomSheet();
-  showToast(type === 'membership' 
-    ? `🎉 Pembayaran Berhasil! Paket ${pkg.name} telah aktif.` 
-    : `🎉 Pembayaran Berhasil! Paket PT bersama Coach ${trainer.name} siap digunakan!`, 4500);
+  // Render Direct Payment Success Confirmation Screen
+  const receiptHtml = `
+    <div class="text-center py-2 mb-2">
+      <div class="w-16 h-16 rounded-full bg-emerald-100 border-2 border-emerald-400 text-emerald-600 flex items-center justify-center mx-auto mb-3 shadow-md animate-bounce-slow">
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+      </div>
+      <span class="inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300 mb-1.5">
+        ✓ PEMBAYARAN BERHASIL • STATUS AKTIF
+      </span>
+      <h3 class="text-lg font-black text-slate-900 mt-1 leading-tight">
+        ${type === 'membership' 
+          ? (isRenewal ? 'Perpanjangan Membership Berhasil!' : 'Paket Membership Aktif!') 
+          : 'Paket Personal Trainer Berhasil Diaktifkan!'}
+      </h3>
+      <p class="text-xs text-slate-600 mt-1.5 px-3 leading-relaxed font-medium">
+        ${type === 'membership' 
+          ? `Anda sudah resmi ${isRenewal ? 'memperpanjang' : 'membeli & mengaktifkan'} paket membership <strong class="text-teal-700 font-bold">${pkg.name}</strong>. Akses gym dan seluruh jadwal kelas sudah aktif!` 
+          : `Anda sudah resmi membeli paket Personal Trainer <strong class="text-teal-700 font-bold">${pkg.label} (${pkg.sessions} Sesi)</strong> bersama Coach <strong class="text-slate-900 font-bold">${trainer.fullName || trainer.name}</strong>.`}
+      </p>
+    </div>
+
+    <!-- Invoice Box -->
+    <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 my-4 space-y-2 text-xs">
+      <div class="flex justify-between pb-2 border-b border-slate-200">
+        <span class="text-slate-400 font-medium">Nomor Invoice:</span>
+        <span class="font-mono font-bold text-slate-800">${invoiceNo}</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-slate-400 font-medium">Layanan yang Dibeli:</span>
+        <span class="font-bold text-slate-900 text-right">${type === 'membership' ? pkg.name : `${pkg.label} (Coach ${trainer.name})`}</span>
+      </div>
+      ${type === 'membership' ? `
+        <div class="flex justify-between">
+          <span class="text-slate-400 font-medium">Masa Aktif Baru:</span>
+          <span class="font-bold text-emerald-700 font-mono">s/d ${formatDateIndo(currentUser.expiryDate)} (${currentUser.daysRemaining} Hari)</span>
+        </div>
+      ` : `
+        <div class="flex justify-between">
+          <span class="text-slate-400 font-medium">Total Sisa Sesi PT:</span>
+          <span class="font-bold text-teal-700 font-mono">${currentUser.ptSessions} Sesi Aktif</span>
+        </div>
+      `}
+      <div class="flex justify-between">
+        <span class="text-slate-400 font-medium">Harga Normal:</span>
+        <span class="font-mono text-slate-700">${formatRupiah(billing.base)}</span>
+      </div>
+      ${billing.appliedVoucher ? `
+        <div class="flex justify-between text-emerald-600 font-bold">
+          <span>Diskon Voucher (${billing.appliedVoucher.code}):</span>
+          <span class="font-mono">-${formatRupiah(billing.disc)}</span>
+        </div>
+      ` : ''}
+      <div class="flex justify-between">
+        <span class="text-slate-400 font-medium">Metode Pembayaran:</span>
+        <span class="font-mono font-bold text-slate-800 uppercase">${activePaymentMethod}</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-slate-400 font-medium">Waktu Transaksi:</span>
+        <span class="text-slate-700 font-mono">${dateStr}</span>
+      </div>
+      <div class="pt-2 border-t border-slate-200 flex justify-between text-sm font-black text-slate-900">
+        <span>Total Dibayar:</span>
+        <span class="text-teal-600 font-mono font-black">${formatRupiah(billing.total)}</span>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="space-y-2 pb-1">
+      <button type="button" 
+        class="w-full py-3.5 rounded-xl bg-teal-550 hover:bg-teal-650 active:scale-[0.98] text-white text-xs font-black shadow-md shadow-teal-550/20 transition-all cursor-pointer flex items-center justify-center gap-2"
+        onclick="closeBottomSheet(); updateHeaderUserDisplay(); renderHomeClasses(); renderHomeTrainers(); renderHomeRetentionBanner(); showToast('🎉 Transaksi Anda berhasil dan telah tersinkronisasi ke Dashboard Admin!', 4000);">
+        <span>✓ Selesai & Kembali ke Beranda</span>
+      </button>
+      <button type="button" 
+        class="w-full py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold transition-all cursor-pointer text-center"
+        onclick="closeBottomSheet(); openProfileSheet();">
+        Lihat Status Membership di Profil &rarr;
+      </button>
+    </div>
+  `;
+
+  openBottomSheet(receiptHtml);
+  const sheetContent = document.getElementById('sheet-content');
+  if (sheetContent) sheetContent.scrollTop = 0;
 
   updateHeaderUserDisplay();
   renderHomeTrainers();
+  renderHomeClasses();
   renderHomeRetentionBanner();
 }
 
@@ -4699,8 +4883,15 @@ function extendCurrentMembership() {
   const currentUser = getCurrentUser();
   if (!currentUser) return;
 
+  const currentPkg = MEMBERSHIP_PACKAGES.find(p => 
+    p.id === currentUser.packageId ||
+    p.shortName === currentUser.packageType || 
+    p.name === currentUser.packageDuration ||
+    (currentUser.packageDuration && p.name.includes(currentUser.packageDuration))
+  ) || MEMBERSHIP_PACKAGES[1];
+
   closeBottomSheet();
-  openPricingSheet('pkg-3m');
+  openPricingSheet(currentPkg.id);
 }
 
 function openTransactionHistorySheet() {
