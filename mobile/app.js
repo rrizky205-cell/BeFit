@@ -5415,6 +5415,46 @@ window.openChatAdminSheet = openChatAdminSheet;
 
 function initRetentionSystem() {
   try {
+    // Handle Demo Mode for presentation screenshots
+    const urlParams = new URLSearchParams(window.location.search);
+    const demoMode = urlParams.get('demo');
+    if (demoMode) {
+      const expiry = new Date(Date.now() + 6 * 86400000).toISOString().split('T')[0];
+      const demoUser = {
+        id: 'USR-TEST-001',
+        name: 'Rizky Muhammad Riady',
+        email: 'rizky.member@gmail.com',
+        phone: '082116156884',
+        branch: 'Setiabudi',
+        packageType: 'Pro Transformation',
+        packageDuration: 'Paket 3 Bulan (Pro Transformation)',
+        status: 'Active',
+        membershipStatus: 'Aktif',
+        isPaidMember: true,
+        expiryDate: expiry,
+        daysRemaining: 6,
+        totalPaid: 900000,
+        injectedVouchers: ['RENEWLOYAL25']
+      };
+      setCurrentUser(demoUser);
+      unlockRetentionExclusive();
+      if (demoMode === 'trainer') {
+        setTimeout(() => { if (typeof openFullTrainerScreen === 'function') openFullTrainerScreen(); }, 200);
+      } else if (demoMode === 'checkout') {
+        setActivePromoCode('RENEWLOYAL25');
+        setTimeout(() => {
+          const pkg = MEMBERSHIP_PACKAGES.find(p => p.id === 'pkg-3m') || MEMBERSHIP_PACKAGES[1];
+          openUnifiedCheckout({ type: 'membership', package: pkg });
+        }, 250);
+      } else {
+        updateHeaderUserDisplay();
+        renderHomeRetentionBanner();
+        renderHomeTrainers();
+        renderHomeClasses();
+      }
+      return;
+    }
+
     const user = getCurrentUser();
     if (user && user.role !== 'admin') {
       checkAndInjectRetentionVoucher(user);

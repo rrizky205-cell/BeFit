@@ -1845,6 +1845,20 @@
 
     // Initial render on load
     document.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const demo = urlParams.get('demo');
+      if (demo === 'overview' || demo === 'crm') {
+        localStorage.setItem(ADMIN_AUTH_KEY, JSON.stringify({
+          email: 'rrizky205@gmail.com',
+          role: 'admin',
+          loginAt: new Date().toISOString()
+        }));
+        if (demo === 'crm') {
+          currentTab = 'members';
+        } else {
+          currentTab = 'overview';
+        }
+      }
       renderAdminView();
     });
 
