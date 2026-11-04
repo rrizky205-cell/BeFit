@@ -1054,6 +1054,29 @@ const VOUCHERS_DATA = [
   }
 ];
 
+function isUserPaidMember(user) {
+  if (!user || user.role === 'admin') return false;
+  if (user.isPaidMember === false) return false;
+  if (user.membershipStatus === 'Belum Aktif' || user.status === 'Belum Aktif') return false;
+  if (!user.expiryDate) return false;
+  if (user.packageType === 'Belum Berlangganan' || user.packageDuration === 'Belum Berlangganan') return false;
+  if (typeof user.packageDuration === 'string' && (user.packageDuration.toLowerCase().includes('trial') || user.packageDuration.toLowerCase().includes('free'))) return false;
+  if (typeof user.packageType === 'string' && (user.packageType.toLowerCase().includes('trial') || user.packageType.toLowerCase().includes('free'))) return false;
+  if (typeof user.voucherUsed === 'string' && user.voucherUsed.toLowerCase().includes('trial')) return false;
+
+  if (user.isPaidMember === true) return true;
+  if (Number(user.totalPaid) > 0) return true;
+
+  const validPackages = [
+    'Basic Starter', 'Pro Transformation', 'Elite Athlete', 'Ultimate Yearly', 'Basic Starter Plus',
+    'Paket 1 Bulan', 'Paket 3 Bulan', 'Paket 6 Bulan', 'Paket 12 Bulan'
+  ];
+  if (validPackages.some(pkg => (user.packageType && user.packageType.includes(pkg)) || (user.packageDuration && user.packageDuration.includes(pkg)))) {
+    return true;
+  }
+  return false;
+}
+
 function getDaysRemaining(expiryDateStr) {
   if (!expiryDateStr) return 999;
   try {
@@ -1068,7 +1091,9 @@ function getDaysRemaining(expiryDateStr) {
 }
 
 function checkAndInjectRetentionVoucher(user) {
-  if (!user || user.role === 'admin') return { isExpiringSoon: false, daysRemaining: 999 };
+  if (!user || user.role === 'admin' || !isUserPaidMember(user)) {
+    return { isExpiringSoon: false, daysRemaining: 0 };
+  }
 
   const days = getDaysRemaining(user.expiryDate);
   const usedVouchers = Array.isArray(user.usedVouchers) ? user.usedVouchers : [];
@@ -1097,7 +1122,7 @@ function checkAndInjectRetentionVoucher(user) {
 
 function isRetentionUnlocked() {
   const user = getCurrentUser();
-  if (!user || user.role === 'admin') return false;
+  if (!user || user.role === 'admin' || !isUserPaidMember(user)) return false;
   const days = getDaysRemaining(user.expiryDate);
   const usedVouchers = Array.isArray(user.usedVouchers) ? user.usedVouchers : [];
   if (usedVouchers.includes('RENEWLOYAL25')) return false;
@@ -1113,7 +1138,7 @@ function renderHomeRetentionBanner() {
   if (!container) return;
 
   const user = getCurrentUser();
-  if (!user || user.role === 'admin') {
+  if (!user || user.role === 'admin' || !isUserPaidMember(user)) {
     container.innerHTML = '';
     return;
   }
@@ -1207,7 +1232,7 @@ function claimVoucher(code) {
 // ==================== 6. SEED USERS & AUTH STATE ====================
 
 const DATA_VERSION_KEY = 'befit_data_version';
-const CURRENT_DATA_VERSION = 'v6';
+const CURRENT_DATA_VERSION = 'v7';
 
 const DEFAULT_USERS = [
   // ===== CABANG SETIABUDI (~8 Member, Total Membership: Rp 7.850.000) =====
@@ -1472,14 +1497,19 @@ const DEFAULT_USERS = [
     phone: '081778899006',
     password: '123456',
     branch: 'Dago',
-    packageType: 'Basic Starter',
-    packageDuration: 'Paket 1 Bulan (Trial Member)',
-    voucherUsed: 'FREETRIAL7D',
+    membershipPackage: null,
+    packageType: 'Belum Berlangganan',
+    packageDuration: 'Belum Berlangganan',
+    membershipStatus: 'Belum Aktif',
+    voucherUsed: null,
     totalPaid: 0,
-    paymentMethod: 'TRIAL',
+    paymentMethod: null,
     dateJoined: '02 Nov 2026',
-    expiryDate: '2026-11-20',
-    status: 'Active',
+    expiryDate: null,
+    status: 'Belum Aktif',
+    isPaidMember: false,
+    daysRemaining: 0,
+    injectedVouchers: [],
     isFrozen: false,
     role: 'member'
   },
@@ -1703,7 +1733,7 @@ function sanitize(str) {
   return el.innerHTML;
 }
 
-// User Storage with v6 Auto-Merge / Migration
+// User Storage with v7 Auto-Merge / Migration
 function getUsers() {
   try {
     const ver = localStorage.getItem(DATA_VERSION_KEY);
@@ -1718,8 +1748,34 @@ function getUsers() {
           const key = (u.email || u.id || '').toLowerCase();
           const def = map.get(key);
           if (def) {
-            map.set(key, { ...def, ...u, expiryDate: def.expiryDate, password: def.password, branch: def.branch, packageDuration: def.packageDuration, packageType: def.packageType, totalPaid: def.totalPaid });
+            map.set(key, {
+              ...def,
+              ...u,
+              expiryDate: def.expiryDate,
+              password: def.password,
+              branch: def.branch,
+              packageDuration: def.packageDuration,
+              packageType: def.packageType,
+              totalPaid: def.totalPaid,
+              isPaidMember: def.isPaidMember,
+              status: def.status,
+              membershipStatus: def.membershipStatus,
+              daysRemaining: def.daysRemaining,
+              injectedVouchers: def.injectedVouchers || []
+            });
           } else if (u.role !== 'admin') {
+            // Clean any legacy trial account in localStorage
+            if (u.packageDuration && (u.packageDuration.includes('Trial') || u.packageDuration.includes('Free')) && !u.totalPaid) {
+              u.packageType = 'Belum Berlangganan';
+              u.packageDuration = 'Belum Berlangganan';
+              u.membershipPackage = null;
+              u.membershipStatus = 'Belum Aktif';
+              u.status = 'Belum Aktif';
+              u.isPaidMember = false;
+              u.daysRemaining = 0;
+              u.expiryDate = null;
+              u.injectedVouchers = [];
+            }
             map.set(key, u);
           }
         });
@@ -1736,6 +1792,17 @@ function getUsers() {
           const matched = users.find(u => (u.email || '').toLowerCase() === (cur.email || '').toLowerCase());
           if (matched) {
             localStorage.setItem(CURRENT_USER_KEY, JSON.stringify({ ...cur, ...matched }));
+          } else if (cur.packageDuration && (cur.packageDuration.includes('Trial') || cur.packageDuration.includes('Free')) && !cur.totalPaid) {
+            cur.packageType = 'Belum Berlangganan';
+            cur.packageDuration = 'Belum Berlangganan';
+            cur.membershipPackage = null;
+            cur.membershipStatus = 'Belum Aktif';
+            cur.status = 'Belum Aktif';
+            cur.isPaidMember = false;
+            cur.daysRemaining = 0;
+            cur.expiryDate = null;
+            cur.injectedVouchers = [];
+            localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(cur));
           }
         }
       } catch (e) {}
@@ -2428,15 +2495,22 @@ function submitOTPVerification() {
     email: pendingRegistrationData.email,
     phone: pendingRegistrationData.phone,
     password: pendingRegistrationData.password,
-    status: 'Active',
-    joinDate: new Date().toISOString().split('T')[0],
-    packageType: 'Starter Member',
-    packageDuration: 'Free Member (7 Hari Trial)',
-    expiryDate: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
+    membershipPackage: null,
+    packageType: 'Belum Berlangganan',
+    packageDuration: 'Belum Berlangganan',
+    membershipStatus: 'Belum Aktif',
+    status: 'Belum Aktif',
+    isPaidMember: false,
+    daysRemaining: 0,
+    expiryDate: null,
+    injectedVouchers: [],
+    totalPaid: 0,
     ptSessions: 0,
     isTrialClaimed: false,
     bookedClasses: [],
-    bookedTrainers: []
+    bookedTrainers: [],
+    joinDate: new Date().toISOString().split('T')[0],
+    role: 'member'
   };
 
   users.push(newUser);
@@ -2444,13 +2518,14 @@ function submitOTPVerification() {
   setCurrentUser(newUser);
 
   closeBottomSheet();
-  showToast(`🎉 Verifikasi Berhasil! Selamat datang di Be Fit, ${newUser.name}.`, 4000);
+  showToast(`🎉 Pendaftaran Berhasil! Selamat datang di Be Fit, ${newUser.name}. Silakan pilih paket membership Anda.`, 4000);
 
   updateHeaderUserDisplay();
   updateTrialButton();
   renderCalendarDatePicker();
   renderHomeClasses();
   renderHomeTrainers();
+  renderHomeRetentionBanner();
 
   pendingRegistrationData = null;
 }
@@ -2960,8 +3035,8 @@ function handleBookClass(classId) {
     const dateFormatted = `${parts[2]} ${['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'][selD.getMonth()]}`;
 
     renderHomeClasses();
-    openClassDetail(classId);
-    showToast(`Berhasil terdaftar di kelas ${cls.name}!`, 3500);
+    closeBottomSheet();
+    showToast(`🎉 Berhasil terdaftar di kelas ${cls.name}!`, 3500);
   });
 }
 
@@ -4398,17 +4473,20 @@ function completePaymentSuccess(params, billing) {
 
     currentUser.packageType = pkg.shortName;
     currentUser.packageDuration = pkg.name;
+    currentUser.membershipPackage = pkg.name;
     currentUser.expiryDate = newExpiry;
     currentUser.status = 'Active';
+    currentUser.membershipStatus = 'Aktif';
+    currentUser.isPaidMember = true;
+    currentUser.daysRemaining = Math.max(1, getDaysRemaining(newExpiry));
     currentUser.voucherUsed = voucherCodeUsed;
-    currentUser.totalPaid = billing.total;
+    currentUser.totalPaid = (Number(currentUser.totalPaid) || 0) + billing.total;
     currentUser.paymentMethod = activePaymentMethod.toUpperCase();
     currentUser.branch = getSelectedBranch().name.split(' ')[2] || 'Setiabudi';
-    currentUser.dateJoined = dateStr;
+    currentUser.dateJoined = currentUser.dateJoined || dateStr;
     setCurrentUser(currentUser);
 
     syncWithCRMState(currentUser, 'Pembelian Paket Membership', `${pkg.name} (${formatRupiah(billing.total)})`);
-    showToast(`Paket ${pkg.name} berhasil diaktifkan!`, 4000);
   } else if (type === 'pt') {
     currentUser.ptSessions = (currentUser.ptSessions || 0) + (pkg.sessions || 1);
     currentUser.ptTrainer = trainer.name;
@@ -4476,66 +4554,15 @@ function completePaymentSuccess(params, billing) {
     localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(txList));
   } catch (e) {}
 
-  // Render Payment Receipt with Voucher Details
-  const receiptHtml = `
-    <div class="text-center py-2 mb-4">
-      <div class="w-16 h-16 rounded-full bg-emerald-100 border-2 border-emerald-400 text-emerald-600 flex items-center justify-center mx-auto mb-3 shadow-sm animate-bounce-slow">
-        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-      </div>
-      <span class="inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300 mb-1">
-        LUNAS / AKTIF
-      </span>
-      <h3 class="text-lg font-black text-slate-900 mt-1">Pembayaran Berhasil!</h3>
-      <p class="text-xs text-slate-400 mt-0.5">${type === 'membership' ? 'Paket Membership kamu telah aktif seketika.' : `Paket PT bersama Coach ${trainer.name} siap digunakan!`}</p>
-    </div>
+  // Auto-close Bottom Sheet with smooth slide-down & show success toast
+  closeBottomSheet();
+  showToast(type === 'membership' 
+    ? `🎉 Pembayaran Berhasil! Paket ${pkg.name} telah aktif.` 
+    : `🎉 Pembayaran Berhasil! Paket PT bersama Coach ${trainer.name} siap digunakan!`, 4500);
 
-    <!-- Invoice Details Box -->
-    <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 mb-4 space-y-2 text-xs">
-      <div class="flex justify-between pb-2 border-b border-slate-200">
-        <span class="text-slate-400">Nomor Invoice:</span>
-        <span class="font-mono font-bold text-slate-800">${invoiceNo}</span>
-      </div>
-      <div class="flex justify-between">
-        <span class="text-slate-400">Layanan:</span>
-        <span class="font-bold text-slate-800 text-right">${type === 'membership' ? pkg.name : `${pkg.label} (${trainer.name})`}</span>
-      </div>
-      <div class="flex justify-between">
-        <span class="text-slate-400">Harga Normal:</span>
-        <span class="font-mono text-slate-700">${formatRupiah(billing.base)}</span>
-      </div>
-      ${billing.appliedVoucher ? `
-        <div class="flex justify-between text-emerald-600 font-bold">
-          <span>Diskon Voucher (${billing.appliedVoucher.code}):</span>
-          <span class="font-mono">-${formatRupiah(billing.disc)}</span>
-        </div>
-      ` : ''}
-      <div class="flex justify-between">
-        <span class="text-slate-400">Metode Pembayaran:</span>
-        <span class="font-mono font-bold text-slate-800 uppercase">${activePaymentMethod}</span>
-      </div>
-      <div class="flex justify-between">
-        <span class="text-slate-400">Waktu Transaksi:</span>
-        <span class="text-slate-700 font-mono">${dateStr}</span>
-      </div>
-      <div class="pt-2 border-t border-slate-200 flex justify-between text-sm font-black text-slate-900">
-        <span>Total Dibayar:</span>
-        <span class="text-teal-600 font-mono font-black">${formatRupiah(billing.total)}</span>
-      </div>
-    </div>
-
-    <button type="button" class="w-full py-3.5 rounded-xl bg-slate-900 text-white text-xs font-black shadow-md hover:bg-slate-800 active:scale-[0.98] transition-all"
-      onclick="closeBottomSheet(); updateHeaderUserDisplay();">
-      Tutup & Kembali ke Beranda
-    </button>
-  `;
-
-  openBottomSheet(receiptHtml);
-  const sheetContent = document.getElementById('sheet-content');
-  if (sheetContent) {
-    sheetContent.scrollTop = 0;
-  }
   updateHeaderUserDisplay();
   renderHomeTrainers();
+  renderHomeRetentionBanner();
 }
 
 // ==================== 6. CLEAN PROFILE SHEET (NO MEMBER ID, NO CRM LINK) ====================
@@ -4548,8 +4575,10 @@ function openProfileSheet() {
     return;
   }
 
-  // Check retention eligibility & inject voucher if 1-10 days remaining
-  const { isExpiringSoon, daysRemaining } = checkAndInjectRetentionVoucher(currentUser);
+  const isPaid = isUserPaidMember(currentUser);
+  const { isExpiringSoon, daysRemaining } = isPaid 
+    ? checkAndInjectRetentionVoucher(currentUser) 
+    : { isExpiringSoon: false, daysRemaining: 0 };
 
   // Active membership package
   const activePackage = MEMBERSHIP_PACKAGES.find(p => p.shortName === currentUser.packageType || p.name === currentUser.packageDuration) || MEMBERSHIP_PACKAGES[1];
@@ -4562,13 +4591,13 @@ function openProfileSheet() {
       </div>
       <h3 class="text-base font-black text-slate-900">${sanitize(currentUser.name)}</h3>
       <p class="text-xs text-slate-500 mt-0.5">${currentUser.phone} • ${currentUser.email || 'member@befit.id'}</p>
-      <span class="inline-block mt-1.5 px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
-        Status: ${currentUser.status || 'Active'}
+      <span class="inline-block mt-1.5 px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${isPaid ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-slate-100 text-slate-700 border border-slate-300'}">
+        Status: ${isPaid ? (currentUser.status || 'Active') : 'Belum Aktif (Belum Berlangganan)'}
       </span>
     </div>
 
-    ${isExpiringSoon ? `
-      <!-- Amber Retention Warning Card in Profile -->
+    ${isPaid && isExpiringSoon ? `
+      <!-- Amber Retention Warning Card in Profile (Paid Expiring Member Only) -->
       <div class="mb-4 p-3.5 rounded-2xl bg-[#FEF3C7] border-2 border-[#F59E0B] shadow-sm flex flex-col gap-2.5 text-left">
         <div class="flex items-start gap-2.5">
           <span class="text-2xl shrink-0">⚠️</span>
@@ -4590,38 +4619,71 @@ function openProfileSheet() {
       </div>
     ` : ''}
 
-    <!-- Active Membership Status Card: Clean, NO Member ID -->
-    <div class="p-4 bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl mb-4 shadow-md border border-amber-500/20">
-      <div class="flex items-center justify-between mb-2">
-        <span class="text-[10px] uppercase font-bold tracking-wider text-teal-400">Membership Be Fit</span>
-        <span class="text-[10px] font-bold text-amber-300">✦ MEMBER RESMI ✦</span>
+    ${isPaid ? `
+      <!-- Active Membership Status Card for Paid Member -->
+      <div class="p-4 bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl mb-4 shadow-md border border-amber-500/20">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-[10px] uppercase font-bold tracking-wider text-teal-400">Membership Be Fit</span>
+          <span class="text-[10px] font-bold text-amber-300">✦ MEMBER RESMI ✦</span>
+        </div>
+        <h4 class="text-base font-black">${sanitize(currentUser.packageType || 'Pro Transformation')}</h4>
+        <p class="text-xs text-slate-300 mt-0.5">Berlaku s/d: <strong class="text-white">${currentUser.expiryDate || 'Aktif'}</strong> ${isExpiringSoon ? `<span class="ml-1 text-amber-300 font-bold">(${daysRemaining} Hari Lagi)</span>` : ''}</p>
+        
+        <div class="mt-3 pt-2.5 border-t border-slate-700/80 flex items-center justify-between text-xs">
+          <span class="text-slate-300">Sisa Sesi PT:</span>
+          <span class="font-bold text-brand-sunny font-mono">${currentUser.ptSessions || 0} Sesi Aktif</span>
+        </div>
       </div>
-      <h4 class="text-base font-black">${sanitize(currentUser.packageType || 'Pro Transformation')}</h4>
-      <p class="text-xs text-slate-300 mt-0.5">Berlaku s/d: <strong class="text-white">${currentUser.expiryDate || 'Aktif'}</strong> ${isExpiringSoon ? `<span class="ml-1 text-amber-300 font-bold">(${daysRemaining} Hari Lagi)</span>` : ''}</p>
-      
-      <div class="mt-3 pt-2.5 border-t border-slate-700/80 flex items-center justify-between text-xs">
-        <span class="text-slate-300">Sisa Sesi PT:</span>
-        <span class="font-bold text-brand-sunny font-mono">${currentUser.ptSessions || 0} Sesi Aktif</span>
+
+      <!-- Primary Action: Perpanjang Membership -->
+      <div class="space-y-2.5 mb-4">
+        <button type="button" class="w-full flex items-center justify-between p-3.5 rounded-xl bg-teal-550 text-white hover:bg-teal-650 active:scale-[0.98] text-xs font-bold shadow-md shadow-teal-550/20 transition-all text-left cursor-pointer"
+          onclick="extendCurrentMembership()">
+          <span class="flex items-center gap-2">
+            <span class="text-base">⚡</span>
+            <span>Perpanjang Membership ${isExpiringSoon ? '(Diskon 25% Aktif)' : `(${sanitize(activePackage.shortName)})`}</span>
+          </span>
+          <svg class="w-4 h-4 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+        </button>
+
+        <button type="button" class="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-800 text-left transition-colors cursor-pointer"
+          onclick="openTransactionHistorySheet()">
+          <span class="flex items-center gap-2"><span>🧾</span> Riwayat Transaksi & Invoice</span>
+          <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </button>
       </div>
-    </div>
+    ` : `
+      <!-- Unpaid Member Card (No Active Package) -->
+      <div class="p-4 bg-slate-50 text-slate-800 rounded-2xl mb-4 border border-slate-200">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400">Status Membership</span>
+          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-600">Belum Berlangganan</span>
+        </div>
+        <h4 class="text-base font-black text-slate-900">Belum Ada Paket Aktif</h4>
+        <p class="text-xs text-slate-600 mt-1">Status Membership: <strong class="text-slate-900">Belum Aktif (Belum Berlangganan)</strong></p>
+        <p class="text-[11px] text-teal-700 font-medium mt-2 bg-teal-50 p-2.5 rounded-xl border border-teal-200/80 leading-relaxed">
+          🎉 Gunakan kode promo <strong>MEMBERBARU15</strong> untuk mendapatkan Diskon 15% pada pembelian paket membership pertamamu!
+        </p>
+      </div>
 
-    <!-- Primary Action: Perpanjang Membership (Aman & Membuka Pemilihan Paket / Checkout) -->
-    <div class="space-y-2.5 mb-4">
-      <button type="button" class="w-full flex items-center justify-between p-3.5 rounded-xl bg-teal-550 text-white hover:bg-teal-650 active:scale-[0.98] text-xs font-bold shadow-md shadow-teal-550/20 transition-all text-left cursor-pointer"
-        onclick="extendCurrentMembership()">
-        <span class="flex items-center gap-2">
-          <span class="text-base">⚡</span>
-          <span>Perpanjang Membership ${isExpiringSoon ? '(Diskon 25% Aktif)' : `(${sanitize(activePackage.shortName)})`}</span>
-        </span>
-        <svg class="w-4 h-4 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
-      </button>
+      <!-- Action for Unpaid Member: Pilih Paket Membership -->
+      <div class="space-y-2.5 mb-4">
+        <button type="button" class="w-full flex items-center justify-between p-3.5 rounded-xl bg-teal-550 text-white hover:bg-teal-650 active:scale-[0.98] text-xs font-bold shadow-md shadow-teal-550/20 transition-all text-left cursor-pointer"
+          onclick="closeBottomSheet(); openPricingSheet();">
+          <span class="flex items-center gap-2">
+            <span class="text-base">🚀</span>
+            <span>Pilih Paket Membership (Diskon 15% Member Baru)</span>
+          </span>
+          <svg class="w-4 h-4 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+        </button>
 
-      <button type="button" class="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-800 text-left transition-colors cursor-pointer"
-        onclick="openTransactionHistorySheet()">
-        <span class="flex items-center gap-2"><span>🧾</span> Riwayat Transaksi & Invoice</span>
-        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-      </button>
-    </div>
+        <button type="button" class="w-full flex items-center justify-between p-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-800 text-left transition-colors cursor-pointer"
+          onclick="openTransactionHistorySheet()">
+          <span class="flex items-center gap-2"><span>🧾</span> Riwayat Transaksi & Invoice</span>
+          <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    `}
 
     <!-- Logout Button -->
     <button type="button" class="w-full py-2.5 rounded-xl bg-red-50 text-red-600 border border-red-200 text-xs font-bold hover:bg-red-100 transition-colors cursor-pointer"
@@ -4680,9 +4742,10 @@ function updateHeaderUserDisplay() {
   if (!badgeEl) return;
 
   if (user) {
+    const isPaid = isUserPaidMember(user);
     badgeEl.innerHTML = `
       <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/95 border border-slate-200 shadow-sm text-xs cursor-pointer hover:bg-slate-50 transition-colors" onclick="openProfileSheet()">
-        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+        <span class="w-2 h-2 rounded-full ${isPaid ? 'bg-emerald-500' : 'bg-slate-400'}"></span>
         <span class="font-bold text-slate-800 truncate max-w-[120px]">${sanitize(user.name.split(' ')[0])}</span>
       </div>
     `;
