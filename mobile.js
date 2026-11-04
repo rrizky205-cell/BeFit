@@ -5439,13 +5439,14 @@ function initRetentionSystem() {
       setCurrentUser(demoUser);
       unlockRetentionExclusive();
       if (demoMode === 'trainer') {
-        setTimeout(() => { if (typeof openFullTrainerScreen === 'function') openFullTrainerScreen(); }, 200);
+        setTimeout(() => {
+          openAllTrainersSheet();
+        }, 150);
       } else if (demoMode === 'checkout') {
-        setActivePromoCode('RENEWLOYAL25');
         setTimeout(() => {
           const pkg = MEMBERSHIP_PACKAGES.find(p => p.id === 'pkg-3m') || MEMBERSHIP_PACKAGES[1];
           openUnifiedCheckout({ type: 'membership', package: pkg });
-        }, 250);
+        }, 150);
       } else {
         updateHeaderUserDisplay();
         renderHomeRetentionBanner();
