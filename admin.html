@@ -2231,26 +2231,50 @@
       } catch (e) {}
     }
 
+    function safeParse(raw, fallback = null) {
+      if (!raw || typeof raw !== 'string') return fallback;
+      try {
+        const parsed = JSON.parse(raw);
+        return parsed !== null && parsed !== undefined ? parsed : fallback;
+      } catch (err) {
+        console.warn('safeParse fallback:', err);
+        return fallback;
+      }
+    }
+
+    window.safeParse = safeParse;
     window.pullCloudSync = pullCloudSync;
     window.pushCloudSync = pushCloudSync;
     window.syncCloudManual = () => pullCloudSync(true);
 
     // Initial render on load
     document.addEventListener('DOMContentLoaded', () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const demo = urlParams.get('demo');
-      if (demo === 'overview' || demo === 'crm') {
-        sessionStorage.setItem(ADMIN_AUTH_KEY, 'true');
-        localStorage.setItem(ADMIN_AUTH_KEY, 'true');
-        if (demo === 'crm') {
-          currentTab = 'members';
-        } else {
-          currentTab = 'overview';
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const demo = urlParams.get('demo');
+        if (demo === 'overview' || demo === 'crm') {
+          sessionStorage.setItem(ADMIN_AUTH_KEY, 'true');
+          localStorage.setItem(ADMIN_AUTH_KEY, 'true');
+          if (demo === 'crm') {
+            currentTab = 'members';
+          } else {
+            currentTab = 'overview';
+          }
         }
+        renderAdminView();
+      } catch (err) {
+        console.warn('Admin DOMContentLoaded fallback:', err);
       }
-      renderAdminView();
-      if (isAdminLoggedIn()) {
-        void pullCloudSync(false);
+    });
+
+    // Trigger Cloud Sync strictly after full page load
+    window.addEventListener('load', () => {
+      try {
+        if (isAdminLoggedIn() && !(typeof window !== 'undefined' && window.BEFIT_SKIP_INIT_PULL)) {
+          Promise.resolve(pullCloudSync(false)).catch(err => console.warn('Admin cloud pull skipped:', err));
+        }
+      } catch (err) {
+        console.warn('Admin cloud load error:', err);
       }
     });
 

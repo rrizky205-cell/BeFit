@@ -1806,8 +1806,7 @@ function formatDateIndo(dateStr) {
 function getUsers() {
   try {
     const ver = localStorage.getItem(DATA_VERSION_KEY);
-    const raw = localStorage.getItem(USERS_STORAGE_KEY);
-    let users = raw ? JSON.parse(raw) : [];
+    let users = safeGetStorageJson(USERS_STORAGE_KEY, []);
 
     if (ver !== CURRENT_DATA_VERSION || !Array.isArray(users) || users.length < 24) {
       const map = new Map();
@@ -1911,18 +1910,37 @@ function saveUsers(users) {
   } catch (e) {}
 }
 
-function getCurrentUser() {
+function safeParse(raw, fallback = null) {
+  if (!raw || typeof raw !== 'string') return fallback;
   try {
-    const raw = localStorage.getItem(CURRENT_USER_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch (e) {}
-  return null;
+    const parsed = JSON.parse(raw);
+    return parsed !== null && parsed !== undefined ? parsed : fallback;
+  } catch (err) {
+    console.warn('safeParse fallback triggered:', err);
+    return fallback;
+  }
+}
+
+function safeGetStorageJson(key, fallback = null) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw);
+    return parsed !== null && parsed !== undefined ? parsed : fallback;
+  } catch (err) {
+    console.warn(`Corrupted localStorage for "${key}", resetting safely:`, err);
+    try { localStorage.removeItem(key); } catch (e) {}
+    return fallback;
+  }
+}
+
+function getCurrentUser() {
+  return safeGetStorageJson(CURRENT_USER_KEY, null);
 }
 
 function appendToStorageArray(key, item) {
   try {
-    const raw = localStorage.getItem(key);
-    const list = raw ? JSON.parse(raw) : [];
+    const list = safeGetStorageJson(key, []);
     const arr = Array.isArray(list) ? list : [];
     arr.unshift(item);
     localStorage.setItem(key, JSON.stringify(arr));
@@ -1960,14 +1978,8 @@ function getCloudSyncUrl() {
 }
 
 function readJsonArrayStorage(key) {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (e) {
-    return [];
-  }
+  const parsed = safeGetStorageJson(key, []);
+  return Array.isArray(parsed) ? parsed : [];
 }
 
 function mergeCloudUsers(localUsers, remoteUsers) {
@@ -4722,14 +4734,20 @@ function openUnifiedCheckout(params) {
               <h4 class="text-sm font-black tracking-wide text-slate-900 uppercase">BE FIT GYM INDONESIA</h4>
             </div>
 
-            <!-- Area Gambar QRIS Asli (Tanpa Crop Sudut) -->
+            <!-- Area Gambar QRIS Asli (Tanpa Crop Sudut + Fallback Anti-Broken) -->
             <div class="bg-white p-3 border border-slate-200 rounded-xl shadow-sm inline-block mx-auto">
               <img 
                 src="/qris.jpg" 
                 alt="QRIS Pembayaran Be Fit Gym" 
                 class="w-56 h-56 mx-auto object-contain rounded-lg"
                 style="image-rendering: pixelated;"
+                onerror="if(!this.dataset.fb){this.dataset.fb='1';this.src='./qris.jpg';}else{this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.classList.remove('hidden');}"
               />
+              <div class="hidden w-56 h-56 mx-auto rounded-lg bg-slate-50 border border-dashed border-slate-300 flex flex-col items-center justify-center p-4 text-center">
+                <span class="text-2xl mb-1.5">📱</span>
+                <span class="text-xs font-black text-slate-800">QRIS BE FIT GYM INDONESIA</span>
+                <span class="text-[11px] text-slate-500 mt-1">Klik tombol konfirmasi di bawah untuk menyelesaikan transaksi instan.</span>
+              </div>
             </div>
 
             <!-- Total Tagihan di Bawah QRIS -->
@@ -6066,11 +6084,26 @@ window.handleDeepLinkRouting = initRetentionSystem;
 window.checkDeepLinkParams = initRetentionSystem;
 window.pushCloudSync = pushCloudSync;
 window.pullCloudSync = pullCloudSync;
+window.safeParse = safeParse;
 
 // Execute immediately in case DOM is already ready
-if (document.readyState === 'complete' || document.readyState === 'interactive') {
-  initRetentionSystem();
+try {
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    initRetentionSystem();
+  }
+} catch (err) {
+  console.warn('initRetentionSystem fallback:', err);
 }
-if (typeof window !== 'undefined' && !window.BEFIT_SKIP_INIT_PULL) {
-  void pullCloudSync();
+
+// Run cross-device cloud sync ONLY AFTER main page load completes (never block render)
+if (typeof window !== 'undefined') {
+  window.addEventListener('load', () => {
+    try {
+      if (!window.BEFIT_SKIP_INIT_PULL) {
+        Promise.resolve(pullCloudSync()).catch(err => console.warn('Cloud sync skipped:', err));
+      }
+    } catch (err) {
+      console.warn('Cloud sync load error:', err);
+    }
+  });
 }
