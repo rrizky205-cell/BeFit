@@ -1087,15 +1087,16 @@ const VOUCHERS_DATA = [
 
 function isUserPaidMember(user) {
   if (!user || user.role === 'admin') return false;
-  if (user.membershipStatus === 'Aktif' || user.isPaidMember === true) return true;
   if (user.isPaidMember === false) return false;
-  if (user.membershipStatus === 'Belum Aktif' || user.status === 'Belum Aktif') return false;
-  if (!user.expiryDate) return false;
+  if (user.membershipStatus === 'Belum Aktif' || user.membershipStatus === 'Akun Baru (Belum Aktif)' || user.status === 'Belum Aktif') return false;
+  if (user.membershipPackage === 'Belum Berlangganan' && !user.expiryDate) return false;
   if (user.packageType === 'Belum Berlangganan' || user.packageDuration === 'Belum Berlangganan') return false;
   if (typeof user.packageDuration === 'string' && (user.packageDuration.toLowerCase().includes('trial') || user.packageDuration.toLowerCase().includes('free'))) return false;
   if (typeof user.packageType === 'string' && (user.packageType.toLowerCase().includes('trial') || user.packageType.toLowerCase().includes('free'))) return false;
   if (typeof user.voucherUsed === 'string' && user.voucherUsed.toLowerCase().includes('trial')) return false;
+  if (!user.expiryDate) return false;
 
+  if (user.membershipStatus === 'Aktif' || user.isPaidMember === true) return true;
   if (Number(user.membershipPaid || user.totalPaid) > 0) return true;
 
   const validPackages = [
@@ -1850,7 +1851,7 @@ function getUsers() {
           }
         });
       }
-      users = Array.from(map.values());
+      users = Array.from(map.values()).sort((a, b) => Number(b.createdAtTimestamp || 0) - Number(a.createdAtTimestamp || 0));
       localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
       localStorage.setItem(DATA_VERSION_KEY, CURRENT_DATA_VERSION);
 
@@ -1949,24 +1950,226 @@ function renderApp() {
 
 const updateUI = renderApp;
 
+const DEFAULT_CLOUD_SYNC_URL = 'https://textdb.dev/api/data/befit_gym_crm_cloud_sync_v8';
+
+function getCloudSyncUrl() {
+  if (typeof window !== 'undefined' && window.BEFIT_CLOUD_ENDPOINT) {
+    return window.BEFIT_CLOUD_ENDPOINT;
+  }
+  return DEFAULT_CLOUD_SYNC_URL;
+}
+
+function readJsonArrayStorage(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function mergeCloudUsers(localUsers, remoteUsers) {
+  const map = new Map();
+  const ingest = (u) => {
+    if (!u || typeof u !== 'object') return;
+    const key = String(u.email || u.id || '').toLowerCase().trim();
+    if (!key) return;
+    const existing = map.get(key);
+    if (!existing) {
+      map.set(key, { ...u });
+      return;
+    }
+    const existingTs = Number(existing.lastUpdatedAt || existing.createdAtTimestamp || 0);
+    const incomingTs = Number(u.lastUpdatedAt || u.createdAtTimestamp || 0);
+    const existingPaid = Number(existing.totalPaid || 0);
+    const incomingPaid = Number(u.totalPaid || 0);
+    const pickIncoming = incomingTs !== existingTs
+      ? incomingTs > existingTs
+      : (incomingPaid >= existingPaid);
+    const base = pickIncoming ? { ...existing, ...u } : { ...u, ...existing };
+    base.createdAtTimestamp = Math.max(Number(existing.createdAtTimestamp || 0), Number(u.createdAtTimestamp || 0));
+    base.lastUpdatedAt = Math.max(existingTs, incomingTs);
+    map.set(key, base);
+  };
+  (Array.isArray(localUsers) ? localUsers : []).forEach(ingest);
+  (Array.isArray(remoteUsers) ? remoteUsers : []).forEach(ingest);
+  return Array.from(map.values()).sort((a, b) => Number(b.createdAtTimestamp || 0) - Number(a.createdAtTimestamp || 0));
+}
+
+function mergeCloudTransactions(localTx, remoteTx) {
+  const map = new Map();
+  const ingest = (t) => {
+    if (!t || typeof t !== 'object') return;
+    const id = t.id || `${t.title || t.packageName || ''}_${t.date || ''}_${t.amount || 0}`;
+    if (!map.has(id)) map.set(id, t);
+  };
+  (Array.isArray(localTx) ? localTx : []).forEach(ingest);
+  (Array.isArray(remoteTx) ? remoteTx : []).forEach(ingest);
+  return Array.from(map.values());
+}
+
+function mergeCloudPtOrders(localPt, remotePt) {
+  const map = new Map();
+  const ingest = (o) => {
+    if (!o || typeof o !== 'object') return;
+    const oid = String(o.orderId || o.id || '');
+    if (!oid) return;
+    const existing = map.get(oid);
+    if (!existing) {
+      map.set(oid, { ...o });
+      return;
+    }
+    const remA = existing.remainingSessions !== undefined ? Number(existing.remainingSessions) : Number(existing.sessions || 4);
+    const remB = o.remainingSessions !== undefined ? Number(o.remainingSessions) : Number(o.sessions || 4);
+    const tsA = Number(existing.updatedAt || existing.createdAtTimestamp || 0);
+    const tsB = Number(o.updatedAt || o.createdAtTimestamp || 0);
+    if (tsB > tsA || (tsB === tsA && remB < remA)) {
+      map.set(oid, { ...existing, ...o });
+    }
+  };
+  (Array.isArray(localPt) ? localPt : []).forEach(ingest);
+  (Array.isArray(remotePt) ? remotePt : []).forEach(ingest);
+  return Array.from(map.values());
+}
+
+let cloudPushInFlight = false;
+let cloudPushQueued = false;
+
+async function pushCloudSync() {
+  if (typeof fetch !== 'function') return;
+  if (cloudPushInFlight) {
+    cloudPushQueued = true;
+    return;
+  }
+  cloudPushInFlight = true;
+  try {
+    const url = getCloudSyncUrl();
+    const localUsers = getUsers();
+    const localTx = mergeCloudTransactions(readJsonArrayStorage(TRANSACTIONS_KEY), readJsonArrayStorage(TRANSACTIONS_ALT_KEY));
+    const localPt = mergeCloudPtOrders(readJsonArrayStorage(PT_BOOKINGS_KEY), readJsonArrayStorage(PT_ORDERS_KEY));
+
+    let remoteData = {};
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 3500);
+      const getRes = await fetch(url, { method: 'GET', cache: 'no-store', signal: ctrl.signal });
+      clearTimeout(t);
+      if (getRes.ok) {
+        const txt = await getRes.text();
+        if (txt && txt.trim().startsWith('{')) {
+          remoteData = JSON.parse(txt);
+        }
+      }
+    } catch (e) {}
+
+    const mergedUsers = mergeCloudUsers(localUsers, remoteData.users);
+    const mergedTx = mergeCloudTransactions(localTx, remoteData.transactions);
+    const mergedPt = mergeCloudPtOrders(localPt, remoteData.ptOrders);
+
+    saveUsers(mergedUsers);
+    localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(mergedTx));
+    localStorage.setItem(TRANSACTIONS_ALT_KEY, JSON.stringify(mergedTx));
+    localStorage.setItem(PT_BOOKINGS_KEY, JSON.stringify(mergedPt));
+    localStorage.setItem(PT_ORDERS_KEY, JSON.stringify(mergedPt));
+
+    const payload = JSON.stringify({
+      updatedAt: Date.now(),
+      version: CURRENT_DATA_VERSION,
+      users: mergedUsers,
+      transactions: mergedTx,
+      ptOrders: mergedPt
+    });
+
+    const postCtrl = new AbortController();
+    const ptTimeout = setTimeout(() => postCtrl.abort(), 4500);
+    await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: payload,
+      signal: postCtrl.signal
+    });
+    clearTimeout(ptTimeout);
+  } catch (e) {
+    // Non-fatal offline fallback
+  } finally {
+    cloudPushInFlight = false;
+    if (cloudPushQueued) {
+      cloudPushQueued = false;
+      void pushCloudSync();
+    }
+  }
+}
+
+async function pullCloudSync() {
+  if (typeof fetch !== 'function') return false;
+  try {
+    const url = getCloudSyncUrl();
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 3500);
+    const res = await fetch(url, { method: 'GET', cache: 'no-store', signal: ctrl.signal });
+    clearTimeout(t);
+    if (!res.ok) return false;
+    const txt = await res.text();
+    if (!txt || !txt.trim().startsWith('{')) return false;
+    const remote = JSON.parse(txt);
+
+    const localUsers = getUsers();
+    const localTx = mergeCloudTransactions(readJsonArrayStorage(TRANSACTIONS_KEY), readJsonArrayStorage(TRANSACTIONS_ALT_KEY));
+    const localPt = mergeCloudPtOrders(readJsonArrayStorage(PT_BOOKINGS_KEY), readJsonArrayStorage(PT_ORDERS_KEY));
+
+    const mergedUsers = mergeCloudUsers(localUsers, remote.users);
+    const mergedTx = mergeCloudTransactions(localTx, remote.transactions);
+    const mergedPt = mergeCloudPtOrders(localPt, remote.ptOrders);
+
+    saveUsers(mergedUsers);
+    localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(mergedTx));
+    localStorage.setItem(TRANSACTIONS_ALT_KEY, JSON.stringify(mergedTx));
+    localStorage.setItem(PT_BOOKINGS_KEY, JSON.stringify(mergedPt));
+    localStorage.setItem(PT_ORDERS_KEY, JSON.stringify(mergedPt));
+
+    const cur = getCurrentUser();
+    if (cur && cur.email) {
+      const updatedCur = mergedUsers.find(u => u.email && u.email.toLowerCase() === cur.email.toLowerCase());
+      if (updatedCur) {
+        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify({ ...cur, ...updatedCur }));
+      }
+    }
+    localStorage.setItem(SYNC_TS_KEY, String(Date.now()));
+    renderApp();
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 /**
  * Single authoritative state synchronizer across currentUser, befit_users,
- * Admin transactions, PT orders, class bookings, and immediate UI re-render.
+ * Admin transactions, PT orders, class bookings, cloud sync, and immediate UI re-render.
  */
-function syncMasterState({ user = undefined, transaction = null, ptOrder = null, classBooking = null, crmNote = null, skipRender = false } = {}) {
+function syncMasterState({ user = undefined, transaction = null, ptOrder = null, classBooking = null, crmNote = null, skipRender = false, skipCloudSync = false } = {}) {
   try {
     const targetUser = user !== undefined ? user : getCurrentUser();
     if (targetUser) {
+      const nowTs = Date.now();
+      targetUser.lastUpdatedAt = nowTs;
       localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(targetUser));
       const users = getUsers();
       const idx = users.findIndex(u =>
         (u.id && targetUser.id && u.id === targetUser.id) ||
-        (u.email && targetUser.email && u.email.toLowerCase() === targetUser.email.toLowerCase())
+        (u.email && targetUser.email && u.email.toLowerCase().trim() === targetUser.email.toLowerCase().trim())
       );
       if (idx !== -1) {
-        users[idx] = { ...users[idx], ...targetUser };
+        users[idx] = {
+          ...users[idx],
+          ...targetUser,
+          createdAtTimestamp: users[idx].createdAtTimestamp || targetUser.createdAtTimestamp || 0,
+          lastUpdatedAt: nowTs
+        };
       } else {
-        users.push(targetUser);
+        targetUser.createdAtTimestamp = targetUser.createdAtTimestamp || nowTs;
+        users.unshift(targetUser);
       }
       saveUsers(users);
     } else if (user === null) {
@@ -1993,6 +2196,10 @@ function syncMasterState({ user = undefined, transaction = null, ptOrder = null,
 
     localStorage.setItem(SYNC_TS_KEY, String(Date.now()));
     window.dispatchEvent(new CustomEvent('befit:stateUpdated', { detail: { user: targetUser, transaction, ptOrder, classBooking } }));
+
+    if (!skipCloudSync && (targetUser || transaction || ptOrder)) {
+      void pushCloudSync();
+    }
   } catch (e) {
     console.error('syncMasterState error:', e);
   }
@@ -2003,7 +2210,7 @@ function syncMasterState({ user = undefined, transaction = null, ptOrder = null,
 }
 
 function setCurrentUser(user) {
-  syncMasterState({ user });
+  syncMasterState({ user, skipCloudSync: true });
 }
 
 // Branch Storage
@@ -2662,19 +2869,21 @@ function submitOTPVerification() {
   // OTP Valid! Register User
   if (otpCountdownInterval) clearInterval(otpCountdownInterval);
 
-  const users = getUsers();
-  const newId = `BF-${Math.floor(1000 + Math.random() * 9000)}`;
+  const nowTs = Date.now();
+  const isoToday = new Date().toISOString().split('T')[0];
+  const selectedBranchObj = getSelectedBranch();
   const newUser = {
-    id: newId,
+    id: 'USR-' + nowTs,
     name: pendingRegistrationData.name,
-    email: pendingRegistrationData.email,
+    email: pendingRegistrationData.email.toLowerCase().trim(),
     phone: pendingRegistrationData.phone,
     password: pendingRegistrationData.password,
-    branch: normalizeBranchName(getSelectedBranch().name),
-    membershipPackage: null,
+    branch: normalizeBranchName(selectedBranchObj.name),
+    branchFullName: selectedBranchObj.name,
+    membershipPackage: 'Belum Berlangganan',
     packageType: 'Belum Berlangganan',
     packageDuration: 'Belum Berlangganan',
-    membershipStatus: 'Belum Aktif',
+    membershipStatus: 'Akun Baru (Belum Aktif)',
     status: 'Belum Aktif',
     isPaidMember: false,
     daysRemaining: 0,
@@ -2684,6 +2893,11 @@ function submitOTPVerification() {
     totalPaid: 0,
     membershipPaid: 0,
     ptPaid: 0,
+    paymentMethod: '-',
+    voucherUsed: '-',
+    registeredAt: new Date().toLocaleDateString('id-ID'),
+    createdAtTimestamp: nowTs,
+    lastUpdatedAt: nowTs,
     ptSessions: 0,
     ptRemainingSessions: 0,
     activeTrainer: null,
@@ -2692,11 +2906,18 @@ function submitOTPVerification() {
     isTrialClaimed: false,
     bookedClasses: [],
     bookedTrainers: [],
-    joinDate: new Date().toISOString().split('T')[0],
+    joinDate: isoToday,
+    dateJoined: formatDateIndo(isoToday),
     role: 'member'
   };
 
-  syncMasterState({ user: newUser });
+  syncMasterState({
+    user: newUser,
+    crmNote: {
+      type: 'Pendaftaran Akun Baru',
+      details: `Cabang ${newUser.branch} (${newUser.email})`
+    }
+  });
 
   closeBottomSheet();
   showToast(`🎉 Pendaftaran Berhasil! Selamat datang di Be Fit, ${newUser.name}. Silakan pilih paket membership Anda.`, 4000);
@@ -5829,8 +6050,13 @@ window.checkAndInjectRetentionVoucher = checkAndInjectRetentionVoucher;
 window.initRetentionSystem = initRetentionSystem;
 window.handleDeepLinkRouting = initRetentionSystem;
 window.checkDeepLinkParams = initRetentionSystem;
+window.pushCloudSync = pushCloudSync;
+window.pullCloudSync = pullCloudSync;
 
 // Execute immediately in case DOM is already ready
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
   initRetentionSystem();
+}
+if (typeof window !== 'undefined' && !window.BEFIT_SKIP_INIT_PULL) {
+  void pullCloudSync();
 }

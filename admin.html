@@ -734,6 +734,9 @@
     let currentTab = 'overview';
     let searchQuery = '';
     let memberFilterStatus = 'all'; // 'all', 'expiring', 'active', 'frozen', 'expired'
+    const DEFAULT_CLOUD_SYNC_URL = 'https://textdb.dev/api/data/befit_gym_crm_cloud_sync_v8';
+    let lastCloudSyncAt = '';
+    let cloudSyncBusy = false;
 
     // ==================== HELPER FUNCTIONS ====================
     function formatRupiah(num) {
@@ -793,7 +796,8 @@
     function isUserPaidMember(m) {
       if (!m || m.role === 'admin') return false;
       if (m.isPaidMember === false) return false;
-      if (m.membershipStatus === 'Belum Aktif' || m.status === 'Belum Aktif') return false;
+      if (m.membershipStatus === 'Belum Aktif' || m.membershipStatus === 'Akun Baru (Belum Aktif)' || m.status === 'Belum Aktif') return false;
+      if (m.membershipPackage === 'Belum Berlangganan' && !m.expiryDate) return false;
       if (!m.expiryDate) return false;
       if (m.packageType === 'Belum Berlangganan' || m.packageDuration === 'Belum Berlangganan') return false;
       if (typeof m.packageDuration === 'string' && (m.packageDuration.toLowerCase().includes('trial') || m.packageDuration.toLowerCase().includes('free'))) return false;
@@ -878,7 +882,7 @@
                   m.packageType = 'Belum Berlangganan';
                   m.packageDuration = 'Belum Berlangganan';
                   m.membershipPackage = null;
-                  m.membershipStatus = 'Belum Aktif';
+                  m.membershipStatus = 'Akun Baru (Belum Aktif)';
                   m.status = 'Belum Aktif';
                   m.isPaidMember = false;
                   m.daysRemaining = 0;
@@ -889,7 +893,9 @@
               }
             });
           }
-          members = Array.from(map.values()).filter(m => m.role !== 'admin');
+          members = Array.from(map.values())
+            .filter(m => m.role !== 'admin')
+            .sort((a, b) => Number(b.createdAtTimestamp || 0) - Number(a.createdAtTimestamp || 0));
           saveMembers(members);
           localStorage.setItem(DATA_VERSION_KEY, CURRENT_DATA_VERSION);
         }
@@ -1008,6 +1014,7 @@
         localStorage.setItem(ADMIN_AUTH_KEY, 'true');
         showToast('Login Admin CRM Berhasil!');
         renderAdminView();
+        void pullCloudSync(false);
       } else {
         showToast('Email atau Password salah! Periksa kembali kredensial Anda.');
       }
@@ -1032,12 +1039,14 @@
       const idx = members.findIndex(m => m.id === memberId || m.email === memberId);
       if (idx !== -1) {
         members[idx].isFrozen = !members[idx].isFrozen;
+        members[idx].lastUpdatedAt = Date.now();
         saveMembers(members);
         syncCurrentUserRecord(members[idx]);
         showToast(members[idx].isFrozen 
           ? `Status membership ${members[idx].name} dibekukan (Cuti).` 
           : `Status membership ${members[idx].name} diaktifkan kembali.`);
         renderAdminView();
+        void pushCloudSync();
       }
     };
 
@@ -1060,6 +1069,7 @@
         members[idx].status = 'Active';
         members[idx].membershipStatus = 'Aktif';
         members[idx].isPaidMember = true;
+        members[idx].lastUpdatedAt = Date.now();
         if (!members[idx].packageType || members[idx].packageType === 'Belum Berlangganan') {
           members[idx].packageType = 'Basic Starter';
           members[idx].packageDuration = 'Paket 1 Bulan (Basic Starter)';
@@ -1073,6 +1083,7 @@
         
         showToast(`Masa aktif ${members[idx].name} berhasil diaktifkan/diperpanjang +30 hari (s/d ${formatDateIndo(newExpiry)})!`, 4000);
         renderAdminView();
+        void pushCloudSync();
       }
     };
 
@@ -1083,6 +1094,7 @@
         const currentRemaining = bookings[idx].remainingSessions !== undefined ? bookings[idx].remainingSessions : bookings[idx].sessions;
         if (currentRemaining > 0) {
           bookings[idx].remainingSessions = currentRemaining - 1;
+          bookings[idx].updatedAt = Date.now();
           if (bookings[idx].remainingSessions === 0) {
             bookings[idx].status = 'Selesai / Kuota Habis';
             showToast(`Sesi PT ${bookings[idx].userName} selesai (Kuota habis). Tawarkan paket perpanjangan via WA!`, 4500);
@@ -1103,11 +1115,13 @@
           if (mIdx !== -1) {
             members[mIdx].ptRemainingSessions = bookings[idx].remainingSessions;
             members[mIdx].ptSessions = bookings[idx].remainingSessions;
+            members[mIdx].lastUpdatedAt = Date.now();
             saveMembers(members);
             syncCurrentUserRecord(members[mIdx]);
           }
 
           renderAdminView();
+          void pushCloudSync();
         }
       }
     };
@@ -1184,15 +1198,21 @@
               </div>
             </div>
 
-            <!-- Right: Admin Status & Logout -->
-            <div class="flex items-center gap-4">
-              <div class="hidden sm:flex items-center gap-2 text-right">
+            <!-- Right: Admin Status, Cloud Sync & Logout -->
+            <div class="flex items-center gap-2.5 sm:gap-3">
+              <div class="hidden md:flex items-center gap-2 text-right mr-1">
                 <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
                 <div class="leading-tight">
                   <span class="text-xs font-bold text-slate-900 block">Admin Portal Live</span>
-                  <span class="text-[10px] text-slate-400 font-mono">rrizky205@gmail.com</span>
+                  <span id="cloud-sync-status-text" class="text-[10px] text-slate-400 font-mono">Sync: ${lastCloudSyncAt || 'Aktif (3s)'}</span>
                 </div>
               </div>
+
+              <button type="button" id="btn-cloud-sync-admin" onclick="syncCloudManual()"
+                class="px-3 py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100 border border-teal-200 text-xs font-extrabold text-teal-800 transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                title="Tarik data terbaru dari perangkat lain (HP/Laptop)">
+                <span>🔄 Sinkronkan Data Terbaru</span>
+              </button>
 
               <a href="index.html" class="px-3 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-700 transition-colors inline-flex items-center gap-1.5 cursor-pointer">
                 <span>📱 Buka App User</span>
@@ -1259,6 +1279,8 @@
         return d > 10 && !m.isFrozen;
       });
 
+      const unpaidNewMembers = members.filter(m => !isUserPaidMember(m));
+
       const atRiskMembers = members.filter(m => {
         if (!isUserPaidMember(m)) return false;
         const d = getDaysRemaining(m.expiryDate);
@@ -1308,12 +1330,12 @@
             </span>
           </div>
 
-          <!-- Card 2: Active Members -->
+          <!-- Card 2: Total Member Terdaftar -->
           <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Member Aktif</span>
-            <h3 class="text-lg font-bold font-mono tabular-nums text-emerald-600 leading-tight">${activeMembers.length} Member</h3>
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Total Member Terdaftar</span>
+            <h3 id="overview-total-members-count" class="text-lg font-bold font-mono tabular-nums text-emerald-600 leading-tight">${members.length} Member</h3>
             <span class="inline-block mt-2 text-[9px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
-              Masa Aktif &gt; 10 Hari
+              ✓ ${activeMembers.length} Aktif • ${unpaidNewMembers.length} Akun Baru
             </span>
           </div>
 
@@ -1627,8 +1649,9 @@
                (m.email && m.email.toLowerCase().includes(q)) ||
                (m.phone && m.phone.includes(q)) ||
                (m.branch && m.branch.toLowerCase().includes(q)) ||
+               (m.membershipPackage && m.membershipPackage.toLowerCase().includes(q)) ||
                (m.packageType && m.packageType.toLowerCase().includes(q));
-      });
+      }).sort((a, b) => Number(b.createdAtTimestamp || 0) - Number(a.createdAtTimestamp || 0));
 
       return `
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -1713,8 +1736,8 @@
                   let statusBadgeHtml = '';
 
                   if (!isPaid) {
-                    daysBadgeHtml = `<span class="px-2 py-0.5 rounded font-mono font-bold bg-slate-100 text-slate-500 border border-slate-200">Masa Aktif: -</span>`;
-                    statusBadgeHtml = `<span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-slate-100 text-slate-700 border border-slate-300">Akun Baru (Belum Beli Paket)</span>`;
+                    daysBadgeHtml = `<span class="px-2 py-0.5 rounded font-mono font-bold bg-sky-50 text-sky-700 border border-sky-200">Baru Daftar${m.registeredAt ? ` (${m.registeredAt})` : ''}</span>`;
+                    statusBadgeHtml = `<span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-sky-100 text-sky-800 border border-sky-300">Akun Baru (Belum Beli Paket)</span>`;
                   } else if (isFrozen) {
                     daysBadgeHtml = `<span class="px-2 py-0.5 rounded font-mono font-bold bg-blue-50 text-blue-800 border border-blue-200">❄️ Dibekukan (Cuti)</span>`;
                     statusBadgeHtml = `<span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-blue-100 text-blue-800 border border-blue-300">FROZEN</span>`;
@@ -2005,6 +2028,213 @@
       }
     };
 
+    function getCloudSyncUrl() {
+      if (typeof window !== 'undefined' && window.BEFIT_CLOUD_ENDPOINT) {
+        return window.BEFIT_CLOUD_ENDPOINT;
+      }
+      return DEFAULT_CLOUD_SYNC_URL;
+    }
+
+    function readRawUsersStorage() {
+      try {
+        const raw = localStorage.getItem(USERS_STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function mergeCloudUsersAdmin(localUsers, remoteUsers) {
+      const map = new Map();
+      const ingest = (u) => {
+        if (!u || typeof u !== 'object') return;
+        const key = String(u.email || u.id || '').toLowerCase().trim();
+        if (!key) return;
+        const existing = map.get(key);
+        if (!existing) {
+          map.set(key, { ...u });
+          return;
+        }
+        const existingTs = Number(existing.lastUpdatedAt || existing.createdAtTimestamp || 0);
+        const incomingTs = Number(u.lastUpdatedAt || u.createdAtTimestamp || 0);
+        const existingPaid = Number(existing.totalPaid || 0);
+        const incomingPaid = Number(u.totalPaid || 0);
+        const pickIncoming = incomingTs !== existingTs
+          ? incomingTs > existingTs
+          : (incomingPaid >= existingPaid);
+        const base = pickIncoming ? { ...existing, ...u } : { ...u, ...existing };
+        base.createdAtTimestamp = Math.max(Number(existing.createdAtTimestamp || 0), Number(u.createdAtTimestamp || 0));
+        base.lastUpdatedAt = Math.max(existingTs, incomingTs);
+        map.set(key, base);
+      };
+      (Array.isArray(localUsers) ? localUsers : []).forEach(ingest);
+      (Array.isArray(remoteUsers) ? remoteUsers : []).forEach(ingest);
+      return Array.from(map.values()).sort((a, b) => Number(b.createdAtTimestamp || 0) - Number(a.createdAtTimestamp || 0));
+    }
+
+    function mergeCloudTransactionsAdmin(localTx, remoteTx) {
+      const map = new Map();
+      const ingest = (t) => {
+        if (!t || typeof t !== 'object') return;
+        const id = t.id || `${t.title || t.packageName || ''}_${t.date || ''}_${t.amount || 0}`;
+        if (!map.has(id)) map.set(id, t);
+      };
+      (Array.isArray(localTx) ? localTx : []).forEach(ingest);
+      (Array.isArray(remoteTx) ? remoteTx : []).forEach(ingest);
+      return Array.from(map.values());
+    }
+
+    function mergeCloudPtOrdersAdmin(localPt, remotePt) {
+      const map = new Map();
+      const ingest = (o) => {
+        if (!o || typeof o !== 'object') return;
+        const oid = String(o.orderId || o.id || '');
+        if (!oid) return;
+        const existing = map.get(oid);
+        if (!existing) {
+          map.set(oid, { ...o });
+          return;
+        }
+        const remA = existing.remainingSessions !== undefined ? Number(existing.remainingSessions) : Number(existing.sessions || 4);
+        const remB = o.remainingSessions !== undefined ? Number(o.remainingSessions) : Number(o.sessions || 4);
+        const tsA = Number(existing.updatedAt || existing.createdAtTimestamp || 0);
+        const tsB = Number(o.updatedAt || o.createdAtTimestamp || 0);
+        if (tsB > tsA || (tsB === tsA && remB < remA)) {
+          map.set(oid, { ...existing, ...o });
+        }
+      };
+      (Array.isArray(localPt) ? localPt : []).forEach(ingest);
+      (Array.isArray(remotePt) ? remotePt : []).forEach(ingest);
+      return Array.from(map.values());
+    }
+
+    async function pullCloudSync(isManual = false) {
+      if (typeof fetch !== 'function' || cloudSyncBusy) return false;
+      cloudSyncBusy = true;
+      const syncBtn = document.getElementById('btn-cloud-sync-admin');
+      if (isManual && syncBtn) {
+        syncBtn.innerHTML = '<span>⏳ Menyinkronkan...</span>';
+      }
+      try {
+        const url = getCloudSyncUrl();
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 4000);
+        const res = await fetch(url, { method: 'GET', cache: 'no-store', signal: ctrl.signal });
+        clearTimeout(t);
+        if (!res.ok) {
+          if (isManual) showToast('Belum ada data cloud baru atau server sedang sibuk.');
+          return false;
+        }
+        const txt = await res.text();
+        if (!txt || !txt.trim().startsWith('{')) {
+          if (isManual) showToast('Data lokal sudah paling baru.');
+          return false;
+        }
+        const remote = JSON.parse(txt);
+
+        // Ensure baseline seeds are initialized before merging
+        getStoredMembers();
+        const localRawUsers = readRawUsersStorage();
+        const localTx = getStoredTransactions();
+        const localPt = getStoredPtBookings();
+
+        const mergedUsers = mergeCloudUsersAdmin(localRawUsers, remote.users);
+        const mergedTx = mergeCloudTransactionsAdmin(localTx, remote.transactions);
+        const mergedPt = mergeCloudPtOrdersAdmin(localPt, remote.ptOrders);
+
+        const prevSig = getAdminDataSignature();
+        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(mergedUsers));
+        localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(mergedTx));
+        localStorage.setItem(TRANSACTIONS_ALT_KEY, JSON.stringify(mergedTx));
+        localStorage.setItem(PT_BOOKINGS_KEY, JSON.stringify(mergedPt));
+        localStorage.setItem(PT_ORDERS_KEY, JSON.stringify(mergedPt));
+
+        // Sync active mobile session user if open on same device
+        try {
+          const curRaw = localStorage.getItem(CURRENT_USER_KEY);
+          if (curRaw) {
+            const cur = JSON.parse(curRaw);
+            const matched = mergedUsers.find(u => cur && cur.email && u.email && u.email.toLowerCase() === cur.email.toLowerCase());
+            if (matched) {
+              localStorage.setItem(CURRENT_USER_KEY, JSON.stringify({ ...cur, ...matched }));
+            }
+          }
+        } catch (e) {}
+
+        const nowDate = new Date();
+        lastCloudSyncAt = nowDate.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const nextSig = getAdminDataSignature();
+        lastAdminDataSignature = nextSig;
+
+        const searchInput = document.getElementById('member-search-input');
+        const isTyping = searchInput && document.activeElement === searchInput;
+
+        if ((nextSig !== prevSig || isManual) && !isTyping && isAdminLoggedIn()) {
+          renderAdminView();
+        } else {
+          const statusEl = document.getElementById('cloud-sync-status-text');
+          if (statusEl) statusEl.textContent = `Sync: ${lastCloudSyncAt}`;
+        }
+
+        if (isManual) {
+          showToast('✅ Data terbaru berhasil disinkronkan (Cloud & Lokal)!', 3000);
+        }
+        return true;
+      } catch (e) {
+        if (isManual) showToast('Gagal terhubung ke Cloud Sync. Menggunakan data lokal.', 3500);
+        return false;
+      } finally {
+        cloudSyncBusy = false;
+        const btn = document.getElementById('btn-cloud-sync-admin');
+        if (btn) btn.innerHTML = '<span>🔄 Sinkronkan Data Terbaru</span>';
+      }
+    }
+
+    async function pushCloudSync() {
+      if (typeof fetch !== 'function') return;
+      try {
+        const url = getCloudSyncUrl();
+        const localRawUsers = readRawUsersStorage();
+        const localTx = getStoredTransactions();
+        const localPt = getStoredPtBookings();
+
+        let remoteData = {};
+        try {
+          const ctrl = new AbortController();
+          const t = setTimeout(() => ctrl.abort(), 3500);
+          const g = await fetch(url, { method: 'GET', cache: 'no-store', signal: ctrl.signal });
+          clearTimeout(t);
+          if (g.ok) {
+            const txt = await g.text();
+            if (txt && txt.trim().startsWith('{')) remoteData = JSON.parse(txt);
+          }
+        } catch (e) {}
+
+        const mergedUsers = mergeCloudUsersAdmin(localRawUsers, remoteData.users);
+        const mergedTx = mergeCloudTransactionsAdmin(localTx, remoteData.transactions);
+        const mergedPt = mergeCloudPtOrdersAdmin(localPt, remoteData.ptOrders);
+
+        const payload = JSON.stringify({
+          updatedAt: Date.now(),
+          version: CURRENT_DATA_VERSION,
+          users: mergedUsers,
+          transactions: mergedTx,
+          ptOrders: mergedPt
+        });
+
+        await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: payload
+        });
+      } catch (e) {}
+    }
+
+    window.pullCloudSync = pullCloudSync;
+    window.pushCloudSync = pushCloudSync;
+    window.syncCloudManual = () => pullCloudSync(true);
+
     // Initial render on load
     document.addEventListener('DOMContentLoaded', () => {
       const urlParams = new URLSearchParams(window.location.search);
@@ -2019,9 +2249,12 @@
         }
       }
       renderAdminView();
+      if (isAdminLoggedIn()) {
+        void pullCloudSync(false);
+      }
     });
 
-    // Real-time synchronization with localStorage (cross-tab sync)
+    // Real-time synchronization with localStorage (cross-tab sync) & Cloud Sync (cross-device 3s polling)
     let lastAdminDataSignature = '';
     function getAdminDataSignature() {
       const tx = localStorage.getItem(TRANSACTIONS_KEY) || '';
@@ -2057,10 +2290,16 @@
     });
 
     setInterval(syncAdminDataRealtime, 2000);
+    setInterval(() => {
+      if (isAdminLoggedIn() && !(typeof window !== 'undefined' && window.BEFIT_DISABLE_AUTO_CLOUD_POLL)) {
+        void pullCloudSync(false);
+      }
+    }, 3000);
 
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible' && isAdminLoggedIn()) {
         renderAdminView();
+        void pullCloudSync(false);
       }
     });
   </script>
