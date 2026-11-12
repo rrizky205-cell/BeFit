@@ -52,10 +52,43 @@
     // ==================== STORAGE KEYS & SEED DATA ====================
     const ADMIN_AUTH_KEY = 'befit_admin_auth';
     const USERS_STORAGE_KEY = 'befit_users';
+    const CURRENT_USER_KEY = 'befit_current_user';
     const TRANSACTIONS_KEY = 'befit_mobile_transactions';
+    const TRANSACTIONS_ALT_KEY = 'befit_transactions';
     const PT_BOOKINGS_KEY = 'befit_pt_bookings';
+    const PT_ORDERS_KEY = 'befit_pt_orders';
+    const SYNC_TS_KEY = 'befit_sync_ts';
     const DATA_VERSION_KEY = 'befit_data_version';
-    const CURRENT_DATA_VERSION = 'v7';
+    const CURRENT_DATA_VERSION = 'v8';
+
+    function relativeDateStr(daysFromNow) {
+      const d = new Date();
+      d.setHours(0, 0, 0, 0);
+      d.setDate(d.getDate() + Number(daysFromNow || 0));
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
+    function parseDateLocal(dateStr) {
+      if (!dateStr || typeof dateStr !== 'string') return null;
+      const parts = dateStr.trim().split('T')[0].split('-');
+      if (parts.length === 3) {
+        const y = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10) - 1;
+        const d = parseInt(parts[2], 10);
+        const dt = new Date(y, m, d);
+        if (!isNaN(dt.getTime())) {
+          dt.setHours(0, 0, 0, 0);
+          return dt;
+        }
+      }
+      const fallback = new Date(dateStr);
+      if (isNaN(fallback.getTime())) return null;
+      fallback.setHours(0, 0, 0, 0);
+      return fallback;
+    }
 
     // 24 Realistis Seed Members spread across 4 Branches (Setiabudi, Dago, Pasirkaliki, Buah Batu)
     // 6 Akun Demo Hampir Habis Masa Aktif (1-10 Hari, Password: '123456')
@@ -74,7 +107,7 @@
         totalPaid: 900000,
         paymentMethod: 'QRIS INSTANT',
         dateJoined: '06 Agu 2026',
-        expiryDate: '2026-11-07', // 3 Hari Lagi
+        expiryDate: relativeDateStr(3), // 3 Hari Lagi
         status: 'Active',
         isFrozen: false,
         role: 'member'
@@ -92,7 +125,7 @@
         totalPaid: 900000,
         paymentMethod: 'BCA VA',
         dateJoined: '06 Agu 2026',
-        expiryDate: '2026-11-06', // 2 Hari Lagi
+        expiryDate: relativeDateStr(2), // 2 Hari Lagi
         status: 'Active',
         isFrozen: false,
         role: 'member'
@@ -220,7 +253,7 @@
         totalPaid: 350000,
         paymentMethod: 'BCA VA',
         dateJoined: '04 Okt 2026',
-        expiryDate: '2026-11-09', // 5 Hari Lagi
+        expiryDate: relativeDateStr(5), // 5 Hari Lagi
         status: 'Active',
         isFrozen: false,
         role: 'member'
@@ -238,7 +271,7 @@
         totalPaid: 900000,
         paymentMethod: 'QRIS INSTANT',
         dateJoined: '13 Agu 2026',
-        expiryDate: '2026-11-13', // 9 Hari Lagi
+        expiryDate: relativeDateStr(9), // 9 Hari Lagi
         status: 'Active',
         isFrozen: false,
         role: 'member'
@@ -353,7 +386,7 @@
         totalPaid: 1500000,
         paymentMethod: 'MANDIRI VA',
         dateJoined: '08 Mei 2026',
-        expiryDate: '2026-11-08', // 4 Hari Lagi
+        expiryDate: relativeDateStr(4), // 4 Hari Lagi
         status: 'Active',
         isFrozen: false,
         role: 'member'
@@ -445,7 +478,7 @@
         totalPaid: 350000,
         paymentMethod: 'BCA VA',
         dateJoined: '11 Okt 2026',
-        expiryDate: '2026-11-11', // 7 Hari Lagi
+        expiryDate: relativeDateStr(7), // 7 Hari Lagi
         status: 'Active',
         isFrozen: false,
         role: 'member'
@@ -719,9 +752,9 @@
       if (!expiryDateStr) return 0;
       const now = new Date();
       now.setHours(0, 0, 0, 0);
-      const expiry = new Date(expiryDateStr);
-      expiry.setHours(0, 0, 0, 0);
-      return Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      const expiry = parseDateLocal(expiryDateStr);
+      if (!expiry) return 0;
+      return Math.round((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
     }
 
     function formatDateIndo(dateStr) {
@@ -768,19 +801,45 @@
       if (typeof m.voucherUsed === 'string' && m.voucherUsed.toLowerCase().includes('trial')) return false;
 
       if (m.isPaidMember === true) return true;
-      if (Number(m.totalPaid) > 0) return true;
+      if (m.membershipStatus === 'Aktif' || m.status === 'Active') return true;
+      if (Number(m.totalPaid) > 0 || Number(m.membershipPaid) > 0) return true;
 
       const validPackages = [
         'Basic Starter', 'Pro Transformation', 'Elite Athlete', 'Ultimate Yearly', 'Basic Starter Plus',
-        'Paket 1 Bulan', 'Paket 3 Bulan', 'Paket 6 Bulan', 'Paket 12 Bulan'
+        'VIP Committed', 'Paket 1 Bulan', 'Paket 3 Bulan', 'Paket 6 Bulan', 'Paket 12 Bulan'
       ];
-      if (validPackages.some(pkg => (m.packageType && m.packageType.includes(pkg)) || (m.packageDuration && m.packageDuration.includes(pkg)))) {
+      if (validPackages.some(pkg =>
+        (m.packageType && m.packageType.includes(pkg)) ||
+        (m.packageDuration && m.packageDuration.includes(pkg)) ||
+        (m.membershipPackage && m.membershipPackage.includes(pkg))
+      )) {
         return true;
       }
       return false;
     }
 
-    // ==================== STORAGE GETTERS & SETTERS (V7 AUTO-MERGE) ====================
+    function touchSyncTimestamp() {
+      try {
+        localStorage.setItem(SYNC_TS_KEY, String(Date.now()));
+      } catch (e) {}
+    }
+
+    function syncCurrentUserRecord(updatedMember) {
+      if (!updatedMember) return;
+      try {
+        const rawCur = localStorage.getItem(CURRENT_USER_KEY);
+        if (!rawCur) return;
+        const cur = JSON.parse(rawCur);
+        if (!cur) return;
+        const matchEmail = cur.email && updatedMember.email && cur.email.toLowerCase() === updatedMember.email.toLowerCase();
+        const matchId = cur.id && updatedMember.id && cur.id === updatedMember.id;
+        if (matchEmail || matchId) {
+          localStorage.setItem(CURRENT_USER_KEY, JSON.stringify({ ...cur, ...updatedMember }));
+        }
+      } catch (e) {}
+    }
+
+    // ==================== STORAGE GETTERS & SETTERS (V8 AUTO-MERGE) ====================
     function getStoredMembers() {
       try {
         const ver = localStorage.getItem(DATA_VERSION_KEY);
@@ -795,20 +854,27 @@
               const key = (m.email || m.id || '').toLowerCase();
               const def = map.get(key);
               if (def) {
+                const hasRealUpgrade = Number(m.totalPaid || 0) > Number(def.totalPaid || 0) ||
+                  Number(m.membershipPaid || 0) > 0 ||
+                  !!m.lastPaymentAt;
+                const parsedMExp = parseDateLocal(m.expiryDate);
+                const parsedDefExp = parseDateLocal(def.expiryDate);
+                const keepStoredExpiry = m.expiryDate && (hasRealUpgrade || (parsedMExp && parsedDefExp && parsedMExp > parsedDefExp));
                 map.set(key, {
                   ...def,
                   ...m,
-                  expiryDate: (m.totalPaid && m.expiryDate) ? m.expiryDate : def.expiryDate,
+                  expiryDate: keepStoredExpiry ? m.expiryDate : def.expiryDate,
                   branch: m.branch || def.branch,
-                  packageDuration: (m.totalPaid && m.packageDuration) ? m.packageDuration : def.packageDuration,
-                  packageType: (m.totalPaid && m.packageType) ? m.packageType : def.packageType,
+                  packageDuration: (hasRealUpgrade && m.packageDuration) ? m.packageDuration : (m.packageDuration || def.packageDuration),
+                  packageType: (hasRealUpgrade && m.packageType) ? m.packageType : (m.packageType || def.packageType),
+                  membershipPackage: m.membershipPackage || def.membershipPackage || def.packageDuration,
                   totalPaid: Math.max(Number(m.totalPaid) || 0, Number(def.totalPaid) || 0),
                   isPaidMember: m.isPaidMember !== undefined ? m.isPaidMember : def.isPaidMember,
-                  status: (m.status && m.totalPaid) ? m.status : def.status,
-                  membershipStatus: (m.membershipStatus && m.totalPaid) ? m.membershipStatus : def.membershipStatus
+                  status: (m.status && (hasRealUpgrade || Number(m.totalPaid) > 0)) ? m.status : def.status,
+                  membershipStatus: (m.membershipStatus && (hasRealUpgrade || Number(m.totalPaid) > 0)) ? m.membershipStatus : (def.membershipStatus || 'Aktif')
                 });
               } else if (m.role !== 'admin') {
-                if (m.packageDuration && (m.packageDuration.includes('Trial') || m.packageDuration.includes('Free')) && !m.totalPaid) {
+                if (m.packageDuration && (m.packageDuration.includes('Trial') || m.packageDuration.includes('Free')) && !m.totalPaid && !m.membershipPaid) {
                   m.packageType = 'Belum Berlangganan';
                   m.packageDuration = 'Belum Berlangganan';
                   m.membershipPackage = null;
@@ -836,47 +902,100 @@
     function saveMembers(members) {
       try {
         localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(members));
+        touchSyncTimestamp();
       } catch (e) {}
     }
 
     function getStoredTransactions() {
-      try {
-        const raw = localStorage.getItem(TRANSACTIONS_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed)) return parsed;
-        }
-      } catch (e) {}
-      return [];
+      const txMap = new Map();
+      [TRANSACTIONS_KEY, TRANSACTIONS_ALT_KEY].forEach(key => {
+        try {
+          const raw = localStorage.getItem(key);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+              parsed.forEach(item => {
+                if (!item) return;
+                const dedupeKey = item.id || `${item.title || item.packageName || ''}_${item.date || ''}_${item.amount || 0}`;
+                if (!txMap.has(dedupeKey)) {
+                  txMap.set(dedupeKey, item);
+                }
+              });
+            }
+          }
+        } catch (e) {}
+      });
+      return Array.from(txMap.values());
     }
 
     function getStoredPtBookings() {
-      try {
-        const raw = localStorage.getItem(PT_BOOKINGS_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed) && parsed.length >= 9) {
-            return parsed.map(b => ({
-              ...b,
-              remainingSessions: b.remainingSessions !== undefined ? b.remainingSessions : (b.sessions || 4),
-              status: b.remainingSessions === 0 ? 'Selesai / Kuota Habis' : (b.status || 'Aktif Berjalan')
-            }));
+      const orderMap = new Map();
+      [PT_ORDERS_KEY, PT_BOOKINGS_KEY].forEach(key => {
+        try {
+          const raw = localStorage.getItem(key);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+              parsed.forEach(b => {
+                if (!b) return;
+                const oid = String(b.id || b.orderId || '');
+                if (!oid) return;
+                const normalized = {
+                  ...b,
+                  id: b.id || b.orderId,
+                  orderId: b.orderId || b.id,
+                  userName: b.userName || b.memberName || 'Member',
+                  userPhone: b.userPhone || b.phone || b.memberEmail || '-',
+                  trainerName: b.trainerName || '-',
+                  branch: b.branch || 'Setiabudi',
+                  package: b.package || b.packageName || 'Paket PT',
+                  sessions: Number(b.sessions || b.totalSessions || b.remainingSessions || 4),
+                  remainingSessions: b.remainingSessions !== undefined ? Number(b.remainingSessions) : Number(b.sessions || b.totalSessions || 4),
+                  totalPaid: Number(b.totalPaid || b.amount || 0)
+                };
+                normalized.status = normalized.remainingSessions === 0 ? 'Selesai / Kuota Habis' : (b.status || 'Aktif Berjalan');
+                const existing = orderMap.get(oid);
+                if (!existing || normalized.remainingSessions < existing.remainingSessions) {
+                  orderMap.set(oid, normalized);
+                }
+              });
+            }
           }
+        } catch (e) {}
+      });
+
+      const hadNoStorage = !localStorage.getItem(PT_BOOKINGS_KEY) && !localStorage.getItem(PT_ORDERS_KEY);
+      if (orderMap.size === 0 || hadNoStorage) {
+        SEED_PT_BOOKINGS.forEach(s => {
+          if (!orderMap.has(s.id)) {
+            orderMap.set(s.id, { ...s });
+          }
+        });
+        const mergedInitial = Array.from(orderMap.values());
+        savePtBookings(mergedInitial);
+        return mergedInitial;
+      }
+
+      SEED_PT_BOOKINGS.forEach(s => {
+        if (!orderMap.has(s.id)) {
+          orderMap.set(s.id, { ...s });
         }
-      } catch (e) {}
-      savePtBookings(SEED_PT_BOOKINGS);
-      return SEED_PT_BOOKINGS;
+      });
+      return Array.from(orderMap.values());
     }
 
     function savePtBookings(bookings) {
       try {
-        localStorage.setItem(PT_BOOKINGS_KEY, JSON.stringify(bookings));
+        const serialized = JSON.stringify(bookings);
+        localStorage.setItem(PT_BOOKINGS_KEY, serialized);
+        localStorage.setItem(PT_ORDERS_KEY, serialized);
+        touchSyncTimestamp();
       } catch (e) {}
     }
 
     // ==================== AUTH CHECK ====================
     function isAdminLoggedIn() {
-      return sessionStorage.getItem(ADMIN_AUTH_KEY) === 'true';
+      return sessionStorage.getItem(ADMIN_AUTH_KEY) === 'true' || localStorage.getItem(ADMIN_AUTH_KEY) === 'true';
     }
 
     function handleAdminLogin(e) {
@@ -886,6 +1005,7 @@
 
       if (email === 'rrizky205@gmail.com' && pass === 'wudinjir1911') {
         sessionStorage.setItem(ADMIN_AUTH_KEY, 'true');
+        localStorage.setItem(ADMIN_AUTH_KEY, 'true');
         showToast('Login Admin CRM Berhasil!');
         renderAdminView();
       } else {
@@ -895,6 +1015,7 @@
 
     function handleAdminLogout() {
       sessionStorage.removeItem(ADMIN_AUTH_KEY);
+      localStorage.removeItem(ADMIN_AUTH_KEY);
       renderAdminView();
     }
 
@@ -912,6 +1033,7 @@
       if (idx !== -1) {
         members[idx].isFrozen = !members[idx].isFrozen;
         saveMembers(members);
+        syncCurrentUserRecord(members[idx]);
         showToast(members[idx].isFrozen 
           ? `Status membership ${members[idx].name} dibekukan (Cuti).` 
           : `Status membership ${members[idx].name} diaktifkan kembali.`);
@@ -923,11 +1045,18 @@
       const members = getStoredMembers();
       const idx = members.findIndex(m => m.id === memberId || m.email === memberId);
       if (idx !== -1) {
-        const currentExp = members[idx].expiryDate ? new Date(members[idx].expiryDate) : new Date();
-        const baseDate = currentExp > new Date() ? currentExp : new Date();
-        const newExpiry = new Date(baseDate.getTime() + 30 * 86400000).toISOString().split('T')[0];
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        const currentExp = members[idx].expiryDate ? parseDateLocal(members[idx].expiryDate) : now;
+        const baseDate = (currentExp && currentExp > now) ? new Date(currentExp.getTime()) : new Date(now.getTime());
+        baseDate.setDate(baseDate.getDate() + 30);
+        const y = baseDate.getFullYear();
+        const mo = String(baseDate.getMonth() + 1).padStart(2, '0');
+        const da = String(baseDate.getDate()).padStart(2, '0');
+        const newExpiry = `${y}-${mo}-${da}`;
         
         members[idx].expiryDate = newExpiry;
+        members[idx].daysRemaining = getDaysRemaining(newExpiry);
         members[idx].status = 'Active';
         members[idx].membershipStatus = 'Aktif';
         members[idx].isPaidMember = true;
@@ -935,8 +1064,12 @@
           members[idx].packageType = 'Basic Starter';
           members[idx].packageDuration = 'Paket 1 Bulan (Basic Starter)';
         }
+        if (!members[idx].membershipPackage || members[idx].membershipPackage === 'Belum Berlangganan') {
+          members[idx].membershipPackage = 'Paket 1 Bulan';
+        }
         members[idx].isFrozen = false;
         saveMembers(members);
+        syncCurrentUserRecord(members[idx]);
         
         showToast(`Masa aktif ${members[idx].name} berhasil diaktifkan/diperpanjang +30 hari (s/d ${formatDateIndo(newExpiry)})!`, 4000);
         renderAdminView();
@@ -945,7 +1078,7 @@
 
     window.checkInPtSession = (orderId) => {
       const bookings = getStoredPtBookings();
-      const idx = bookings.findIndex(b => b.id === orderId);
+      const idx = bookings.findIndex(b => b.id === orderId || b.orderId === orderId);
       if (idx !== -1) {
         const currentRemaining = bookings[idx].remainingSessions !== undefined ? bookings[idx].remainingSessions : bookings[idx].sessions;
         if (currentRemaining > 0) {
@@ -957,6 +1090,23 @@
             showToast(`Check-in sesi PT berhasil! Sisa kuota ${bookings[idx].userName}: ${bookings[idx].remainingSessions} sesi.`, 3500);
           }
           savePtBookings(bookings);
+
+          // Sync updated PT remaining quota back to member & current user profile
+          const b = bookings[idx];
+          const members = getStoredMembers();
+          const mIdx = members.findIndex(m =>
+            (b.memberEmail && m.email && m.email.toLowerCase() === b.memberEmail.toLowerCase()) ||
+            (b.userEmail && m.email && m.email.toLowerCase() === b.userEmail.toLowerCase()) ||
+            (b.userPhone && b.userPhone !== '-' && m.phone === b.userPhone) ||
+            (b.userName && m.name && m.name.toLowerCase() === b.userName.toLowerCase())
+          );
+          if (mIdx !== -1) {
+            members[mIdx].ptRemainingSessions = bookings[idx].remainingSessions;
+            members[mIdx].ptSessions = bookings[idx].remainingSessions;
+            saveMembers(members);
+            syncCurrentUserRecord(members[mIdx]);
+          }
+
           renderAdminView();
         }
       }
@@ -966,7 +1116,12 @@
     function computeBranchAnalytics(members, ptBookings) {
       return BRANCH_CONFIGS.map(b => {
         const bMembers = members.filter(m => (m.branch || '').toLowerCase().includes(b.shortName.toLowerCase()));
-        const membershipRev = bMembers.reduce((sum, m) => sum + Number(m.totalPaid || 0), 0);
+        const membershipRev = bMembers.reduce((sum, m) => {
+          const memPaid = m.membershipPaid !== undefined
+            ? Number(m.membershipPaid || 0)
+            : Math.max(0, Number(m.totalPaid || 0) - Number(m.ptPaid || 0));
+          return sum + memPaid;
+        }, 0);
         
         const bPt = ptBookings.filter(pt => (pt.branch || '').toLowerCase().includes(b.shortName.toLowerCase()));
         const ptRev = bPt.reduce((sum, pt) => sum + Number(pt.totalPaid || 0), 0);
@@ -1406,8 +1561,8 @@
                   </tr>
                 ` : transactions.map(t => `
                   <tr>
-                    <td class="px-6 py-3.5 font-mono font-bold text-slate-800 tabular-nums">${t.id}</td>
-                    <td class="px-6 py-3.5 font-bold text-slate-900">${t.title || t.type}</td>
+                    <td class="px-6 py-3.5 font-mono font-bold text-slate-800 tabular-nums">${t.id || '-'}</td>
+                    <td class="px-6 py-3.5 font-bold text-slate-900">${t.title || t.packageName || t.type || 'Transaksi'}</td>
                     <td class="px-6 py-3.5">
                       ${t.voucherCode && t.voucherCode !== '-' ? `
                         <span class="px-2 py-0.5 rounded font-mono font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
@@ -1415,8 +1570,8 @@
                         </span>
                       ` : '<span class="text-slate-400 font-mono">-</span>'}
                     </td>
-                    <td class="px-6 py-3.5 font-mono font-bold text-teal-600 tabular-nums">${formatRupiah(t.amount)}</td>
-                    <td class="px-6 py-3.5 font-bold text-slate-700 font-mono uppercase">${t.method || 'QRIS'}</td>
+                    <td class="px-6 py-3.5 font-mono font-bold text-teal-600 tabular-nums">${formatRupiah(t.amount !== undefined ? t.amount : (t.totalPaid || 0))}</td>
+                    <td class="px-6 py-3.5 font-bold text-slate-700 font-mono uppercase">${t.method || t.paymentMethod || 'QRIS'}</td>
                     <td class="px-6 py-3.5 font-mono text-slate-500">${t.date || 'Hari ini'}</td>
                     <td class="px-6 py-3.5"><span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">${t.status || 'LUNAS'}</span></td>
                   </tr>
@@ -1487,7 +1642,7 @@
               </div>
               
               <div class="w-full sm:w-72">
-                <input type="text" placeholder="Cari nama, email, hp, atau paket..." value="${searchQuery}"
+                <input id="member-search-input" type="text" placeholder="Cari nama, email, hp, atau paket..." value="${searchQuery}"
                   oninput="handleSearchChange(this.value)"
                   class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-teal-550 outline-none">
               </div>
@@ -1593,8 +1748,9 @@
 
                       <!-- Paket & Cabang -->
                       <td class="px-6 py-4">
-                        <span class="font-bold ${isPaid ? 'text-slate-800' : 'text-slate-500 italic'} block">${isPaid ? (m.packageDuration || m.packageType || 'Membership') : 'Belum Berlangganan'}</span>
-                        <span class="text-[11px] text-teal-600 font-semibold">Cabang: ${m.branch || 'Setiabudi'}</span>
+                        <span class="font-bold ${isPaid ? 'text-slate-800' : 'text-slate-500 italic'} block">${isPaid ? (m.membershipPackage || m.packageDuration || m.packageType || 'Membership') : 'Belum Berlangganan'}</span>
+                        <span class="text-[11px] text-teal-600 font-semibold block">Cabang: ${m.branch || 'Setiabudi'}</span>
+                        ${(m.activeTrainer || m.ptPackageName) ? `<span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded mt-0.5 inline-block">PT: ${m.activeTrainer || '-'} (${m.ptRemainingSessions !== undefined ? m.ptRemainingSessions : (m.ptSessions || 0)} sesi)</span>` : ''}
                       </td>
 
                       <!-- Tanggal Berakhir & Sisa Hari -->
@@ -1705,33 +1861,39 @@
               </thead>
               <tbody class="divide-y divide-slate-100 text-slate-700 leading-relaxed">
                 ${ptBookings.map(b => {
-                  const remaining = b.remainingSessions !== undefined ? b.remainingSessions : b.sessions;
+                  const oid = b.id || b.orderId || '-';
+                  const uName = b.userName || b.memberName || 'Member';
+                  const uContact = b.userPhone || b.memberEmail || '-';
+                  const pkg = b.package || b.packageName || 'Paket PT';
+                  const totalSess = Number(b.sessions || b.totalSessions || 4);
+                  const remaining = b.remainingSessions !== undefined ? Number(b.remainingSessions) : totalSess;
                   const isDone = remaining === 0;
+                  const coachLabel = String(b.trainerName || '-').startsWith('Coach ') ? b.trainerName : `Coach ${b.trainerName || '-'}`;
 
                   return `
                     <tr class="hover:bg-slate-50 transition-colors">
-                      <td class="px-6 py-4 font-mono font-bold text-slate-800 tabular-nums">${b.id}</td>
+                      <td class="px-6 py-4 font-mono font-bold text-slate-800 tabular-nums">${oid}</td>
                       <td class="px-6 py-4">
-                        <span class="font-bold text-slate-900 block leading-tight">${b.userName}</span>
-                        <span class="text-[10px] text-slate-400 font-mono">${b.userPhone || '-'}</span>
+                        <span class="font-bold text-slate-900 block leading-tight">${uName}</span>
+                        <span class="text-[10px] text-slate-400 font-mono">${uContact}</span>
                       </td>
                       <td class="px-6 py-4">
-                        <span class="font-bold text-teal-600 block">Coach ${b.trainerName}</span>
+                        <span class="font-bold text-teal-600 block">${coachLabel}</span>
                       </td>
                       <td class="px-6 py-4 text-slate-700 font-medium">
-                        ${b.branch}
+                        ${b.branch || 'Setiabudi'}
                       </td>
                       <td class="px-6 py-4">
-                        <span class="font-bold text-slate-800 block">${b.package}</span>
+                        <span class="font-bold text-slate-800 block">${pkg}</span>
                         <div class="flex items-center gap-1.5 mt-1">
                           <div class="w-20 bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200">
-                            <div class="bg-teal-550 h-full rounded-full" style="width: ${Math.round((remaining / (b.sessions || 1)) * 100)}%;"></div>
+                            <div class="bg-teal-550 h-full rounded-full" style="width: ${Math.round((remaining / (totalSess || 1)) * 100)}%;"></div>
                           </div>
-                          <span class="text-[11px] font-mono font-bold text-slate-700 tabular-nums">${remaining}/${b.sessions} Sesi</span>
+                          <span class="text-[11px] font-mono font-bold text-slate-700 tabular-nums">${remaining}/${totalSess} Sesi</span>
                         </div>
                       </td>
                       <td class="px-6 py-4 font-mono font-bold tabular-nums text-slate-900">
-                        ${formatRupiah(b.totalPaid)}
+                        ${formatRupiah(b.totalPaid || 0)}
                       </td>
                       <td class="px-6 py-4">
                         ${isDone ? `
@@ -1746,13 +1908,13 @@
                       </td>
                       <td class="px-6 py-4 text-center">
                         ${isDone ? `
-                          <a href="https://wa.me/${formatWhatsAppNumber(b.userPhone)}?text=${encodeURIComponent('Halo Kak ' + b.userName + '! Kuota sesi latihan PT bersama Coach ' + b.trainerName + ' sudah selesai. Ingin perpanjang paket coaching lagi?')}"
+                          <a href="https://wa.me/${formatWhatsAppNumber(b.userPhone)}?text=${encodeURIComponent('Halo Kak ' + uName + '! Kuota sesi latihan PT bersama ' + coachLabel + ' sudah selesai. Ingin perpanjang paket coaching lagi?')}"
                             target="_blank" rel="noopener noreferrer"
                             class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold text-[11px] transition-all inline-flex items-center gap-1 shadow-sm cursor-pointer">
                             <span>💬 Follow-Up Kuota (WA)</span>
                           </a>
                         ` : `
-                          <button type="button" onclick="checkInPtSession('${b.id}')"
+                          <button type="button" onclick="checkInPtSession('${oid}')"
                             class="px-3 py-1.5 rounded-lg bg-teal-550 hover:bg-teal-650 active:scale-95 text-white font-bold text-[11px] transition-all shadow-sm cursor-pointer inline-flex items-center gap-1">
                             <span>Check-In Sesi (-1)</span>
                           </button>
@@ -1863,9 +2025,12 @@
     let lastAdminDataSignature = '';
     function getAdminDataSignature() {
       const tx = localStorage.getItem(TRANSACTIONS_KEY) || '';
+      const txAlt = localStorage.getItem(TRANSACTIONS_ALT_KEY) || '';
       const mem = localStorage.getItem(USERS_STORAGE_KEY) || '';
       const pt = localStorage.getItem(PT_BOOKINGS_KEY) || '';
-      return `${tx.length}_${mem.length}_${pt.length}`;
+      const ptAlt = localStorage.getItem(PT_ORDERS_KEY) || '';
+      const ts = localStorage.getItem(SYNC_TS_KEY) || '';
+      return `${ts}|${tx}|${txAlt}|${mem}|${pt}|${ptAlt}`;
     }
 
     function syncAdminDataRealtime() {
@@ -1883,7 +2048,7 @@
     }
 
     window.addEventListener('storage', (e) => {
-      if (!e.key || e.key === USERS_STORAGE_KEY || e.key === TRANSACTIONS_KEY || e.key === PT_BOOKINGS_KEY) {
+      if (!e.key || e.key === USERS_STORAGE_KEY || e.key === TRANSACTIONS_KEY || e.key === TRANSACTIONS_ALT_KEY || e.key === PT_BOOKINGS_KEY || e.key === PT_ORDERS_KEY || e.key === SYNC_TS_KEY || e.key === ADMIN_AUTH_KEY) {
         if (isAdminLoggedIn()) {
           lastAdminDataSignature = getAdminDataSignature();
           renderAdminView();

@@ -293,8 +293,8 @@
   </div><!-- End App Shell -->
 
   <!-- ===== BOTTOM SHEET OVERLAY (Shared Container) ===== -->
-  <div id="sheet-backdrop" class="fixed inset-0 bg-black/50 z-[60] hidden opacity-0 transition-opacity duration-300" onclick="closeBottomSheet()"></div>
-  <div id="sheet-container" class="fixed bottom-0 left-0 right-0 z-[70] flex justify-center pointer-events-none">
+  <div id="sheet-backdrop" class="fixed inset-0 bg-black/50 z-[90] hidden opacity-0 transition-opacity duration-300" onclick="closeBottomSheet()"></div>
+  <div id="sheet-container" class="fixed bottom-0 left-0 right-0 z-[100] flex justify-center pointer-events-none">
     <div id="sheet-panel" class="bg-white rounded-t-2xl shadow-2xl w-full pointer-events-auto translate-y-full transition-transform duration-300 ease-out overflow-hidden" style="max-width:430px; max-height:85vh;">
       <!-- Drag Handle -->
       <div class="flex justify-center py-3 cursor-grab" id="sheet-handle">
@@ -306,8 +306,14 @@
     </div>
   </div>
 
+  <!-- ===== CENTERED CONFIRMATION MODAL (z-[9999]) ===== -->
+  <div id="center-popup-overlay" class="fixed inset-0 z-[9999] hidden flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onclick="if(event.target === this) closeCenterPopup()">
+    <div id="center-popup-card" class="w-full max-w-[390px] bg-white rounded-3xl shadow-2xl border border-slate-200 p-5 max-h-[88vh] overflow-y-auto">
+    </div>
+  </div>
+
   <!-- ===== TOAST NOTIFICATION ===== -->
-  <div id="mobile-toast" class="fixed top-4 left-1/2 -translate-x-1/2 z-[80] px-4 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold shadow-xl opacity-0 -translate-y-4 transition-all duration-300 pointer-events-none whitespace-nowrap max-w-[90vw]" style="max-width:400px;"></div>
+  <div id="mobile-toast" class="fixed top-4 left-1/2 -translate-x-1/2 z-[10000] px-4 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold shadow-xl opacity-0 -translate-y-4 transition-all duration-300 pointer-events-none whitespace-nowrap max-w-[90vw]" style="max-width:400px;"></div>
 
   <script src="app.js"></script>
 </body>

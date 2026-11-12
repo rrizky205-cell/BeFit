@@ -14,11 +14,38 @@ const CURRENT_USER_KEY = 'befit_current_user';
 const CLASSES_STORAGE_KEY = 'befit_mobile_classes_v3';
 const TRAINERS_STORAGE_KEY = 'befit_mobile_trainers_v5';
 const TRANSACTIONS_KEY = 'befit_mobile_transactions';
+const TRANSACTIONS_ALT_KEY = 'befit_transactions';
 const CLAIMED_VOUCHERS_KEY = 'befit_claimed_vouchers';
 const CLASS_BOOKINGS_KEY = 'befit_class_bookings';
 const PT_BOOKINGS_KEY = 'befit_pt_bookings';
+const PT_ORDERS_KEY = 'befit_pt_orders';
+const SYNC_TS_KEY = 'befit_sync_ts';
 const TRIAL_CLAIMS_KEY = 'befit_trial_claims';
 const ADMIN_AUTH_KEY = 'befit_admin_auth';
+
+function relativeDateStr(daysOffset = 0) {
+  const now = new Date();
+  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + daysOffset);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function normalizeBranchName(branchStr) {
+  const raw = String(branchStr || '').toLowerCase();
+  if (raw.includes('dago')) return 'Dago';
+  if (raw.includes('pasirkaliki')) return 'Pasirkaliki';
+  if (raw.includes('buah batu') || raw.includes('buahbatu')) return 'Buah Batu';
+  return 'Setiabudi';
+}
+
+function parseDateLocal(dateStr) {
+  if (!dateStr) return null;
+  const parts = String(dateStr).split('-');
+  if (parts.length === 3) {
+    return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+  }
+  const d = new Date(dateStr);
+  return isNaN(d.getTime()) ? null : new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
 
 // ==================== 1. BRANCHES & CROWD STATUS ====================
 
@@ -876,6 +903,7 @@ const MEMBERSHIP_PACKAGES = [
   {
     id: 'pkg-1m',
     name: 'Paket 1 Bulan (Basic Starter)',
+    packageLabel: 'Paket 1 Bulan',
     shortName: 'Basic Starter',
     durationDays: 30,
     price: 350000,
@@ -894,6 +922,7 @@ const MEMBERSHIP_PACKAGES = [
   {
     id: 'pkg-3m',
     name: 'Paket 3 Bulan (Pro Transformation)',
+    packageLabel: 'Paket 3 Bulan',
     shortName: 'Pro Transformation',
     durationDays: 90,
     price: 900000,
@@ -912,6 +941,7 @@ const MEMBERSHIP_PACKAGES = [
   {
     id: 'pkg-6m',
     name: 'Paket 6 Bulan (VIP Committed)',
+    packageLabel: 'Paket 6 Bulan',
     shortName: 'VIP Committed',
     durationDays: 180,
     price: 1500000,
@@ -929,7 +959,8 @@ const MEMBERSHIP_PACKAGES = [
   },
   {
     id: 'pkg-12m',
-    name: 'Paket 12 Bulan (Ultimate Yearly)',
+    name: 'Paket 12 Bulan (1 Tahun)',
+    packageLabel: 'Paket 12 Bulan (1 Tahun)',
     shortName: 'Ultimate Yearly',
     durationDays: 365,
     price: 2400000,
@@ -1056,6 +1087,7 @@ const VOUCHERS_DATA = [
 
 function isUserPaidMember(user) {
   if (!user || user.role === 'admin') return false;
+  if (user.membershipStatus === 'Aktif' || user.isPaidMember === true) return true;
   if (user.isPaidMember === false) return false;
   if (user.membershipStatus === 'Belum Aktif' || user.status === 'Belum Aktif') return false;
   if (!user.expiryDate) return false;
@@ -1064,29 +1096,28 @@ function isUserPaidMember(user) {
   if (typeof user.packageType === 'string' && (user.packageType.toLowerCase().includes('trial') || user.packageType.toLowerCase().includes('free'))) return false;
   if (typeof user.voucherUsed === 'string' && user.voucherUsed.toLowerCase().includes('trial')) return false;
 
-  if (user.isPaidMember === true) return true;
-  if (Number(user.totalPaid) > 0) return true;
+  if (Number(user.membershipPaid || user.totalPaid) > 0) return true;
 
   const validPackages = [
-    'Basic Starter', 'Pro Transformation', 'Elite Athlete', 'Ultimate Yearly', 'Basic Starter Plus',
+    'Basic Starter', 'Pro Transformation', 'VIP Committed', 'Elite Athlete', 'Ultimate Yearly', 'Basic Starter Plus',
     'Paket 1 Bulan', 'Paket 3 Bulan', 'Paket 6 Bulan', 'Paket 12 Bulan'
   ];
-  if (validPackages.some(pkg => (user.packageType && user.packageType.includes(pkg)) || (user.packageDuration && user.packageDuration.includes(pkg)))) {
+  if (validPackages.some(pkg => (user.packageType && user.packageType.includes(pkg)) || (user.packageDuration && user.packageDuration.includes(pkg)) || (user.membershipPackage && user.membershipPackage.includes(pkg)))) {
     return true;
   }
   return false;
 }
 
 function getDaysRemaining(expiryDateStr) {
-  if (!expiryDateStr) return 999;
+  if (!expiryDateStr) return 0;
   try {
     const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    const expiry = new Date(expiryDateStr);
-    expiry.setHours(0, 0, 0, 0);
-    return Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const expiry = parseDateLocal(expiryDateStr);
+    if (!expiry) return 0;
+    return Math.round((expiry.getTime() - todayMidnight.getTime()) / 86400000);
   } catch (e) {
-    return 999;
+    return 0;
   }
 }
 
@@ -1232,7 +1263,7 @@ function claimVoucher(code) {
 // ==================== 6. SEED USERS & AUTH STATE ====================
 
 const DATA_VERSION_KEY = 'befit_data_version';
-const CURRENT_DATA_VERSION = 'v7';
+const CURRENT_DATA_VERSION = 'v8';
 
 const DEFAULT_USERS = [
   // ===== CABANG SETIABUDI (~8 Member, Total Membership: Rp 7.850.000) =====
@@ -1245,12 +1276,16 @@ const DEFAULT_USERS = [
     branch: 'Setiabudi',
     packageType: 'Pro Transformation',
     packageDuration: 'Paket 3 Bulan (Pro Transformation)',
+    membershipPackage: 'Paket 3 Bulan',
     voucherUsed: 'MEMBERBARU15',
     totalPaid: 900000,
+    membershipPaid: 900000,
     paymentMethod: 'QRIS INSTANT',
     dateJoined: '06 Agu 2026',
-    expiryDate: '2026-11-07', // 3 Hari Lagi
+    expiryDate: relativeDateStr(3), // 3 Hari Lagi
     status: 'Active',
+    membershipStatus: 'Aktif',
+    isPaidMember: true,
     isFrozen: false,
     role: 'member'
   },
@@ -1263,12 +1298,16 @@ const DEFAULT_USERS = [
     branch: 'Setiabudi',
     packageType: 'Pro Transformation',
     packageDuration: 'Paket 3 Bulan (Pro Transformation)',
+    membershipPackage: 'Paket 3 Bulan',
     voucherUsed: 'MEMBERBARU15',
     totalPaid: 900000,
+    membershipPaid: 900000,
     paymentMethod: 'BCA VA',
     dateJoined: '06 Agu 2026',
-    expiryDate: '2026-11-06', // 2 Hari Lagi
+    expiryDate: relativeDateStr(2), // 2 Hari Lagi
     status: 'Active',
+    membershipStatus: 'Aktif',
+    isPaidMember: true,
     isFrozen: false,
     role: 'member'
   },
@@ -1391,12 +1430,16 @@ const DEFAULT_USERS = [
     branch: 'Dago',
     packageType: 'Basic Starter',
     packageDuration: 'Paket 1 Bulan (Basic Starter)',
+    membershipPackage: 'Paket 1 Bulan',
     voucherUsed: 'HEMAT50K',
     totalPaid: 350000,
+    membershipPaid: 350000,
     paymentMethod: 'BCA VA',
     dateJoined: '04 Okt 2026',
-    expiryDate: '2026-11-09', // 5 Hari Lagi
+    expiryDate: relativeDateStr(5), // 5 Hari Lagi
     status: 'Active',
+    membershipStatus: 'Aktif',
+    isPaidMember: true,
     isFrozen: false,
     role: 'member'
   },
@@ -1409,12 +1452,16 @@ const DEFAULT_USERS = [
     branch: 'Dago',
     packageType: 'Pro Transformation',
     packageDuration: 'Paket 3 Bulan (Pro Transformation)',
+    membershipPackage: 'Paket 3 Bulan',
     voucherUsed: 'MEMBERBARU15',
     totalPaid: 900000,
+    membershipPaid: 900000,
     paymentMethod: 'QRIS INSTANT',
     dateJoined: '13 Agu 2026',
-    expiryDate: '2026-11-13', // 9 Hari Lagi
+    expiryDate: relativeDateStr(9), // 9 Hari Lagi
     status: 'Active',
+    membershipStatus: 'Aktif',
+    isPaidMember: true,
     isFrozen: false,
     role: 'member'
   },
@@ -1524,12 +1571,16 @@ const DEFAULT_USERS = [
     branch: 'Pasirkaliki',
     packageType: 'Elite Athlete',
     packageDuration: 'Paket 6 Bulan (Elite Athlete)',
+    membershipPackage: 'Paket 6 Bulan',
     voucherUsed: 'HEMAT50K',
     totalPaid: 1500000,
+    membershipPaid: 1500000,
     paymentMethod: 'MANDIRI VA',
     dateJoined: '08 Mei 2026',
-    expiryDate: '2026-11-08', // 4 Hari Lagi
+    expiryDate: relativeDateStr(4), // 4 Hari Lagi
     status: 'Active',
+    membershipStatus: 'Aktif',
+    isPaidMember: true,
     isFrozen: false,
     role: 'member'
   },
@@ -1616,12 +1667,16 @@ const DEFAULT_USERS = [
     branch: 'Buah Batu',
     packageType: 'Basic Starter',
     packageDuration: 'Paket 1 Bulan (Basic Starter)',
+    membershipPackage: 'Paket 1 Bulan',
     voucherUsed: 'HEMAT50K',
     totalPaid: 350000,
+    membershipPaid: 350000,
     paymentMethod: 'BCA VA',
     dateJoined: '11 Okt 2026',
-    expiryDate: '2026-11-11', // 7 Hari Lagi
+    expiryDate: relativeDateStr(7), // 7 Hari Lagi
     status: 'Active',
+    membershipStatus: 'Aktif',
+    isPaidMember: true,
     isFrozen: false,
     role: 'member'
   },
@@ -1761,20 +1816,22 @@ function getUsers() {
           const key = (u.email || u.id || '').toLowerCase();
           const def = map.get(key);
           if (def) {
+            const hasPaidUpgrade = (Number(u.totalPaid) || 0) > (Number(def.totalPaid) || 0) || (u.isPaidMember && def.isPaidMember === false);
             map.set(key, {
               ...def,
               ...u,
-              expiryDate: (u.totalPaid && u.expiryDate) ? u.expiryDate : def.expiryDate,
-              password: def.password,
+              expiryDate: hasPaidUpgrade && u.expiryDate ? u.expiryDate : def.expiryDate,
+              password: u.password || def.password,
               branch: u.branch || def.branch,
-              packageDuration: (u.totalPaid && u.packageDuration) ? u.packageDuration : def.packageDuration,
-              packageType: (u.totalPaid && u.packageType) ? u.packageType : def.packageType,
+              membershipPackage: (hasPaidUpgrade && u.membershipPackage) ? u.membershipPackage : (def.membershipPackage || def.packageDuration),
+              packageDuration: (hasPaidUpgrade && u.packageDuration) ? u.packageDuration : def.packageDuration,
+              packageType: (hasPaidUpgrade && u.packageType) ? u.packageType : def.packageType,
               totalPaid: Math.max(Number(u.totalPaid) || 0, Number(def.totalPaid) || 0),
-              isPaidMember: u.isPaidMember !== undefined ? u.isPaidMember : def.isPaidMember,
-              status: (u.status && u.totalPaid) ? u.status : def.status,
-              membershipStatus: (u.membershipStatus && u.totalPaid) ? u.membershipStatus : def.membershipStatus,
-              daysRemaining: (u.daysRemaining !== undefined && u.totalPaid) ? u.daysRemaining : def.daysRemaining,
-              injectedVouchers: def.injectedVouchers || []
+              isPaidMember: hasPaidUpgrade ? true : (def.isPaidMember !== undefined ? def.isPaidMember : true),
+              status: (hasPaidUpgrade && u.status) ? u.status : def.status,
+              membershipStatus: (hasPaidUpgrade && u.membershipStatus) ? u.membershipStatus : (def.membershipStatus || 'Aktif'),
+              daysRemaining: hasPaidUpgrade && u.daysRemaining !== undefined ? u.daysRemaining : getDaysRemaining(hasPaidUpgrade && u.expiryDate ? u.expiryDate : def.expiryDate),
+              injectedVouchers: u.injectedVouchers || def.injectedVouchers || []
             });
           } else if (u.role !== 'admin') {
             // Clean any legacy trial account in localStorage
@@ -1802,7 +1859,7 @@ function getUsers() {
         const curRaw = localStorage.getItem(CURRENT_USER_KEY);
         if (curRaw) {
           const cur = JSON.parse(curRaw);
-          const matched = users.find(u => (u.email || '').toLowerCase() === (cur.email || '').toLowerCase());
+          const matched = users.find(u => cur.email && u.email && u.email.toLowerCase() === cur.email.toLowerCase());
           if (matched) {
             localStorage.setItem(CURRENT_USER_KEY, JSON.stringify({ ...cur, ...matched }));
           } else if (cur.packageDuration && (cur.packageDuration.includes('Trial') || cur.packageDuration.includes('Free')) && !cur.totalPaid) {
@@ -1822,21 +1879,22 @@ function getUsers() {
 
       // Seed PT Bookings if empty
       try {
-        const ptRaw = localStorage.getItem('befit_pt_bookings');
+        const ptRaw = localStorage.getItem(PT_BOOKINGS_KEY);
         const ptList = ptRaw ? JSON.parse(ptRaw) : [];
         if (!Array.isArray(ptList) || ptList.length < 9) {
           const seedPt = [
-            { id: 'PT-SB-01', userName: 'Fajar Nugraha', userPhone: '081234567891', trainerName: 'Aby Pratama', branch: 'Be Fit Setiabudi Bandung', package: '8 Sesi Pro Transformation', sessions: 8, remainingSessions: 6, discount: 250000, voucherCode: 'PTPROMO20', totalPaid: 1750000, date: '29 Okt 2026', status: 'Aktif Berjalan' },
-            { id: 'PT-SB-02', userName: 'Hendra Wijaya', userPhone: '081234567892', trainerName: 'Randy Firmansyah', branch: 'Be Fit Setiabudi Bandung', package: '4 Sesi Starter Coaching', sessions: 4, remainingSessions: 3, discount: 100000, voucherCode: 'PTPROMO20', totalPaid: 950000, date: '30 Okt 2026', status: 'Aktif Berjalan' },
-            { id: 'PT-SB-03', userName: 'Maya Safitri', userPhone: '081234567893', trainerName: 'Sarah Wijaya', branch: 'Be Fit Setiabudi Bandung', package: '4 Sesi Starter Coaching', sessions: 4, remainingSessions: 4, discount: 100000, voucherCode: 'PTPROMO20', totalPaid: 950000, date: '01 Nov 2026', status: 'Aktif Berjalan' },
-            { id: 'PT-SB-04', userName: 'Rian Pratama', userPhone: '081234567894', trainerName: 'Amanda Putri', branch: 'Be Fit Setiabudi Bandung', package: '4 Sesi Starter Coaching', sessions: 4, remainingSessions: 2, discount: 150000, voucherCode: 'PTPROMO20', totalPaid: 900000, date: '02 Nov 2026', status: 'Aktif Berjalan' },
-            { id: 'PT-DG-01', userName: 'Kevin Sanjaya', userPhone: '081778899002', trainerName: 'Kevin Sanjaya', branch: 'Be Fit Dago Bandung', package: '8 Sesi Pro Athlete', sessions: 8, remainingSessions: 7, discount: 250000, voucherCode: 'PTPROMO20', totalPaid: 1750000, date: '28 Okt 2026', status: 'Aktif Berjalan' },
-            { id: 'PT-DG-02', userName: 'Nadya Utami', userPhone: '081778899003', trainerName: 'Rika Amelia', branch: 'Be Fit Dago Bandung', package: '4 Sesi Starter Coaching', sessions: 4, remainingSessions: 3, discount: 100000, voucherCode: 'PTPROMO20', totalPaid: 950000, date: '31 Okt 2026', status: 'Aktif Berjalan' },
-            { id: 'PT-DG-03', userName: 'Rio Febrian', userPhone: '081778899004', trainerName: 'Alex Tan', branch: 'Be Fit Dago Bandung', package: '4 Sesi Starter Coaching', sessions: 4, remainingSessions: 2, discount: 150000, voucherCode: 'PTPROMO20', totalPaid: 850000, date: '02 Nov 2026', status: 'Aktif Berjalan' },
-            { id: 'PT-PK-01', userName: 'Reza Rahadian', userPhone: '081556677890', trainerName: 'Farhan Maulana', branch: 'Be Fit Pasirkaliki Bandung', package: '4 Sesi Elite Athlete', sessions: 4, remainingSessions: 3, discount: 150000, voucherCode: 'PTPROMO20', totalPaid: 1200000, date: '30 Okt 2026', status: 'Aktif Berjalan' },
-            { id: 'PT-PK-02', userName: 'Tiara Andini', userPhone: '081556677891', trainerName: 'Jessica Clarissa', branch: 'Be Fit Pasirkaliki Bandung', package: '4 Sesi Starter Coaching', sessions: 4, remainingSessions: 4, discount: 100000, voucherCode: 'PTPROMO20', totalPaid: 950000, date: '01 Nov 2026', status: 'Aktif Berjalan' }
+            { id: 'PT-SB-01', orderId: 'PT-SB-01', userName: 'Fajar Nugraha', memberName: 'Fajar Nugraha', memberEmail: 'fajar.nugraha@gmail.com', userPhone: '081234567891', trainerName: 'Aby Pratama', branch: 'Be Fit Setiabudi Bandung', package: 'Paket 8 Sesi', packageName: 'Paket 8 Sesi', sessions: 8, totalSessions: 8, remainingSessions: 6, discount: 250000, voucherCode: 'PTPROMO20', voucherUsed: 'PTPROMO20', totalPaid: 1750000, date: '29 Okt 2026', status: 'Aktif Berjalan' },
+            { id: 'PT-SB-02', orderId: 'PT-SB-02', userName: 'Hendra Wijaya', memberName: 'Hendra Wijaya', memberEmail: 'hendra.wijaya@gmail.com', userPhone: '081234567892', trainerName: 'Randy Firmansyah', branch: 'Be Fit Setiabudi Bandung', package: 'Paket 4 Sesi', packageName: 'Paket 4 Sesi', sessions: 4, totalSessions: 4, remainingSessions: 3, discount: 100000, voucherCode: 'PTPROMO20', voucherUsed: 'PTPROMO20', totalPaid: 950000, date: '30 Okt 2026', status: 'Aktif Berjalan' },
+            { id: 'PT-SB-03', orderId: 'PT-SB-03', userName: 'Maya Safitri', memberName: 'Maya Safitri', memberEmail: 'maya.safitri@gmail.com', userPhone: '081234567893', trainerName: 'Sarah Wijaya', branch: 'Be Fit Setiabudi Bandung', package: 'Paket 4 Sesi', packageName: 'Paket 4 Sesi', sessions: 4, totalSessions: 4, remainingSessions: 4, discount: 100000, voucherCode: 'PTPROMO20', voucherUsed: 'PTPROMO20', totalPaid: 950000, date: '01 Nov 2026', status: 'Aktif Berjalan' },
+            { id: 'PT-SB-04', orderId: 'PT-SB-04', userName: 'Rian Pratama', memberName: 'Rian Pratama', memberEmail: 'rian.pratama@gmail.com', userPhone: '081234567894', trainerName: 'Amanda Putri', branch: 'Be Fit Setiabudi Bandung', package: 'Paket 4 Sesi', packageName: 'Paket 4 Sesi', sessions: 4, totalSessions: 4, remainingSessions: 2, discount: 150000, voucherCode: 'PTPROMO20', voucherUsed: 'PTPROMO20', totalPaid: 900000, date: '02 Nov 2026', status: 'Aktif Berjalan' },
+            { id: 'PT-DG-01', orderId: 'PT-DG-01', userName: 'Kevin Sanjaya', memberName: 'Kevin Sanjaya', memberEmail: 'kevin.sanjaya@gmail.com', userPhone: '081778899002', trainerName: 'Kevin Sanjaya', branch: 'Be Fit Dago Bandung', package: 'Paket 8 Sesi', packageName: 'Paket 8 Sesi', sessions: 8, totalSessions: 8, remainingSessions: 7, discount: 250000, voucherCode: 'PTPROMO20', voucherUsed: 'PTPROMO20', totalPaid: 1750000, date: '28 Okt 2026', status: 'Aktif Berjalan' },
+            { id: 'PT-DG-02', orderId: 'PT-DG-02', userName: 'Nadya Utami', memberName: 'Nadya Utami', memberEmail: 'nadya.utami@gmail.com', userPhone: '081778899003', trainerName: 'Rika Amelia', branch: 'Be Fit Dago Bandung', package: 'Paket 4 Sesi', packageName: 'Paket 4 Sesi', sessions: 4, totalSessions: 4, remainingSessions: 3, discount: 100000, voucherCode: 'PTPROMO20', voucherUsed: 'PTPROMO20', totalPaid: 950000, date: '31 Okt 2026', status: 'Aktif Berjalan' },
+            { id: 'PT-DG-03', orderId: 'PT-DG-03', userName: 'Rio Febrian', memberName: 'Rio Febrian', memberEmail: 'rio.febrian@gmail.com', userPhone: '081778899004', trainerName: 'Alex Tan', branch: 'Be Fit Dago Bandung', package: 'Paket 4 Sesi', packageName: 'Paket 4 Sesi', sessions: 4, totalSessions: 4, remainingSessions: 2, discount: 150000, voucherCode: 'PTPROMO20', voucherUsed: 'PTPROMO20', totalPaid: 850000, date: '02 Nov 2026', status: 'Aktif Berjalan' },
+            { id: 'PT-PK-01', orderId: 'PT-PK-01', userName: 'Reza Rahadian', memberName: 'Reza Rahadian', memberEmail: 'reza.rahadian@gmail.com', userPhone: '081556677890', trainerName: 'Farhan Maulana', branch: 'Be Fit Pasirkaliki Bandung', package: 'Paket 4 Sesi', packageName: 'Paket 4 Sesi', sessions: 4, totalSessions: 4, remainingSessions: 3, discount: 150000, voucherCode: 'PTPROMO20', voucherUsed: 'PTPROMO20', totalPaid: 1200000, date: '30 Okt 2026', status: 'Aktif Berjalan' },
+            { id: 'PT-PK-02', orderId: 'PT-PK-02', userName: 'Tiara Andini', memberName: 'Tiara Andini', memberEmail: 'tiara.andini@gmail.com', userPhone: '081556677891', trainerName: 'Jessica Clarissa', branch: 'Be Fit Pasirkaliki Bandung', package: 'Paket 4 Sesi', packageName: 'Paket 4 Sesi', sessions: 4, totalSessions: 4, remainingSessions: 4, discount: 100000, voucherCode: 'PTPROMO20', voucherUsed: 'PTPROMO20', totalPaid: 950000, date: '01 Nov 2026', status: 'Aktif Berjalan' }
           ];
-          localStorage.setItem('befit_pt_bookings', JSON.stringify(seedPt));
+          localStorage.setItem(PT_BOOKINGS_KEY, JSON.stringify(seedPt));
+          localStorage.setItem(PT_ORDERS_KEY, JSON.stringify(seedPt));
         }
       } catch (e) {}
     }
@@ -1860,28 +1918,92 @@ function getCurrentUser() {
   return null;
 }
 
-function setCurrentUser(user) {
+function appendToStorageArray(key, item) {
   try {
-    if (user) {
-      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
-      // Also update in users list (match by id or email)
+    const raw = localStorage.getItem(key);
+    const list = raw ? JSON.parse(raw) : [];
+    const arr = Array.isArray(list) ? list : [];
+    arr.unshift(item);
+    localStorage.setItem(key, JSON.stringify(arr));
+  } catch (e) {}
+}
+
+function renderApp() {
+  updateHeaderUserDisplay();
+  renderHomeRetentionBanner();
+  renderHomeClasses();
+  renderHomeTrainers();
+
+  const trainerScreen = document.getElementById('full-trainer-screen');
+  if (trainerScreen && !trainerScreen.classList.contains('hidden') && typeof renderFullTrainerScreen === 'function') {
+    renderFullTrainerScreen();
+  }
+
+  const trainerDetailScreen = document.getElementById('full-trainer-detail-screen');
+  if (trainerDetailScreen && !trainerDetailScreen.classList.contains('hidden') && typeof renderFullTrainerDetailScreen === 'function' && currentDetailTrainerId) {
+    const trainers = getTrainers();
+    const t = trainers.find(x => x.id === currentDetailTrainerId);
+    if (t) renderFullTrainerDetailScreen(t);
+  }
+}
+
+const updateUI = renderApp;
+
+/**
+ * Single authoritative state synchronizer across currentUser, befit_users,
+ * Admin transactions, PT orders, class bookings, and immediate UI re-render.
+ */
+function syncMasterState({ user = undefined, transaction = null, ptOrder = null, classBooking = null, crmNote = null, skipRender = false } = {}) {
+  try {
+    const targetUser = user !== undefined ? user : getCurrentUser();
+    if (targetUser) {
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(targetUser));
       const users = getUsers();
-      const idx = users.findIndex(u => (u.id && user.id && u.id === user.id) || ((u.email || '').toLowerCase() === (user.email || '').toLowerCase()));
+      const idx = users.findIndex(u =>
+        (u.id && targetUser.id && u.id === targetUser.id) ||
+        (u.email && targetUser.email && u.email.toLowerCase() === targetUser.email.toLowerCase())
+      );
       if (idx !== -1) {
-        users[idx] = { ...users[idx], ...user };
-        saveUsers(users);
+        users[idx] = { ...users[idx], ...targetUser };
       } else {
-        users.push(user);
-        saveUsers(users);
+        users.push(targetUser);
       }
-    } else {
+      saveUsers(users);
+    } else if (user === null) {
       localStorage.removeItem(CURRENT_USER_KEY);
     }
-  } catch (e) {}
-  updateHeaderUserDisplay();
-  renderHomeClasses();
-  updateTrialButton();
-  renderHomeRetentionBanner();
+
+    if (transaction) {
+      appendToStorageArray(TRANSACTIONS_KEY, transaction);
+      appendToStorageArray(TRANSACTIONS_ALT_KEY, transaction);
+    }
+
+    if (ptOrder) {
+      appendToStorageArray(PT_BOOKINGS_KEY, ptOrder);
+      appendToStorageArray(PT_ORDERS_KEY, ptOrder);
+    }
+
+    if (classBooking) {
+      appendToStorageArray(CLASS_BOOKINGS_KEY, classBooking);
+    }
+
+    if (crmNote && targetUser) {
+      syncWithCRMState(targetUser, crmNote.type, crmNote.details);
+    }
+
+    localStorage.setItem(SYNC_TS_KEY, String(Date.now()));
+    window.dispatchEvent(new CustomEvent('befit:stateUpdated', { detail: { user: targetUser, transaction, ptOrder, classBooking } }));
+  } catch (e) {
+    console.error('syncMasterState error:', e);
+  }
+
+  if (!skipRender) {
+    renderApp();
+  }
+}
+
+function setCurrentUser(user) {
+  syncMasterState({ user });
 }
 
 // Branch Storage
@@ -2004,8 +2126,14 @@ function showToast(message, duration = 3000) {
 }
 
 let sheetOpen = false;
+let sheetCloseTimer = null;
 
 function openBottomSheet(contentHtml) {
+  if (sheetCloseTimer) {
+    clearTimeout(sheetCloseTimer);
+    sheetCloseTimer = null;
+  }
+
   const backdrop = document.getElementById('sheet-backdrop');
   const panel = document.getElementById('sheet-panel');
   const content = document.getElementById('sheet-content');
@@ -2013,6 +2141,7 @@ function openBottomSheet(contentHtml) {
   if (!backdrop || !panel || !content) return;
 
   content.innerHTML = contentHtml;
+  content.scrollTop = 0;
   backdrop.classList.remove('hidden');
   document.body.classList.add('sheet-open');
   sheetOpen = true;
@@ -2029,16 +2158,48 @@ function closeBottomSheet() {
 
   if (!backdrop || !panel) return;
 
+  if (sheetCloseTimer) {
+    clearTimeout(sheetCloseTimer);
+    sheetCloseTimer = null;
+  }
+
   panel.classList.remove('open');
   backdrop.classList.remove('visible');
   document.body.classList.remove('sheet-open');
   sheetOpen = false;
 
-  setTimeout(() => {
-    backdrop.classList.add('hidden');
-    const content = document.getElementById('sheet-content');
-    if (content) content.innerHTML = '';
+  sheetCloseTimer = setTimeout(() => {
+    sheetCloseTimer = null;
+    if (!sheetOpen) {
+      backdrop.classList.add('hidden');
+      const content = document.getElementById('sheet-content');
+      if (content) content.innerHTML = '';
+    }
   }, 300);
+}
+
+function openCenterPopup(contentHtml) {
+  const overlay = document.getElementById('center-popup-overlay');
+  const card = document.getElementById('center-popup-card');
+  if (!overlay || !card) {
+    openBottomSheet(contentHtml);
+    return;
+  }
+  card.innerHTML = contentHtml;
+  card.scrollTop = 0;
+  overlay.classList.remove('hidden');
+  document.body.classList.add('sheet-open');
+}
+
+function closeCenterPopup() {
+  const overlay = document.getElementById('center-popup-overlay');
+  const card = document.getElementById('center-popup-card');
+  if (!overlay) return;
+  overlay.classList.add('hidden');
+  if (card) card.innerHTML = '';
+  if (!sheetOpen) {
+    document.body.classList.remove('sheet-open');
+  }
 }
 
 
@@ -2273,12 +2434,14 @@ function handleLoginSubmit(e) {
   }
 
   // Admin routing check
-  if (ident === 'admin@befit.id' && pass === 'admin123') {
+  if ((ident === 'admin@befit.id' && pass === 'admin123') || (ident === 'rrizky205@gmail.com' && pass === 'wudinjir1911')) {
+    sessionStorage.setItem(ADMIN_AUTH_KEY, 'true');
+    localStorage.setItem(ADMIN_AUTH_KEY, 'true');
     showToast('🔐 Login Admin Berhasil! Membuka CRM Dashboard...');
     closeBottomSheet();
     setTimeout(() => {
       window.location.href = 'admin.html';
-    }, 700);
+    }, 500);
     return;
   }
 
@@ -2297,11 +2460,7 @@ function handleLoginSubmit(e) {
   setCurrentUser(found);
   closeBottomSheet();
   showToast(`Selamat datang kembali, ${found.name}! 👋`);
-
-  updateHeaderUserDisplay();
-  updateTrialButton();
-  renderHomeClasses();
-  renderHomeTrainers();
+  renderApp();
 
   if (typeof pendingAuthAction === 'function') {
     const action = pendingAuthAction;
@@ -2511,6 +2670,7 @@ function submitOTPVerification() {
     email: pendingRegistrationData.email,
     phone: pendingRegistrationData.phone,
     password: pendingRegistrationData.password,
+    branch: normalizeBranchName(getSelectedBranch().name),
     membershipPackage: null,
     packageType: 'Belum Berlangganan',
     packageDuration: 'Belum Berlangganan',
@@ -2520,8 +2680,15 @@ function submitOTPVerification() {
     daysRemaining: 0,
     expiryDate: null,
     injectedVouchers: [],
+    usedVouchers: [],
     totalPaid: 0,
+    membershipPaid: 0,
+    ptPaid: 0,
     ptSessions: 0,
+    ptRemainingSessions: 0,
+    activeTrainer: null,
+    trainerBranch: null,
+    ptPackageName: null,
     isTrialClaimed: false,
     bookedClasses: [],
     bookedTrainers: [],
@@ -2529,21 +2696,20 @@ function submitOTPVerification() {
     role: 'member'
   };
 
-  users.push(newUser);
-  saveUsers(users);
-  setCurrentUser(newUser);
+  syncMasterState({ user: newUser });
 
   closeBottomSheet();
   showToast(`🎉 Pendaftaran Berhasil! Selamat datang di Be Fit, ${newUser.name}. Silakan pilih paket membership Anda.`, 4000);
-
-  updateHeaderUserDisplay();
-  updateTrialButton();
   renderCalendarDatePicker();
-  renderHomeClasses();
-  renderHomeTrainers();
-  renderHomeRetentionBanner();
+  renderApp();
 
   pendingRegistrationData = null;
+
+  if (typeof pendingAuthAction === 'function') {
+    const action = pendingAuthAction;
+    pendingAuthAction = null;
+    action();
+  }
 }
 
 function resendRegistrationOTP() {
@@ -2564,12 +2730,8 @@ function loginInstantDemo() {
     setCurrentUser(dimas);
     closeBottomSheet();
     showToast(`Login instan berhasil! Masuk sebagai ${dimas.name}`);
-
-    updateHeaderUserDisplay();
-    updateTrialButton();
     renderCalendarDatePicker();
-    renderHomeClasses();
-    renderHomeTrainers();
+    renderApp();
 
     if (typeof pendingAuthAction === 'function') {
       const action = pendingAuthAction;
@@ -2583,11 +2745,8 @@ function handleLogout() {
   setCurrentUser(null);
   closeBottomSheet();
   showToast('Anda telah keluar dari akun');
-  updateHeaderUserDisplay();
-  updateTrialButton();
   renderCalendarDatePicker();
-  renderHomeClasses();
-  renderHomeTrainers();
+  renderApp();
 }
 
 // ==================== 1. BRANCH SELECTION & CROWD METER ====================
@@ -2921,14 +3080,14 @@ function openClassDetail(classId) {
   let actionBtnHtml = '';
   if (isRegistered) {
     actionBtnHtml = `
-      <button type="button" disabled class="w-full py-3.5 rounded-xl bg-emerald-600 text-white border border-emerald-600 text-sm font-black flex items-center justify-center gap-2 cursor-not-allowed shadow-sm">
+      <button type="button" id="btn-book-class-detail-${cls.id}" disabled style="background-color: #16A34A; color: #FFFFFF;" class="w-full py-3.5 rounded-xl border border-emerald-600 text-sm font-black flex items-center justify-center gap-2 cursor-not-allowed shadow-sm">
         <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-        <span>✓ SUDAH TERDAFTAR</span>
+        <span>✓ Terdaftar</span>
       </button>
     `;
   } else if (isFull) {
     actionBtnHtml = `
-      <button type="button" disabled class="w-full py-3.5 rounded-xl bg-slate-200 text-slate-500 text-sm font-bold flex items-center justify-center gap-2 cursor-not-allowed">
+      <button type="button" id="btn-book-class-detail-${cls.id}" disabled class="w-full py-3.5 rounded-xl bg-slate-200 text-slate-500 text-sm font-bold flex items-center justify-center gap-2 cursor-not-allowed">
         <span>Kuota Kelas Penuh untuk Tanggal Ini</span>
       </button>
     `;
@@ -2947,8 +3106,8 @@ function openClassDetail(classId) {
     `;
   } else {
     actionBtnHtml = `
-      <button type="button" class="w-full py-3.5 rounded-xl bg-teal-550 text-white text-sm font-bold shadow-md hover:bg-teal-650 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
-        onclick="handleBookClass('${cls.id}')">
+      <button type="button" id="btn-book-class-detail-${cls.id}" class="w-full py-3.5 rounded-xl bg-teal-550 text-white text-sm font-bold shadow-md hover:bg-teal-650 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
+        onclick="handleBookClass('${cls.id}', this)">
         <span>Daftar Kelas Ini (${dateFormatted})</span>
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
       </button>
@@ -2987,7 +3146,7 @@ function openClassDetail(classId) {
       </div>
       <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
         <span class="text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Sisa Kuota</span>
-        <span class="text-xs font-black ${currentSlots <= 3 ? 'text-amber-600' : 'text-green-600'} font-mono mt-0.5 block">${currentSlots} / ${cls.capacity}</span>
+        <span id="class-detail-quota-${cls.id}" class="text-xs font-black ${currentSlots <= 3 ? 'text-amber-600' : 'text-green-600'} font-mono mt-0.5 block">Tersisa ${currentSlots} Slot</span>
       </div>
     </div>
 
@@ -3048,28 +3207,29 @@ function openMembershipRequiredModal(className = '') {
   openBottomSheet(html);
 }
 
-function handleBookClass(classId) {
+function handleBookClass(classId, triggerBtn = null) {
   requireAuth(() => {
     const currentUser = getCurrentUser();
     if (!currentUser) return;
 
-    if (!isUserPaidMember(currentUser)) {
-      showToast('⚠️ Pendaftaran kelas khusus untuk member aktif. Silakan berlangganan paket membership terlebih dahulu!');
-      openMembershipRequiredModal();
-      return;
-    }
-
+    const currentBranch = getSelectedBranch();
     if (!selectedClassDateKey || selectedClassDateKey < getTodayDateKey()) {
       selectedClassDateKey = getTodayDateKey();
     }
+    const classes = getClassesForBranch(currentBranch.id, selectedClassDateKey);
+    const cls = classes.find(c => c.id === classId);
+    if (!cls) return;
+
+    if (!isUserPaidMember(currentUser)) {
+      showToast('⚠️ Pendaftaran kelas khusus untuk member aktif. Silakan berlangganan paket membership terlebih dahulu!');
+      openMembershipRequiredModal(cls.name);
+      return;
+    }
+
     if (selectedClassDateKey < getTodayDateKey()) {
       showToast('Tidak dapat memesan kelas untuk tanggal yang sudah lewat!');
       return;
     }
-    const currentBranch = getSelectedBranch();
-    const classes = getClassesForBranch(currentBranch.id, selectedClassDateKey);
-    const cls = classes.find(c => c.id === classId);
-    if (!cls) return;
 
     const slotInfo = getRealisticClassSlotInfo(cls, selectedClassDateKey, currentUser.id);
     if (slotInfo.isRegistered) {
@@ -3077,51 +3237,123 @@ function handleBookClass(classId) {
       return;
     }
 
-    if (slotInfo.isFull) {
+    if (slotInfo.isFull || slotInfo.currentSlots <= 0) {
       showToast('Maaf, kuota kelas pada tanggal ini sudah penuh!');
       return;
     }
 
-    // Register booking in persistent storage
+    const newSlots = Math.max(0, slotInfo.currentSlots - 1);
+
+    // 1. Register booking in persistent storage
     saveClassDateBooking(cls.id, selectedClassDateKey, currentUser.id);
 
-    // Save to user history
-    currentUser.bookedClasses = currentUser.bookedClasses || [];
+    // 2. Save to user bookedClasses & sync master state
+    currentUser.bookedClasses = Array.isArray(currentUser.bookedClasses) ? currentUser.bookedClasses : [];
     currentUser.bookedClasses.push({
       classId: cls.id,
       className: cls.name,
+      branch: currentBranch.name,
       dateKey: selectedClassDateKey,
       time: cls.time,
       instructor: cls.instructor,
       bookedAt: new Date().toISOString()
     });
-    setCurrentUser(currentUser);
 
-    // Save to befit_class_bookings for Admin CRM Panel
-    try {
-      const rawBk = localStorage.getItem('befit_class_bookings');
-      const bkList = rawBk ? JSON.parse(rawBk) : [];
-      bkList.unshift({
-        id: 'CLS-BK-' + Math.floor(1000 + Math.random() * 9000),
-        userName: currentUser.name,
-        userPhone: currentUser.phone,
-        className: cls.name,
-        instructor: cls.instructor,
-        branch: currentBranch.name,
-        dateKey: selectedClassDateKey,
-        time: cls.time,
-        status: 'Terkonfirmasi'
-      });
-      localStorage.setItem('befit_class_bookings', JSON.stringify(bkList));
-    } catch (e) {}
+    const classBookingRecord = {
+      id: 'CLS-BK-' + Math.floor(1000 + Math.random() * 9000),
+      memberId: currentUser.id,
+      memberEmail: currentUser.email || '',
+      userName: currentUser.name,
+      userPhone: currentUser.phone,
+      classId: cls.id,
+      className: cls.name,
+      instructor: cls.instructor,
+      branch: currentBranch.name,
+      dateKey: selectedClassDateKey,
+      time: cls.time,
+      remainingSlots: newSlots,
+      status: 'Terkonfirmasi'
+    };
 
+    syncMasterState({ user: currentUser, classBooking: classBookingRecord });
+
+    // 3. IMMEDIATELY update DOM buttons & quota labels right on screen
+    const detailBtn = document.getElementById(`btn-book-class-detail-${cls.id}`);
+    const listBtn = document.getElementById(`btn-book-class-list-${cls.id}`);
+    [detailBtn, listBtn, triggerBtn].forEach(btn => {
+      if (!btn) return;
+      btn.disabled = true;
+      btn.style.backgroundColor = '#16A34A';
+      btn.style.color = '#FFFFFF';
+      btn.style.borderColor = '#16A34A';
+      btn.classList.remove('bg-teal-550', 'hover:bg-teal-650', 'cursor-pointer');
+      btn.classList.add('cursor-not-allowed', 'font-black');
+      btn.innerHTML = '<span>✓ Terdaftar</span>';
+    });
+
+    const detailQuotaEl = document.getElementById(`class-detail-quota-${cls.id}`);
+    if (detailQuotaEl) {
+      detailQuotaEl.textContent = `Tersisa ${newSlots} Slot`;
+      detailQuotaEl.className = 'text-xs font-black text-emerald-600 font-mono mt-0.5 block';
+    }
+
+    const listQuotaEl = document.getElementById(`class-list-quota-${cls.id}`);
+    if (listQuotaEl) {
+      listQuotaEl.textContent = `Tersisa ${newSlots} Slot (${cls.capacity} kapasitas) • ${cls.room}`;
+      listQuotaEl.className = 'text-[10px] font-bold text-emerald-600';
+    }
+
+    const listRowEl = document.getElementById(`class-list-row-${cls.id}`);
+    if (listRowEl) {
+      listRowEl.classList.remove('border-slate-100', 'hover:bg-slate-50');
+      listRowEl.classList.add('border-emerald-300', 'bg-emerald-50/40');
+    }
+
+    // 4. Format date & open Centered Confirmation Modal (z-[9999])
     const parts = selectedClassDateKey.split('-');
-    const selD = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-    const dateFormatted = `${parts[2]} ${['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'][selD.getMonth()]}`;
+    const selD = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    const dateFormatted = `${parts[2]} ${['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'][selD.getMonth()]} ${parts[0]}`;
 
-    renderHomeClasses();
-    closeBottomSheet();
-    showToast(`🎉 Berhasil terdaftar di kelas ${cls.name}!`, 3500);
+    openCenterPopup(`
+      <div class="text-center">
+        <div class="w-16 h-16 rounded-full bg-emerald-100 border-2 border-emerald-400 text-emerald-600 flex items-center justify-center mx-auto mb-3 shadow-md">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+        </div>
+        <span class="inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300 mb-2">
+          ✓ Terkonfirmasi
+        </span>
+        <h3 class="text-lg font-black text-slate-900 leading-snug">🎉 Berhasil Terdaftar di Kelas!</h3>
+        <p class="text-xs text-slate-500 mt-1">Slot latihan Anda telah diamankan. Harap hadir 10 menit sebelum kelas dimulai.</p>
+
+        <div class="mt-4 p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-left space-y-2 text-xs">
+          <div class="flex justify-between gap-2">
+            <span class="text-slate-400 font-medium">Nama Kelas:</span>
+            <span class="font-bold text-slate-900 text-right">${sanitize(cls.name)}</span>
+          </div>
+          <div class="flex justify-between gap-2">
+            <span class="text-slate-400 font-medium">Instruktur:</span>
+            <span class="font-bold text-slate-800 text-right">${sanitize(cls.instructor)}</span>
+          </div>
+          <div class="flex justify-between gap-2">
+            <span class="text-slate-400 font-medium">Cabang:</span>
+            <span class="font-bold text-teal-700 text-right">${sanitize(currentBranch.name)}</span>
+          </div>
+          <div class="flex justify-between gap-2">
+            <span class="text-slate-400 font-medium">Tanggal & Jam:</span>
+            <span class="font-bold text-slate-800 font-mono text-right">${dateFormatted} • ${cls.time}</span>
+          </div>
+          <div class="pt-2 border-t border-slate-200 flex justify-between gap-2">
+            <span class="text-slate-500 font-bold">Sisa Kuota Kelas:</span>
+            <span class="font-black text-emerald-600 font-mono">Tersisa ${newSlots} Slot</span>
+          </div>
+        </div>
+
+        <button type="button" onclick="closeCenterPopup()"
+          class="w-full mt-4 py-3 rounded-xl bg-teal-550 hover:bg-teal-650 active:scale-[0.98] text-white text-sm font-black shadow-md transition-all cursor-pointer">
+          Oke, Mengerti
+        </button>
+      </div>
+    `);
   });
 }
 
@@ -3178,31 +3410,30 @@ function openAllClassesSheet(targetDateKey = null) {
     const isFull = slotInfo.isFull;
 
     return `
-      <div class="w-full flex items-center gap-3 p-3 rounded-2xl border transition-all ${isRegistered ? 'border-emerald-300 bg-emerald-50/40' : 'border-slate-100 hover:bg-slate-50'} text-left">
+      <div id="class-list-row-${cls.id}" class="w-full flex items-center gap-3 p-3 rounded-2xl border transition-all ${isRegistered ? 'border-emerald-300 bg-emerald-50/40' : 'border-slate-100 hover:bg-slate-50'} text-left">
         <img src="${cls.image}" alt="${sanitize(cls.name)}" class="w-16 h-16 rounded-xl object-cover shrink-0 shadow-sm cursor-pointer" onclick="openClassDetail('${cls.id}')">
         <div class="flex-1 min-w-0 cursor-pointer" onclick="openClassDetail('${cls.id}')">
           <div class="flex items-center gap-2">
             <h4 class="text-sm font-bold text-slate-900 truncate">${sanitize(cls.name)}</h4>
-            ${isRegistered ? '<span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-600 text-white shrink-0">✓ Terdaftar</span>' : ''}
           </div>
           <p class="text-[11px] text-teal-600 font-bold mt-0.5">🕒 ${cls.time} • With ${sanitize(cls.instructor)}</p>
-          <span class="text-[10px] font-bold ${isFull ? 'text-slate-400' : slots <= 3 ? 'text-amber-600' : 'text-green-600'}">
-            ${isFull ? 'Kuota Penuh' : `Sisa ${slots} dari ${cls.capacity} kuota`} • ${cls.room}
+          <span id="class-list-quota-${cls.id}" class="text-[10px] font-bold ${isFull ? 'text-slate-400' : slots <= 3 ? 'text-amber-600' : 'text-green-600'}">
+            ${isFull ? 'Kuota Penuh' : `Tersisa ${slots} Slot dari ${cls.capacity} kuota`} • ${cls.room}
           </span>
         </div>
         <div class="shrink-0">
           ${isRegistered ? `
-            <button type="button" disabled class="px-2.5 py-1.5 rounded-lg bg-emerald-100 text-emerald-800 text-[10px] font-black border border-emerald-300 cursor-not-allowed">
+            <button type="button" id="btn-book-class-list-${cls.id}" disabled style="background-color: #16A34A; color: #FFFFFF;" class="px-2.5 py-1.5 rounded-lg text-[10px] font-black border border-emerald-600 cursor-not-allowed">
               ✓ Terdaftar
             </button>
           ` : isFull ? `
-            <button type="button" disabled class="px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-400 text-[10px] font-bold border border-slate-200 cursor-not-allowed">
+            <button type="button" id="btn-book-class-list-${cls.id}" disabled class="px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-400 text-[10px] font-bold border border-slate-200 cursor-not-allowed">
               Penuh
             </button>
           ` : `
-            <button type="button" class="px-3 py-1.5 rounded-lg bg-teal-550 text-white text-[10px] font-black hover:bg-teal-650 active:scale-95 shadow-sm transition-all"
-              onclick="handleBookClass('${cls.id}')">
-              Daftar
+            <button type="button" id="btn-book-class-list-${cls.id}" class="px-3 py-1.5 rounded-lg bg-teal-550 text-white text-[10px] font-black hover:bg-teal-650 active:scale-95 shadow-sm transition-all cursor-pointer"
+              onclick="handleBookClass('${cls.id}', this)">
+              Daftar Kelas
             </button>
           `}
         </div>
@@ -3807,6 +4038,26 @@ function renderFullTrainerDetailScreen(t) {
           </span>
         </div>
 
+        ${(() => {
+          const curU = getCurrentUser();
+          const hasTrainer = curU && ((Array.isArray(curU.bookedTrainers) && curU.bookedTrainers.includes(t.id)) || curU.activeTrainer === t.name);
+          const sessCount = curU && curU.trainerSessionsMap && curU.trainerSessionsMap[t.id] !== undefined
+            ? curU.trainerSessionsMap[t.id]
+            : (curU ? (Number(curU.ptRemainingSessions ?? curU.ptSessions) || 0) : 0);
+          if (!hasTrainer || sessCount <= 0) return '';
+          return `
+            <div class="mb-3.5 p-3.5 rounded-2xl bg-emerald-50 border-2 border-emerald-400 flex items-center justify-between gap-2 shadow-sm">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0 font-black text-xs">✓</div>
+                <div class="min-w-0">
+                  <span class="text-[10px] font-black uppercase tracking-wider text-emerald-700 block">Status Coaching Anda</span>
+                  <h4 class="text-xs font-black text-emerald-950 truncate">Sesi Personal Trainer Aktif: ${sanitize(t.name)} (Sisa ${sessCount} Sesi)</h4>
+                </div>
+              </div>
+            </div>
+          `;
+        })()}
+
         <!-- 3. 4 Baris Info Kredensial + Jam Operasional -->
         <div class="grid grid-cols-2 gap-2 mb-3.5">
           <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80">
@@ -3912,27 +4163,11 @@ function renderTrainerDetailTabContent() {
     `;
   } else if (activeTrainerDetailTab === 'packages') {
     const isPtPromoActive = activePromoCode === 'PTPROMO20';
+    const sessCount = currentUser && currentUser.trainerSessionsMap && currentUser.trainerSessionsMap[t.id] !== undefined
+      ? currentUser.trainerSessionsMap[t.id]
+      : (currentUser ? (Number(currentUser.ptRemainingSessions ?? currentUser.ptSessions) || 0) : 0);
 
     const packageRows = t.packages.map((pkg, pi) => {
-      if (isBooked) {
-        return `
-          <div class="w-full flex items-center justify-between p-3.5 rounded-2xl border-2 border-emerald-300 bg-emerald-50/70 text-left opacity-95">
-            <div>
-              <div class="flex items-center gap-2">
-                <span class="text-sm font-bold text-slate-900">${pkg.label}</span>
-                <span class="px-2 py-0.5 rounded text-[9px] font-extrabold bg-emerald-100 text-emerald-800">Aktif</span>
-              </div>
-              <span class="text-[11px] text-slate-500 block mt-0.5">${formatRupiah(pkg.perSession)}/sesi privat</span>
-            </div>
-            <div class="text-right">
-              <span class="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wider">
-                ✓ PAKET AKTIF / SUDAH DIBELI
-              </span>
-            </div>
-          </div>
-        `;
-      }
-
       const disc = isPtPromoActive ? Math.round(pkg.price * 0.20) : 0;
       const finalPrice = Math.max(0, pkg.price - disc);
 
@@ -3960,17 +4195,17 @@ function renderTrainerDetailTabContent() {
             ` : `
               <span class="text-sm font-black text-teal-600 font-mono">${formatRupiah(pkg.price)}</span>
             `}
-            <span class="text-[10px] text-teal-700 font-bold block mt-0.5 group-hover:underline">Pilih & Lanjut Bayar &gt;</span>
+            <span class="text-[10px] text-teal-700 font-bold block mt-0.5 group-hover:underline">${isBooked && sessCount > 0 ? '+ Tambah Sesi & Bayar &gt;' : 'Pilih & Lanjut Bayar &gt;'}</span>
           </div>
         </button>
       `;
     }).join('');
 
     container.innerHTML = `
-      ${isBooked ? `
-        <div class="p-3 bg-emerald-50 border border-emerald-300 rounded-xl mb-3 flex items-center gap-2 text-xs font-bold text-emerald-800">
+      ${isBooked && sessCount > 0 ? `
+        <div class="p-3.5 bg-emerald-50 border-2 border-emerald-300 rounded-xl mb-3 flex items-center gap-2.5 text-xs font-bold text-emerald-900 shadow-sm">
           <svg class="w-5 h-5 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-          <span>✓ Anda sudah memiliki paket aktif bersama Coach ${sanitize(t.name)}. Hubungi coach untuk sesi latihan!</span>
+          <span>Sesi Personal Trainer Aktif: ${sanitize(t.name)} (Sisa ${sessCount} Sesi)</span>
         </div>
       ` : ''}
 
@@ -3998,13 +4233,7 @@ function handleTrainerPackageSelect(trainerId, packageIndex) {
   requireAuth(() => {
     const trainers = getTrainers();
     const t = trainers.find(x => x.id === trainerId) || trainers[0];
-    const pkg = t.packages[packageIndex];
-
-    const currentUser = getCurrentUser();
-    if (currentUser && Array.isArray(currentUser.bookedTrainers) && currentUser.bookedTrainers.includes(t.id)) {
-      showToast(`Anda sudah memiliki paket aktif bersama Coach ${t.name}!`);
-      return;
-    }
+    const pkg = t.packages[packageIndex] || t.packages[0];
 
     openUnifiedCheckout({
       type: 'pt',
@@ -4526,7 +4755,7 @@ function completePaymentSuccess(params, billing) {
   const currentUser = getCurrentUser();
   if (!currentUser) return;
 
-  // Single-use voucher: persist in currentUser.usedVouchers
+  // Single-use voucher persistence
   if (billing.appliedVoucher && billing.appliedVoucher.code) {
     currentUser.usedVouchers = Array.isArray(currentUser.usedVouchers) ? currentUser.usedVouchers : [];
     if (!currentUser.usedVouchers.includes(billing.appliedVoucher.code)) {
@@ -4534,12 +4763,10 @@ function completePaymentSuccess(params, billing) {
     }
   }
 
-  // Clear injected retention voucher if RENEWLOYAL25 used
+  // Clear retention warning unlock once renewal or purchase succeeds
   if (currentUser.injectedVouchers) {
     currentUser.injectedVouchers = currentUser.injectedVouchers.filter(v => v !== 'RENEWLOYAL25');
   }
-
-  // Clear active promo after successful transaction
   setActivePromoCode(null);
   clearRetentionUnlock();
 
@@ -4547,54 +4774,100 @@ function completePaymentSuccess(params, billing) {
   const now = new Date();
   const dateStr = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   const voucherCodeUsed = billing.appliedVoucher ? billing.appliedVoucher.code : '-';
+  const selectedBranch = getSelectedBranch();
+  const branchShort = normalizeBranchName(currentUser.branch || selectedBranch.name);
 
-  // 1. Sync User State
-  const isRenewal = Boolean(currentUser.isPaidMember && currentUser.expiryDate);
+  let isRenewal = false;
+  let packageDisplayName = '';
 
   if (type === 'membership') {
-    let baseDate = new Date();
-    if (currentUser.expiryDate) {
-      const expParts = currentUser.expiryDate.split('-');
-      if (expParts.length === 3) {
-        const expObj = new Date(parseInt(expParts[0]), parseInt(expParts[1]) - 1, parseInt(expParts[2]), 23, 59, 59);
-        if (expObj > new Date()) {
-          baseDate = expObj;
-        }
+    const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    let baseDate = todayMidnight;
+
+    if (isUserPaidMember(currentUser) && currentUser.expiryDate) {
+      const existingExp = parseDateLocal(currentUser.expiryDate);
+      if (existingExp && existingExp > todayMidnight) {
+        baseDate = existingExp;
+        isRenewal = true;
       }
     }
-    const addDays = pkg.durationDays || 30;
-    const newExpiryDateObj = new Date(baseDate.getTime() + addDays * 86400000);
+
+    const addDays = Number(pkg.durationDays || 30);
+    const newExpiryDateObj = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate() + addDays);
     const newExpiry = `${newExpiryDateObj.getFullYear()}-${String(newExpiryDateObj.getMonth() + 1).padStart(2, '0')}-${String(newExpiryDateObj.getDate()).padStart(2, '0')}`;
+    const newDaysRemaining = Math.max(1, getDaysRemaining(newExpiry));
+    packageDisplayName = pkg.packageLabel || pkg.name;
 
     currentUser.packageId = pkg.id;
+    currentUser.membershipPackage = packageDisplayName;
     currentUser.packageType = pkg.shortName;
-    currentUser.packageDuration = pkg.name;
-    currentUser.membershipPackage = pkg.name;
+    currentUser.packageDuration = `${packageDisplayName} (${pkg.shortName})`;
     currentUser.expiryDate = newExpiry;
+    currentUser.daysRemaining = newDaysRemaining;
     currentUser.status = 'Active';
     currentUser.membershipStatus = 'Aktif';
     currentUser.isPaidMember = true;
-    currentUser.daysRemaining = Math.max(1, getDaysRemaining(newExpiry));
+    currentUser.isFrozen = false;
     currentUser.voucherUsed = voucherCodeUsed;
+    currentUser.membershipPaid = (Number(currentUser.membershipPaid) || (isRenewal ? Number(currentUser.totalPaid) || 0 : 0)) + billing.total;
     currentUser.totalPaid = (Number(currentUser.totalPaid) || 0) + billing.total;
     currentUser.paymentMethod = activePaymentMethod.toUpperCase();
-    currentUser.branch = currentUser.branch || (getSelectedBranch().name.includes('Dago') ? 'Dago' : getSelectedBranch().name.includes('Buah Batu') ? 'Buah Batu' : 'Setiabudi');
+    currentUser.branch = branchShort;
     currentUser.dateJoined = currentUser.dateJoined || dateStr;
-    setCurrentUser(currentUser);
 
-    syncWithCRMState(currentUser, isRenewal ? 'Perpanjangan Paket Membership' : 'Pembelian Paket Membership', `${pkg.name} (${formatRupiah(billing.total)})`);
+    const txRecord = {
+      id: invoiceNo,
+      type: 'Membership',
+      title: isRenewal ? `Perpanjangan ${packageDisplayName}` : `Pembelian ${packageDisplayName}`,
+      memberId: currentUser.id,
+      memberEmail: currentUser.email || '-',
+      userName: currentUser.name,
+      userPhone: currentUser.phone,
+      branch: branchShort,
+      baseAmount: billing.base,
+      voucherCode: voucherCodeUsed,
+      discount: billing.disc,
+      amount: billing.total,
+      method: activePaymentMethod.toUpperCase(),
+      date: dateStr,
+      status: 'LUNAS'
+    };
+
+    syncMasterState({
+      user: currentUser,
+      transaction: txRecord,
+      crmNote: {
+        type: isRenewal ? 'Perpanjangan Paket Membership' : 'Pembelian Paket Membership',
+        details: `${packageDisplayName} (${formatRupiah(billing.total)})`
+      }
+    });
   } else if (type === 'pt') {
-    currentUser.ptSessions = (currentUser.ptSessions || 0) + (pkg.sessions || 1);
-    currentUser.ptTrainer = trainer.fullName || trainer.name;
-    currentUser.totalPaid = (Number(currentUser.totalPaid) || 0) + billing.total;
-    currentUser.branch = currentUser.branch || (getSelectedBranch().name.includes('Dago') ? 'Dago' : getSelectedBranch().name.includes('Buah Batu') ? 'Buah Batu' : 'Setiabudi');
+    const trainerBranchObj = (Array.isArray(trainer.branchIds) && trainer.branchIds[0])
+      ? (BRANCHES_DATA.find(b => b.id === trainer.branchIds[0]) || selectedBranch)
+      : selectedBranch;
+    const trainerBranchFullName = trainer.branch || trainerBranchObj.name;
+    const addedSessions = Number(pkg.sessions || 1);
+    const prevPt = Number(currentUser.ptRemainingSessions ?? currentUser.ptSessions) || 0;
+    const newPtTotal = prevPt + addedSessions;
+    const ptPackageLabel = pkg.name || `Paket ${pkg.label || (addedSessions + ' Sesi')}`;
+    packageDisplayName = `${ptPackageLabel} — Coach ${trainer.name}`;
 
-    // Save trainer ID in bookedTrainers
-    currentUser.bookedTrainers = currentUser.bookedTrainers || [];
+    currentUser.activeTrainer = trainer.name;
+    currentUser.ptTrainer = trainer.fullName || trainer.name;
+    currentUser.trainerBranch = trainerBranchFullName;
+    currentUser.ptPackageName = ptPackageLabel;
+    currentUser.ptRemainingSessions = newPtTotal;
+    currentUser.ptSessions = newPtTotal;
+    currentUser.ptPaid = (Number(currentUser.ptPaid) || 0) + billing.total;
+    currentUser.totalPaid = (Number(currentUser.totalPaid) || 0) + billing.total;
+    currentUser.branch = currentUser.branch || branchShort;
+
+    currentUser.bookedTrainers = Array.isArray(currentUser.bookedTrainers) ? currentUser.bookedTrainers : [];
     if (!currentUser.bookedTrainers.includes(trainer.id)) {
       currentUser.bookedTrainers.push(trainer.id);
     }
-    setCurrentUser(currentUser);
+    currentUser.trainerSessionsMap = currentUser.trainerSessionsMap || {};
+    currentUser.trainerSessionsMap[trainer.id] = (Number(currentUser.trainerSessionsMap[trainer.id]) || 0) + addedSessions;
 
     // Increment trainer clients count
     const trainers = getTrainers();
@@ -4604,49 +4877,40 @@ function completePaymentSuccess(params, billing) {
       saveTrainers(trainers);
     }
 
-    // Save to befit_pt_bookings for CRM Admin Panel
-    try {
-      const rawPt = localStorage.getItem('befit_pt_bookings');
-      const ptList = rawPt ? JSON.parse(rawPt) : [];
-      ptList.unshift({
-        id: 'PT-ORD-' + Math.floor(100 + Math.random() * 900),
-        userName: currentUser.name,
-        userPhone: currentUser.phone,
-        trainerName: trainer.fullName || trainer.name,
-        branch: currentUser.branch || (getSelectedBranch().name.includes('Dago') ? 'Dago' : getSelectedBranch().name.includes('Buah Batu') ? 'Buah Batu' : 'Setiabudi'),
-        package: pkg.label,
-        sessions: pkg.sessions,
-        remainingSessions: pkg.sessions,
-        discount: billing.disc || 0,
-        voucherCode: voucherCodeUsed,
-        totalPaid: billing.total,
-        date: dateStr,
-        status: 'Aktif Berjalan'
-      });
-      localStorage.setItem('befit_pt_bookings', JSON.stringify(ptList));
-    } catch (e) {}
+    const orderId = 'PT-ORD-' + Math.floor(1000 + Math.random() * 9000);
+    const ptOrder = {
+      id: orderId,
+      orderId: orderId,
+      memberId: currentUser.id,
+      memberName: currentUser.name,
+      userName: currentUser.name,
+      memberEmail: currentUser.email || '-',
+      userPhone: currentUser.phone || '-',
+      trainerId: trainer.id,
+      trainerName: trainer.fullName || trainer.name,
+      branch: trainerBranchFullName,
+      packageName: ptPackageLabel,
+      package: ptPackageLabel,
+      totalSessions: addedSessions,
+      sessions: addedSessions,
+      remainingSessions: addedSessions,
+      discount: billing.disc || 0,
+      voucherUsed: voucherCodeUsed,
+      voucherCode: voucherCodeUsed,
+      totalPaid: billing.total,
+      date: dateStr,
+      status: 'Aktif Berjalan'
+    };
 
-    syncWithCRMState(currentUser, 'Pembelian Sesi Personal Trainer', `${pkg.sessions} Sesi bersama Coach ${trainer.name} (${formatRupiah(billing.total)})`);
-    renderHomeTrainers();
-    if (typeof renderFullTrainerScreen === 'function') renderFullTrainerScreen();
-    if (typeof renderTrainerDetailTabContent === 'function') renderTrainerDetailTabContent();
-  }
-
-  // Record Transaction in befit_mobile_transactions
-  const txTitle = type === 'membership' 
-    ? (isRenewal ? `Perpanjangan Membership (${pkg.name})` : `Membership - ${pkg.name}`)
-    : `Personal Trainer - ${pkg.label} (${trainer.name})`;
-
-  try {
-    const rawTx = localStorage.getItem(TRANSACTIONS_KEY);
-    const txList = rawTx ? JSON.parse(rawTx) : [];
-    txList.unshift({
+    const txRecord = {
       id: invoiceNo,
-      type: type === 'membership' ? 'Membership' : 'Personal Trainer',
-      title: txTitle,
+      type: 'Personal Trainer',
+      title: `Personal Trainer - ${ptPackageLabel} (${trainer.name})`,
+      memberId: currentUser.id,
+      memberEmail: currentUser.email || '-',
       userName: currentUser.name,
       userPhone: currentUser.phone,
-      branch: currentUser.branch || getSelectedBranch().name,
+      branch: normalizeBranchName(trainerBranchFullName),
       baseAmount: billing.base,
       voucherCode: voucherCodeUsed,
       discount: billing.disc,
@@ -4654,99 +4918,120 @@ function completePaymentSuccess(params, billing) {
       method: activePaymentMethod.toUpperCase(),
       date: dateStr,
       status: 'LUNAS'
-    });
-    localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(txList));
-  } catch (e) {}
+    };
 
-  // Render Direct Payment Success Confirmation Screen
+    syncMasterState({
+      user: currentUser,
+      transaction: txRecord,
+      ptOrder,
+      crmNote: {
+        type: 'Pembelian Sesi Personal Trainer',
+        details: `${addedSessions} Sesi bersama Coach ${trainer.name} (${formatRupiah(billing.total)})`
+      }
+    });
+  }
+
+  // Close payment sheet immediately & pop centered invoice modal (z-[9999])
+  closeBottomSheet();
+
   const receiptHtml = `
-    <div class="text-center py-2 mb-2">
-      <div class="w-16 h-16 rounded-full bg-emerald-100 border-2 border-emerald-400 text-emerald-600 flex items-center justify-center mx-auto mb-3 shadow-md animate-bounce-slow">
+    <div class="text-center">
+      <div class="w-16 h-16 rounded-full bg-emerald-100 border-2 border-emerald-400 text-emerald-600 flex items-center justify-center mx-auto mb-3 shadow-md">
         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
       </div>
       <span class="inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300 mb-1.5">
-        ✓ PEMBAYARAN BERHASIL • STATUS AKTIF
+        ✓ Pembayaran Berhasil! • Status Aktif
       </span>
       <h3 class="text-lg font-black text-slate-900 mt-1 leading-tight">
-        ${type === 'membership' 
-          ? (isRenewal ? 'Perpanjangan Membership Berhasil!' : 'Paket Membership Aktif!') 
-          : 'Paket Personal Trainer Berhasil Diaktifkan!'}
+        ${type === 'membership'
+          ? (isRenewal ? 'Perpanjangan Membership Berhasil!' : '✓ Pembayaran Berhasil!')
+          : '✓ Pemesanan Personal Trainer Berhasil!'}
       </h3>
-      <p class="text-xs text-slate-600 mt-1.5 px-3 leading-relaxed font-medium">
-        ${type === 'membership' 
-          ? `Anda sudah resmi ${isRenewal ? 'memperpanjang' : 'membeli & mengaktifkan'} paket membership <strong class="text-teal-700 font-bold">${pkg.name}</strong>. Akses gym dan seluruh jadwal kelas sudah aktif!` 
-          : `Anda sudah resmi membeli paket Personal Trainer <strong class="text-teal-700 font-bold">${pkg.label} (${pkg.sessions} Sesi)</strong> bersama Coach <strong class="text-slate-900 font-bold">${trainer.fullName || trainer.name}</strong>.`}
+      <p class="text-xs text-slate-600 mt-1.5 leading-relaxed font-medium">
+        ${type === 'membership'
+          ? `Anda telah mengaktifkan <strong class="text-teal-700 font-bold">${sanitize(packageDisplayName)}</strong>. Masa aktif gym dan pendaftaran kelas Anda kini telah aktif!`
+          : `Anda memiliki <strong class="text-teal-700 font-bold">${currentUser.ptRemainingSessions} Sesi aktif</strong> bersama <strong class="text-slate-900 font-bold">Coach ${sanitize(trainer.name)}</strong>.`}
       </p>
-    </div>
 
-    <!-- Invoice Box -->
-    <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 my-4 space-y-2 text-xs">
-      <div class="flex justify-between pb-2 border-b border-slate-200">
-        <span class="text-slate-400 font-medium">Nomor Invoice:</span>
-        <span class="font-mono font-bold text-slate-800">${invoiceNo}</span>
-      </div>
-      <div class="flex justify-between">
-        <span class="text-slate-400 font-medium">Layanan yang Dibeli:</span>
-        <span class="font-bold text-slate-900 text-right">${type === 'membership' ? pkg.name : `${pkg.label} (Coach ${trainer.name})`}</span>
-      </div>
-      ${type === 'membership' ? `
+      <!-- Invoice Summary Box -->
+      <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 my-4 space-y-2 text-xs text-left">
+        <div class="flex justify-between pb-2 border-b border-slate-200">
+          <span class="text-slate-400 font-medium">Nomor Invoice:</span>
+          <span class="font-mono font-bold text-slate-800">${invoiceNo}</span>
+        </div>
+        <div class="flex justify-between gap-2">
+          <span class="text-slate-400 font-medium">${type === 'membership' ? 'Paket Aktif:' : 'Layanan Trainer:'}</span>
+          <span class="font-bold text-slate-900 text-right">${sanitize(packageDisplayName)}</span>
+        </div>
+        ${type === 'membership' ? `
+          <div class="flex justify-between gap-2">
+            <span class="text-slate-400 font-medium">Masa Aktif Baru:</span>
+            <span class="font-bold text-emerald-700 font-mono text-right">${currentUser.daysRemaining} Hari — Status: AKTIF</span>
+          </div>
+          <div class="flex justify-between gap-2">
+            <span class="text-slate-400 font-medium">Berlaku Hingga:</span>
+            <span class="font-bold text-slate-800 font-mono">${formatDateIndo(currentUser.expiryDate)}</span>
+          </div>
+        ` : `
+          <div class="flex justify-between gap-2">
+            <span class="text-slate-400 font-medium">Total Sisa Sesi PT:</span>
+            <span class="font-bold text-emerald-700 font-mono">${currentUser.ptRemainingSessions} Sesi Aktif</span>
+          </div>
+          <div class="flex justify-between gap-2">
+            <span class="text-slate-400 font-medium">Cabang Trainer:</span>
+            <span class="font-bold text-slate-800 text-right">${sanitize(currentUser.trainerBranch || branchShort)}</span>
+          </div>
+        `}
         <div class="flex justify-between">
-          <span class="text-slate-400 font-medium">Masa Aktif Baru:</span>
-          <span class="font-bold text-emerald-700 font-mono">s/d ${formatDateIndo(currentUser.expiryDate)} (${currentUser.daysRemaining} Hari)</span>
+          <span class="text-slate-400 font-medium">Harga Normal:</span>
+          <span class="font-mono text-slate-700">${formatRupiah(billing.base)}</span>
         </div>
-      ` : `
+        ${billing.appliedVoucher ? `
+          <div class="flex justify-between text-emerald-600 font-bold">
+            <span>Diskon (${billing.appliedVoucher.code}):</span>
+            <span class="font-mono">-${formatRupiah(billing.disc)}</span>
+          </div>
+        ` : ''}
         <div class="flex justify-between">
-          <span class="text-slate-400 font-medium">Total Sisa Sesi PT:</span>
-          <span class="font-bold text-teal-700 font-mono">${currentUser.ptSessions} Sesi Aktif</span>
+          <span class="text-slate-400 font-medium">Metode Bayar:</span>
+          <span class="font-mono font-bold text-slate-800 uppercase">${activePaymentMethod}</span>
         </div>
-      `}
-      <div class="flex justify-between">
-        <span class="text-slate-400 font-medium">Harga Normal:</span>
-        <span class="font-mono text-slate-700">${formatRupiah(billing.base)}</span>
-      </div>
-      ${billing.appliedVoucher ? `
-        <div class="flex justify-between text-emerald-600 font-bold">
-          <span>Diskon Voucher (${billing.appliedVoucher.code}):</span>
-          <span class="font-mono">-${formatRupiah(billing.disc)}</span>
+        <div class="pt-2 border-t border-slate-200 flex justify-between text-sm font-black text-slate-900">
+          <span>Total Dibayar:</span>
+          <span class="text-teal-600 font-mono font-black">${formatRupiah(billing.total)}</span>
         </div>
-      ` : ''}
-      <div class="flex justify-between">
-        <span class="text-slate-400 font-medium">Metode Pembayaran:</span>
-        <span class="font-mono font-bold text-slate-800 uppercase">${activePaymentMethod}</span>
       </div>
-      <div class="flex justify-between">
-        <span class="text-slate-400 font-medium">Waktu Transaksi:</span>
-        <span class="text-slate-700 font-mono">${dateStr}</span>
-      </div>
-      <div class="pt-2 border-t border-slate-200 flex justify-between text-sm font-black text-slate-900">
-        <span>Total Dibayar:</span>
-        <span class="text-teal-600 font-mono font-black">${formatRupiah(billing.total)}</span>
-      </div>
-    </div>
 
-    <!-- Action Buttons -->
-    <div class="space-y-2 pb-1">
-      <button type="button" 
-        class="w-full py-3.5 rounded-xl bg-teal-550 hover:bg-teal-650 active:scale-[0.98] text-white text-xs font-black shadow-md shadow-teal-550/20 transition-all cursor-pointer flex items-center justify-center gap-2"
-        onclick="closeBottomSheet(); updateHeaderUserDisplay(); renderHomeClasses(); renderHomeTrainers(); renderHomeRetentionBanner(); showToast('🎉 Transaksi Anda berhasil dan telah tersinkronisasi ke Dashboard Admin!', 4000);">
-        <span>✓ Selesai & Kembali ke Beranda</span>
-      </button>
-      <button type="button" 
-        class="w-full py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold transition-all cursor-pointer text-center"
-        onclick="closeBottomSheet(); openProfileSheet();">
-        Lihat Status Membership di Profil &rarr;
-      </button>
+      <!-- Action Buttons -->
+      <div class="space-y-2">
+        ${type === 'membership' ? `
+          <button type="button"
+            class="w-full py-3.5 rounded-xl bg-teal-550 hover:bg-teal-650 active:scale-[0.98] text-white text-xs font-black shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+            onclick="closeCenterPopup(); closeFullTrainerDetailScreen(); closeFullTrainerScreen(); renderApp(); openProfileSheet();">
+            <span>Lihat Status Membership Saya</span>
+          </button>
+          <button type="button"
+            class="w-full py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold transition-all cursor-pointer text-center"
+            onclick="closeCenterPopup(); closeFullTrainerDetailScreen(); closeFullTrainerScreen(); renderApp();">
+            Kembali ke Beranda
+          </button>
+        ` : `
+          <button type="button"
+            class="w-full py-3.5 rounded-xl bg-teal-550 hover:bg-teal-650 active:scale-[0.98] text-white text-xs font-black shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+            onclick="closeCenterPopup(); renderApp();">
+            <span>✓ Lihat Status Sesi PT Aktif</span>
+          </button>
+          <button type="button"
+            class="w-full py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold transition-all cursor-pointer text-center"
+            onclick="closeCenterPopup(); closeFullTrainerDetailScreen(); closeFullTrainerScreen(); renderApp(); openProfileSheet();">
+            Lihat Status di Menu Profil &rarr;
+          </button>
+        `}
+      </div>
     </div>
   `;
 
-  openBottomSheet(receiptHtml);
-  const sheetContent = document.getElementById('sheet-content');
-  if (sheetContent) sheetContent.scrollTop = 0;
-
-  updateHeaderUserDisplay();
-  renderHomeTrainers();
-  renderHomeClasses();
-  renderHomeRetentionBanner();
+  openCenterPopup(receiptHtml);
 }
 
 // ==================== 6. CLEAN PROFILE SHEET (NO MEMBER ID, NO CRM LINK) ====================
@@ -4760,12 +5045,32 @@ function openProfileSheet() {
   }
 
   const isPaid = isUserPaidMember(currentUser);
-  const { isExpiringSoon, daysRemaining } = isPaid 
-    ? checkAndInjectRetentionVoucher(currentUser) 
+  const { isExpiringSoon, daysRemaining } = isPaid
+    ? checkAndInjectRetentionVoucher(currentUser)
     : { isExpiringSoon: false, daysRemaining: 0 };
+  const exactDays = isPaid ? Math.max(0, getDaysRemaining(currentUser.expiryDate)) : 0;
 
   // Active membership package
-  const activePackage = MEMBERSHIP_PACKAGES.find(p => p.shortName === currentUser.packageType || p.name === currentUser.packageDuration) || MEMBERSHIP_PACKAGES[1];
+  const activePackage = MEMBERSHIP_PACKAGES.find(p =>
+    p.id === currentUser.packageId ||
+    p.packageLabel === currentUser.membershipPackage ||
+    p.shortName === currentUser.packageType ||
+    p.name === currentUser.packageDuration
+  ) || MEMBERSHIP_PACKAGES[1];
+
+  const ptRemaining = Number(currentUser.ptRemainingSessions ?? currentUser.ptSessions) || 0;
+  const ptTrainerLabel = currentUser.activeTrainer || currentUser.ptTrainer;
+
+  const activePtCardHtml = ptRemaining > 0 && ptTrainerLabel ? `
+    <div class="p-3.5 rounded-2xl bg-emerald-50 border-2 border-emerald-400 mb-4 shadow-sm">
+      <div class="flex items-center justify-between gap-2 mb-1">
+        <span class="text-[10px] font-black uppercase tracking-wider text-emerald-700">✓ Personal Trainer Aktif</span>
+        <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-600 text-white font-mono">Sisa ${ptRemaining} Sesi</span>
+      </div>
+      <h4 class="text-xs font-black text-emerald-950">Sesi Personal Trainer Aktif: ${sanitize(ptTrainerLabel)} (Sisa ${ptRemaining} Sesi)</h4>
+      ${currentUser.ptPackageName ? `<p class="text-[11px] text-emerald-800 mt-0.5 font-medium">${sanitize(currentUser.ptPackageName)} • ${sanitize(currentUser.trainerBranch || currentUser.branch || 'Be Fit Gym')}</p>` : ''}
+    </div>
+  ` : '';
 
   const html = `
     <!-- User Profile Header: Clean, NO Member ID Clutter -->
@@ -4776,7 +5081,7 @@ function openProfileSheet() {
       <h3 class="text-base font-black text-slate-900">${sanitize(currentUser.name)}</h3>
       <p class="text-xs text-slate-500 mt-0.5">${currentUser.phone} • ${currentUser.email || 'member@befit.id'}</p>
       <span class="inline-block mt-1.5 px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${isPaid ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-slate-100 text-slate-700 border border-slate-300'}">
-        Status: ${isPaid ? (currentUser.status || 'Active') : 'Belum Aktif (Belum Berlangganan)'}
+        Status: ${isPaid ? 'Aktif' : 'Belum Aktif (Belum Berlangganan)'}
       </span>
     </div>
 
@@ -4795,7 +5100,7 @@ function openProfileSheet() {
           </div>
         </div>
         <div class="pt-2 border-t border-amber-300/70 flex justify-end">
-          <button type="button" onclick="closeBottomSheet(); openPricingSheet('pkg-3m');"
+          <button type="button" onclick="closeBottomSheet(); openPricingSheet('${activePackage.id}');"
             class="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 active:scale-95 text-white text-xs font-black shadow-sm transition-all flex items-center gap-1.5 cursor-pointer">
             <span>Perpanjang Sekarang (Diskon 25%) &rarr;</span>
           </button>
@@ -4805,19 +5110,21 @@ function openProfileSheet() {
 
     ${isPaid ? `
       <!-- Active Membership Status Card for Paid Member -->
-      <div class="p-4 bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl mb-4 shadow-md border border-amber-500/20">
+      <div class="p-4 bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl mb-4 shadow-md border border-emerald-400/40">
         <div class="flex items-center justify-between mb-2">
-          <span class="text-[10px] uppercase font-bold tracking-wider text-teal-400">Membership Be Fit</span>
-          <span class="text-[10px] font-bold text-amber-300">✦ MEMBER RESMI ✦</span>
+          <span class="text-[10px] uppercase font-bold tracking-wider text-emerald-400">✓ Membership Aktif</span>
+          <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-500 text-slate-950">${exactDays} HARI TERSISA</span>
         </div>
-        <h4 class="text-base font-black">${sanitize(currentUser.packageType || 'Pro Transformation')}</h4>
-        <p class="text-xs text-slate-300 mt-0.5">Berlaku s/d: <strong class="text-white">${currentUser.expiryDate || 'Aktif'}</strong> ${isExpiringSoon ? `<span class="ml-1 text-amber-300 font-bold">(${daysRemaining} Hari Lagi)</span>` : ''}</p>
+        <h4 class="text-base font-black text-white">${sanitize(currentUser.membershipPackage || currentUser.packageDuration || currentUser.packageType || 'Pro Transformation')}</h4>
+        <p class="text-xs text-slate-300 mt-0.5">Berlaku s/d: <strong class="text-white">${formatDateIndo(currentUser.expiryDate) || 'Aktif'}</strong> ${isExpiringSoon ? `<span class="ml-1 text-amber-300 font-bold">(${daysRemaining} Hari Lagi)</span>` : ''}</p>
         
         <div class="mt-3 pt-2.5 border-t border-slate-700/80 flex items-center justify-between text-xs">
-          <span class="text-slate-300">Sisa Sesi PT:</span>
-          <span class="font-bold text-brand-sunny font-mono">${currentUser.ptSessions || 0} Sesi Aktif</span>
+          <span class="text-slate-300">Total Sesi PT Aktif:</span>
+          <span class="font-bold text-brand-sunny font-mono">${ptRemaining} Sesi Aktif</span>
         </div>
       </div>
+
+      ${activePtCardHtml}
 
       <!-- Primary Action: Perpanjang Membership -->
       <div class="space-y-2.5 mb-4">
@@ -4825,7 +5132,7 @@ function openProfileSheet() {
           onclick="extendCurrentMembership()">
           <span class="flex items-center gap-2">
             <span class="text-base">⚡</span>
-            <span>Perpanjang Membership ${isExpiringSoon ? '(Diskon 25% Aktif)' : `(${sanitize(activePackage.shortName)})`}</span>
+            <span>Perpanjang Membership ${isExpiringSoon ? '(Diskon 25% Aktif)' : `(${sanitize(activePackage.packageLabel || activePackage.shortName)})`}</span>
           </span>
           <svg class="w-4 h-4 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
         </button>
@@ -4849,6 +5156,8 @@ function openProfileSheet() {
           🎉 Gunakan kode promo <strong>MEMBERBARU15</strong> untuk mendapatkan Diskon 15% pada pembelian paket membership pertamamu!
         </p>
       </div>
+
+      ${activePtCardHtml}
 
       <!-- Action for Unpaid Member: Pilih Paket Membership -->
       <div class="space-y-2.5 mb-4">
@@ -4887,6 +5196,7 @@ function extendCurrentMembership() {
     p.id === currentUser.packageId ||
     p.shortName === currentUser.packageType || 
     p.name === currentUser.packageDuration ||
+    p.packageLabel === currentUser.membershipPackage ||
     (currentUser.packageDuration && p.name.includes(currentUser.packageDuration))
   ) || MEMBERSHIP_PACKAGES[1];
 
@@ -4895,11 +5205,23 @@ function extendCurrentMembership() {
 }
 
 function openTransactionHistorySheet() {
-  let txList = [];
-  try {
-    const raw = localStorage.getItem(TRANSACTIONS_KEY);
-    if (raw) txList = JSON.parse(raw);
-  } catch (e) {}
+  const txMap = new Map();
+  [TRANSACTIONS_KEY, TRANSACTIONS_ALT_KEY].forEach(key => {
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr)) {
+          arr.forEach(item => {
+            if (item && item.id && !txMap.has(item.id)) {
+              txMap.set(item.id, item);
+            }
+          });
+        }
+      }
+    } catch (e) {}
+  });
+  const txList = Array.from(txMap.values());
 
   const listHtml = txList.length === 0 ? `
     <div class="py-8 text-center text-slate-400 text-xs">
@@ -4907,13 +5229,13 @@ function openTransactionHistorySheet() {
     </div>
   ` : txList.map(tx => `
     <div class="p-3 rounded-xl border border-slate-200 space-y-1 text-xs">
-      <div class="flex justify-between items-center">
-        <span class="font-bold text-slate-900">${sanitize(tx.title)}</span>
-        <span class="text-teal-600 font-mono font-bold">${formatRupiah(tx.amount)}</span>
+      <div class="flex justify-between items-center gap-2">
+        <span class="font-bold text-slate-900">${sanitize(tx.title || tx.packageName || 'Transaksi Be Fit')}</span>
+        <span class="text-teal-600 font-mono font-bold shrink-0">${formatRupiah(tx.amount || tx.totalPaid || 0)}</span>
       </div>
       <div class="flex justify-between text-[11px] text-slate-400 font-mono">
-        <span>${tx.id}</span>
-        <span>${tx.date}</span>
+        <span>${sanitize(tx.id)} • ${sanitize(tx.method || tx.paymentMethod || '')}</span>
+        <span>${sanitize(tx.date || '')}</span>
       </div>
     </div>
   `).join('');
@@ -5288,7 +5610,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 4. Update User Profile Status
   updateHeaderUserDisplay();
-  updateTrialButton();
 
   // 5. Start Carousel
   goToSlide(0);
@@ -5304,9 +5625,34 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Keyboard: Escape closes bottom sheet
+  // Keyboard: Escape closes centered popup or bottom sheet
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && sheetOpen) closeBottomSheet();
+    if (e.key === 'Escape') {
+      const popupOverlay = document.getElementById('center-popup-overlay');
+      if (popupOverlay && !popupOverlay.classList.contains('hidden')) {
+        closeCenterPopup();
+      } else if (sheetOpen) {
+        closeBottomSheet();
+      }
+    }
+  });
+
+  // Cross-tab synchronization listener (syncs admin changes back into active user view)
+  window.addEventListener('storage', (e) => {
+    if (e.key === USERS_STORAGE_KEY || e.key === SYNC_TS_KEY) {
+      const cur = getCurrentUser();
+      if (cur) {
+        const users = getUsers();
+        const fresh = users.find(u =>
+          (u.id && cur.id && u.id === cur.id) ||
+          (u.email && cur.email && u.email.toLowerCase() === cur.email.toLowerCase())
+        );
+        if (fresh) {
+          localStorage.setItem(CURRENT_USER_KEY, JSON.stringify({ ...cur, ...fresh }));
+        }
+      }
+      renderApp();
+    }
   });
 
   // 6. Initialize Auto-Inject Retention Voucher for Expiring Members (1-10 Days Remaining)
@@ -5376,18 +5722,24 @@ function submitAdminLogin() {
   const email = emailInput ? emailInput.value.trim() : '';
   const pass = passInput ? passInput.value.trim() : '';
 
-  if (email === 'rrizky205@gmail.com' && pass === 'wudinjir1911') {
-    localStorage.setItem('befit_admin_auth', 'true');
+  if ((email === 'rrizky205@gmail.com' && pass === 'wudinjir1911') || (email === 'admin@befit.id' && pass === 'admin123')) {
+    sessionStorage.setItem(ADMIN_AUTH_KEY, 'true');
+    localStorage.setItem(ADMIN_AUTH_KEY, 'true');
     showToast('Login Admin berhasil! Mengalihkan ke Panel Admin...', 2500);
     closeBottomSheet();
     setTimeout(() => {
       window.location.href = 'admin.html';
-    }, 400);
+    }, 350);
   } else {
     showToast('Email atau password admin tidak valid!', 3500);
   }
 }
 
+window.syncMasterState = syncMasterState;
+window.renderApp = renderApp;
+window.updateUI = updateUI;
+window.openCenterPopup = openCenterPopup;
+window.closeCenterPopup = closeCenterPopup;
 window.openAdminLoginModal = openAdminLoginModal;
 window.toggleAdminModalPassword = toggleAdminModalPassword;
 window.submitAdminLogin = submitAdminLogin;
@@ -5428,16 +5780,18 @@ function initRetentionSystem() {
         branch: 'Setiabudi',
         packageType: 'Pro Transformation',
         packageDuration: 'Paket 3 Bulan (Pro Transformation)',
+        membershipPackage: 'Paket 3 Bulan',
         status: 'Active',
         membershipStatus: 'Aktif',
         isPaidMember: true,
         expiryDate: expiry,
         daysRemaining: 6,
         totalPaid: 900000,
+        membershipPaid: 900000,
         injectedVouchers: ['RENEWLOYAL25']
       };
       setCurrentUser(demoUser);
-      unlockRetentionExclusive();
+      setRetentionUnlocked(true);
       if (demoMode === 'trainer') {
         setTimeout(() => {
           openAllTrainersSheet();
