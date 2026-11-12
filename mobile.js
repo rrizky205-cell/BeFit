@@ -4700,32 +4700,46 @@ function openUnifiedCheckout(params) {
   window.applyCheckoutVoucher = applyCheckoutVoucher;
   window.removeCheckoutVoucher = removeCheckoutVoucher;
 
-  function renderPaymentMethodDetails() {
+  function renderPaymentMethodDetails(billingTotal) {
     const vaNumber = `8801 ${currentUser.phone.replace(/[^0-9]/g, '').slice(-8) || '12345678'}`;
 
     if (activePaymentMethod === 'qris') {
       return `
-        <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-center">
-          <span class="inline-block px-2.5 py-0.5 rounded text-[10px] font-extrabold bg-emerald-100 text-emerald-800 uppercase tracking-wider mb-2">Verifikasi Instan Otomatis</span>
-          <!-- Realistic Simulated QRIS Code -->
-          <div class="w-44 h-44 bg-white p-3 rounded-2xl border-2 border-slate-900 mx-auto flex flex-col items-center justify-center shadow-md">
-            <svg class="w-32 h-32" viewBox="0 0 100 100" fill="#0F172A">
-              <!-- QR Patterns -->
-              <rect x="5" y="5" width="28" height="28" rx="4" fill="none" stroke="#0F172A" stroke-width="6"/>
-              <rect x="12" y="12" width="14" height="14" fill="#0F172A"/>
-              <rect x="67" y="5" width="28" height="28" rx="4" fill="none" stroke="#0F172A" stroke-width="6"/>
-              <rect x="74" y="12" width="14" height="14" fill="#0F172A"/>
-              <rect x="5" y="67" width="28" height="28" rx="4" fill="none" stroke="#0F172A" stroke-width="6"/>
-              <rect x="12" y="74" width="14" height="14" fill="#0F172A"/>
-              <circle cx="50" cy="50" r="10" fill="#0D9488"/>
-              <rect x="42" y="10" width="8" height="8" fill="#0F172A"/>
-              <rect x="40" y="70" width="12" height="12" fill="#0F172A"/>
-              <rect x="70" y="45" width="10" height="10" fill="#0F172A"/>
-              <rect x="60" y="75" width="15" height="8" fill="#0F172A"/>
-            </svg>
-            <span class="text-[9px] font-black tracking-wider text-slate-800 mt-1 uppercase font-mono">QRIS • BE FIT GYM</span>
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden text-center">
+          <!-- Header Kartu QRIS -->
+          <div class="px-4 py-2.5 bg-slate-900 text-white flex items-center justify-between">
+            <div class="flex items-center gap-2 text-left">
+              <span class="px-2 py-0.5 rounded bg-white text-slate-900 text-xs font-black tracking-wider">QRIS</span>
+              <span class="text-[10px] text-slate-300 font-medium leading-tight">Quick Response Code Indonesian Standard</span>
+            </div>
+            <span class="px-2 py-0.5 rounded text-[9px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 uppercase tracking-wider shrink-0">Instan</span>
           </div>
-          <p class="text-[11px] text-slate-500 mt-2.5">Pindai kode QR menggunakan GoPay, OVO, Dana, ShopeePay, atau Mobile Banking.</p>
+
+          <div class="p-4 bg-slate-50/70">
+            <!-- Nama Merchant -->
+            <div class="mb-2.5">
+              <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400 block">Merchant Resmi</span>
+              <h4 class="text-sm font-black tracking-wide text-slate-900 uppercase">BE FIT GYM INDONESIA</h4>
+            </div>
+
+            <!-- Area Gambar QRIS Asli (Tanpa Crop Sudut) -->
+            <div class="bg-white p-3 border border-slate-200 rounded-xl shadow-sm inline-block mx-auto">
+              <img 
+                src="/qris.jpg" 
+                alt="QRIS Pembayaran Be Fit Gym" 
+                class="w-56 h-56 mx-auto object-contain rounded-lg"
+                style="image-rendering: pixelated;"
+              />
+            </div>
+
+            <!-- Total Tagihan di Bawah QRIS -->
+            <div class="mt-3 p-2.5 bg-white rounded-xl border border-slate-200 flex items-center justify-between text-xs max-w-[260px] mx-auto shadow-2xs">
+              <span class="font-bold text-slate-500">Total Tagihan:</span>
+              <span class="text-sm font-black font-mono text-teal-600">${formatRupiah(billingTotal || 0)}</span>
+            </div>
+
+            <p class="text-[11px] text-slate-500 mt-2.5">Pindai kode QR menggunakan GoPay, OVO, DANA, ShopeePay, atau Mobile Banking.</p>
+          </div>
         </div>
       `;
     }
@@ -4918,7 +4932,7 @@ function openUnifiedCheckout(params) {
 
       <!-- Payment Method Interactive Details (QR / VA) -->
       <div id="payment-details-container" class="mb-4">
-        ${renderPaymentMethodDetails()}
+        ${renderPaymentMethodDetails(total)}
       </div>
 
       <!-- Tagihan Akhir Dinamis Real-Time -->
@@ -4946,7 +4960,7 @@ function openUnifiedCheckout(params) {
       <!-- Pay Button with Real-Time Total (100% Synchronous Instant 0ms) -->
       <button type="button" id="btn-submit-payment" class="w-full py-3.5 rounded-xl bg-teal-550 text-white text-sm font-black shadow-lg shadow-teal-550/30 hover:bg-teal-650 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
         onclick="executePaymentProcess(event)">
-        <span>Bayar Sekarang — ${formatRupiah(total)}</span>
+        <span>Saya Sudah Bayar / Konfirmasi Pembayaran — ${formatRupiah(total)}</span>
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
       </button>
     `;
